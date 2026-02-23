@@ -15,7 +15,7 @@ import (
 )
 
 // TmdbProxyMiddleware TMDB API 代理中间件
-// 拦截所有 /api/v3/* 请求，直接代理到 TMDB 并返回原始 JSON
+// 拦截所有 /api/v3/*、/v3/*、/3/* 请求，直接代理到 TMDB 并返回原始 JSON
 type TmdbProxyMiddleware struct {
 	Client       *tmdbclient.Client
 	ProxyService *proxy.ProxyService
@@ -27,14 +27,12 @@ func NewTmdbProxyMiddleware(client *tmdbclient.Client, proxyService *proxy.Proxy
 
 func (m *TmdbProxyMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 提取 /api/v3 后的路径
-		path := r.URL.Path
-		prefix := "/api/v3"
-		if !strings.HasPrefix(path, prefix) {
+		// 提取版本前缀后的 TMDB 路径
+		tmdbPath, ok := resolveTmdbPath(r.URL.Path)
+		if !ok {
 			next(w, r)
 			return
 		}
-		tmdbPath := strings.TrimPrefix(path, prefix)
 
 		// 从查询参数构建请求选项
 		opts := m.parseOpts(r)
@@ -49,6 +47,15 @@ func (m *TmdbProxyMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 
 		writeJSON(w, data)
 	}
+}
+
+func resolveTmdbPath(path string) (string, bool) {
+	for _, prefix := range []string{"/api/v3", "/v3", "/3"} {
+		if strings.HasPrefix(path, prefix) {
+			return strings.TrimPrefix(path, prefix), true
+		}
+	}
+	return "", false
 }
 
 // parseOpts 从查询参数中提取请求选项

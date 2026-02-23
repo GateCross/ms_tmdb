@@ -33,10 +33,12 @@ func main() {
 	proxyHandler := tmdbProxy.Handle(func(w http.ResponseWriter, r *http.Request) {
 		httpx.ErrorCtx(r.Context(), w, fmt.Errorf("未知路径: %s", r.URL.Path))
 	})
-	server.AddRoutes(
-		buildProxyRoutes(proxyHandler),
-		rest.WithPrefix("/api/v3"),
-	)
+	for _, prefix := range []string{"/api/v3", "/v3", "/3"} {
+		server.AddRoutes(
+			buildProxyRoutes(proxyHandler),
+			rest.WithPrefix(prefix),
+		)
+	}
 
 	// 注册 Admin 路由
 	server.AddRoutes(
