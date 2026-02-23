@@ -31,13 +31,12 @@ type Config struct {
 
 // PostgresConf PostgreSQL 连接配置
 type PostgresConf struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	DBName   string
-	SSLMode  string
-	TimeZone string
+	Host     string `json:",optional"`
+	Port     int    `json:",optional"`
+	User     string `json:",optional"`
+	Password string `json:",optional"`
+	DBName   string `json:",optional"`
+	SSLMode  string `json:",optional"`
 }
 
 // DSN 构建 GORM 使用的 PostgreSQL 连接串
@@ -70,9 +69,6 @@ func (p PostgresConf) DSN() string {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=%s", host, port, user, dbName, sslMode)
 	if p.Password != "" {
 		dsn += fmt.Sprintf(" password=%s", p.Password)
-	}
-	if p.TimeZone != "" {
-		dsn += fmt.Sprintf(" TimeZone=%s", p.TimeZone)
 	}
 	return dsn
 }
