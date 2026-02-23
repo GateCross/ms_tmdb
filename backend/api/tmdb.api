@@ -66,31 +66,57 @@ type (
 	}
 	// 管理接口 - 修改数据请求
 	AdminUpdateReq {
-		Id               int    `path:"id"`
-		Title            string `json:"title,optional"`
-		OriginalTitle    string `json:"original_title,optional"`
-		Overview         string `json:"overview,optional"`
-		Tagline          string `json:"tagline,optional"`
-		ReleaseDate      string `json:"release_date,optional"`
-		Status           string `json:"status,optional"`
-		Runtime          int    `json:"runtime,optional"`
-		OriginalLanguage string `json:"original_language,optional"`
-		Homepage         string `json:"homepage,optional"`
-		PosterPath       string `json:"poster_path,optional"`
-		BackdropPath     string `json:"backdrop_path,optional"`
-		VoteAverage      float64 `json:"vote_average,optional"`
-		Popularity       float64 `json:"popularity,optional"`
+		Id               int      `path:"id"`
+		Title            string   `json:"title,optional"`
+		OriginalTitle    string   `json:"original_title,optional"`
+		Overview         string   `json:"overview,optional"`
+		Tagline          string   `json:"tagline,optional"`
+		ReleaseDate      string   `json:"release_date,optional"`
+		Status           string   `json:"status,optional"`
+		Runtime          int      `json:"runtime,optional"`
+		OriginalLanguage string   `json:"original_language,optional"`
+		Homepage         string   `json:"homepage,optional"`
+		PosterPath       string   `json:"poster_path,optional"`
+		BackdropPath     string   `json:"backdrop_path,optional"`
+		VoteAverage      float64  `json:"vote_average,optional"`
+		Popularity       float64  `json:"popularity,optional"`
 		GenreNames       []string `json:"genre_names,optional"`
-		Name             string `json:"name,optional"`
-		OriginalName     string `json:"original_name,optional"`
-		FirstAirDate     string `json:"first_air_date,optional"`
-		NumberOfSeasons  int    `json:"number_of_seasons,optional"`
-		NumberOfEpisodes int    `json:"number_of_episodes,optional"`
-		Type             string `json:"type,optional"`
+		Name             string   `json:"name,optional"`
+		OriginalName     string   `json:"original_name,optional"`
+		FirstAirDate     string   `json:"first_air_date,optional"`
+		NumberOfSeasons  int      `json:"number_of_seasons,optional"`
+		NumberOfEpisodes int      `json:"number_of_episodes,optional"`
+		Type             string   `json:"type,optional"`
 	}
 	// 管理接口 - 同步请求
 	AdminSyncReq {
-		Id int `path:"id"`
+		Id              int      `path:"id"`
+		Mode            string   `json:"mode,optional"`
+		OverwriteFields []string `json:"overwrite_fields,optional"`
+	}
+	// 管理接口 - 同步响应
+	AdminSyncResp {
+		Mode            string   `json:"mode"`
+		ChangedFields   []string `json:"changed_fields"`
+		Overwritten     []string `json:"overwritten_fields"`
+		KeptLocalFields []string `json:"kept_local_fields"`
+		IsModified      bool     `json:"is_modified"`
+		Message         string   `json:"message"`
+	}
+	// 管理接口 - 代理设置请求
+	AdminProxyReq {
+		ProxyURL string `json:"proxy_url,optional"`
+	}
+	// 管理接口 - 代理设置响应
+	AdminProxyResp {
+		ProxyURL string `json:"proxy_url"`
+		Enabled  bool   `json:"enabled"`
+	}
+	// 管理接口 - 远程差异检测响应
+	AdminCompareResp {
+		HasDiff    bool     `json:"has_diff"`
+		DiffFields []string `json:"diff_fields"`
+		Message    string   `json:"message"`
 	}
 	// 类型列表请求
 	GenreListReq {
@@ -416,13 +442,13 @@ service tmdb-api {
 	put /person/:id (AdminUpdateReq)
 
 	@handler SyncMovie
-	post /sync/movie/:id (AdminSyncReq)
+	post /sync/movie/:id (AdminSyncReq) returns (AdminSyncResp)
 
 	@handler SyncTvSeries
-	post /sync/tv/:id (AdminSyncReq)
+	post /sync/tv/:id (AdminSyncReq) returns (AdminSyncResp)
 
 	@handler SyncPerson
-	post /sync/person/:id (AdminSyncReq)
+	post /sync/person/:id (AdminSyncReq) returns (AdminSyncResp)
 
 	@handler ClearMovieLocal
 	delete /movie/:id/local (AdminSyncReq)
@@ -438,4 +464,20 @@ service tmdb-api {
 
 	@handler ListTvSeries
 	get /tv-series (LibraryListReq) returns (TvSeriesListResp)
+
+	@handler GetProxySettings
+	get /proxy returns (AdminProxyResp)
+
+	@handler UpdateProxySettings
+	put /proxy (AdminProxyReq) returns (AdminProxyResp)
+
+	@handler CompareMovieRemote
+	get /compare/movie/:id (AdminSyncReq) returns (AdminCompareResp)
+
+	@handler CompareTvRemote
+	get /compare/tv/:id (AdminSyncReq) returns (AdminCompareResp)
+
+	@handler ComparePersonRemote
+	get /compare/person/:id (AdminSyncReq) returns (AdminCompareResp)
 }
+

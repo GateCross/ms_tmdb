@@ -9,7 +9,7 @@ import (
 	"ms_tmdb/internal/types"
 )
 
-func SyncMovieHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+func ComparePersonRemoteHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.AdminSyncReq
 		if err := httpx.Parse(r, &req); err != nil {
@@ -17,8 +17,8 @@ func SyncMovieHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		l := admin.NewSyncMovieLogic(r.Context(), svcCtx)
-		resp, err := l.SyncMovie(&req)
+		l := admin.NewComparePersonRemoteLogic(r.Context(), svcCtx)
+		resp, err := l.ComparePersonRemote(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

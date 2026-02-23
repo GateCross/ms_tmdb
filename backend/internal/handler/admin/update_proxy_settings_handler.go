@@ -9,16 +9,16 @@ import (
 	"ms_tmdb/internal/types"
 )
 
-func SyncMovieHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+func UpdateProxySettingsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.AdminSyncReq
+		var req types.AdminProxyReq
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
-		l := admin.NewSyncMovieLogic(r.Context(), svcCtx)
-		resp, err := l.SyncMovie(&req)
+		l := admin.NewUpdateProxySettingsLogic(r.Context(), svcCtx)
+		resp, err := l.UpdateProxySettings(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

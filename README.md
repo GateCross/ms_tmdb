@@ -76,6 +76,121 @@ MS_TMDB_IMAGE=ghcr.io/<your-org>/<your-repo>:latest docker compose up -d
   - `/api/v3/*` TMDB 代理接口
   - `/api/admin/*` 本地管理接口
 
+## 其他程序调用（API）
+
+可通过 HTTP 直接调用本服务，适用于脚本、后端服务、工作流平台（如 n8n）等。
+
+- 默认服务地址：`http://localhost:8888`
+- 返回：`application/json`
+- 鉴权：当前默认无需额外 Token（如后续接入鉴权，以部署配置为准）
+
+### 1. 读取详情（带本地读穿缓存）
+
+```bash
+curl "http://localhost:8888/api/v3/movie/550?language=zh-CN&append_to_response=credits,images"
+```
+
+说明：
+- 无需传 `api_key`，服务端会自动附加 TMDB Key。
+- `/api/v3/movie/{id}`、`/api/v3/tv/{id}`、`/api/v3/person/{id}` 都支持同类调用。
+
+### 2. 对比远程与本地差异（推荐先调用）
+
+```bash
+curl "http://localhost:8888/api/admin/compare/movie/550"
+```
+
+典型响应：
+
+```json
+{
+  "has_diff": true,
+  "diff_fields": ["vote_average", "vote_count"],
+  "message": "检测到远程数据差异"
+}
+```
+
+### 3. 执行同步（按模式）
+
+```bash
+# 仅预览变化，不落库
+curl -X POST "http://localhost:8888/api/admin/sync/movie/550" \
+  -H "Content-Type: application/json" \
+  -d "{\"mode\":\"preview\"}"
+
+# 全量覆盖本地
+curl -X POST "http://localhost:8888/api/admin/sync/movie/550" \
+  -H "Content-Type: application/json" \
+  -d "{\"mode\":\"overwrite_all\"}"
+
+# 仅更新未被本地修改的字段
+curl -X POST "http://localhost:8888/api/admin/sync/movie/550" \
+  -H "Content-Type: application/json" \
+  -d "{\"mode\":\"update_unmodified\"}"
+
+# 选择性覆盖指定字段
+curl -X POST "http://localhost:8888/api/admin/sync/movie/550" \
+  -H "Content-Type: application/json" \
+  -d "{\"mode\":\"selective\",\"overwrite_fields\":[\"vote_average\",\"vote_count\"]}"
+```
+
+支持的资源路径：
+- 电影：`/api/admin/sync/movie/{id}`
+- 剧集：`/api/admin/sync/tv/{id}`
+- 人物：`/api/admin/sync/person/{id}`
+
+### 4. 更新本地覆盖字段
+
+```bash
+curl -X PUT "http://localhost:8888/api/admin/movie/550" \
+  -H "Content-Type: application/json" \
+  -d "{\"title\":\"搏击俱乐部\",\"vote_average\":8.8,\"genre_names\":[\"剧情\",\"惊悚\"]}"
+```
+
+### 5. 获取本地库列表
+
+```bash
+curl "http://localhost:8888/api/admin/movies?page=1&page_size=20&keyword=star&search_mode=contains"
+curl "http://localhost:8888/api/admin/tv-series?page=1&page_size=20"
+```
+
+### 6. Python 调用示例
+
+```python
+import requests
+
+base = "http://localhost:8888"
+movie_id = 550
+
+# 1) 差异检测
+cmp_resp = requests.get(f"{base}/api/admin/compare/movie/{movie_id}", timeout=10).json()
+
+# 2) 有差异再按策略同步
+if cmp_resp.get("has_diff"):
+    sync_resp = requests.post(
+        f"{base}/api/admin/sync/movie/{movie_id}",
+        json={"mode": "update_unmodified"},
+        timeout=20,
+    ).json()
+    print(sync_resp.get("message"))
+```
+
+### 7. 第三方接入推荐流程
+
+适用于定时任务、后端服务、工作流引擎（n8n/Node-RED）：
+
+1. 先调用对比接口判断是否有差异  
+   `GET /api/admin/compare/movie/{id}` 或 `GET /api/admin/compare/tv/{id}`
+2. `has_diff=false` 时跳过同步，直接结束或记录“无需更新”
+3. `has_diff=true` 时按策略选择同步模式  
+   - 保守更新：`mode=update_unmodified`  
+   - 全量覆盖：`mode=overwrite_all`  
+   - 字段级覆盖：`mode=selective` + `overwrite_fields`
+4. 调用同步接口执行更新  
+   `POST /api/admin/sync/movie/{id}` 或 `POST /api/admin/sync/tv/{id}`
+5. 最后读取详情或列表做结果确认  
+   `GET /api/v3/movie/{id}`、`GET /api/v3/tv/{id}`、`GET /api/admin/movies`
+
 ## 配置说明
 
 - 后端配置文件：`backend/etc/tmdb.yaml`

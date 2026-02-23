@@ -3,8 +3,34 @@
 
 package types
 
+type AdminCompareResp struct {
+	HasDiff    bool     `json:"has_diff"`
+	DiffFields []string `json:"diff_fields"`
+	Message    string   `json:"message"`
+}
+
+type AdminProxyReq struct {
+	ProxyURL string `json:"proxy_url,optional"`
+}
+
+type AdminProxyResp struct {
+	ProxyURL string `json:"proxy_url"`
+	Enabled  bool   `json:"enabled"`
+}
+
 type AdminSyncReq struct {
-	Id int `path:"id"`
+	Id              int      `path:"id"`
+	Mode            string   `json:"mode,optional"`
+	OverwriteFields []string `json:"overwrite_fields,optional"`
+}
+
+type AdminSyncResp struct {
+	Mode            string   `json:"mode"`
+	ChangedFields   []string `json:"changed_fields"`
+	Overwritten     []string `json:"overwritten_fields"`
+	KeptLocalFields []string `json:"kept_local_fields"`
+	IsModified      bool     `json:"is_modified"`
+	Message         string   `json:"message"`
 }
 
 type AdminUpdateReq struct {

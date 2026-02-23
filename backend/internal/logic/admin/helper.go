@@ -3,11 +3,21 @@ package admin
 import (
 	"encoding/json"
 	"fmt"
+	"math"
+	"reflect"
+	"sort"
 	"strings"
 
 	"ms_tmdb/internal/model"
 
 	"gorm.io/gorm"
+)
+
+const (
+	syncModeOverwriteAll    = "overwrite_all"
+	syncModeUpdateUnchanged = "update_unmodified"
+	syncModeSelective       = "selective"
+	syncModePreview         = "preview"
 )
 
 // normalizePage 规范化分页参数
@@ -116,4 +126,231 @@ func buildGenresFromNames(names []string) []map[string]interface{} {
 		id++
 	}
 	return result
+}
+
+// normalizeSyncMode 标准化同步模式，默认更新未本地修改字段
+func normalizeSyncMode(mode string) string {
+	switch strings.ToLower(strings.TrimSpace(mode)) {
+	case syncModeOverwriteAll:
+		return syncModeOverwriteAll
+	case syncModeSelective:
+		return syncModeSelective
+	case syncModePreview:
+		return syncModePreview
+	default:
+		return syncModeUpdateUnchanged
+	}
+}
+
+func rawJSONToMap(raw model.RawJSON) (map[string]interface{}, error) {
+	result := make(map[string]interface{})
+	if len(raw) == 0 {
+		return result, nil
+	}
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func cloneMap(input map[string]interface{}) map[string]interface{} {
+	if len(input) == 0 {
+		return map[string]interface{}{}
+	}
+	data, err := json.Marshal(input)
+	if err != nil {
+		output := make(map[string]interface{}, len(input))
+		for k, v := range input {
+			output[k] = v
+		}
+		return output
+	}
+	output := make(map[string]interface{})
+	if err := json.Unmarshal(data, &output); err != nil {
+		output = make(map[string]interface{}, len(input))
+		for k, v := range input {
+			output[k] = v
+		}
+	}
+	return output
+}
+
+func mergeMap(base map[string]interface{}, patch map[string]interface{}) map[string]interface{} {
+	result := cloneMap(base)
+	for key, value := range patch {
+		result[key] = value
+	}
+	return result
+}
+
+func sortedKeys(m map[string]interface{}) []string {
+	keys := make([]string, 0, len(m))
+	for key := range m {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func sanitizeLocalPatch(localPatch map[string]interface{}, remote map[string]interface{}) map[string]interface{} {
+	result := make(map[string]interface{}, len(localPatch))
+	for key, value := range localPatch {
+		remoteValue, exists := remote[key]
+		if !exists || !reflect.DeepEqual(value, remoteValue) {
+			result[key] = value
+		}
+	}
+	return result
+}
+
+func removeFieldsFromPatch(localPatch map[string]interface{}, fields []string) map[string]interface{} {
+	if len(localPatch) == 0 {
+		return map[string]interface{}{}
+	}
+
+	overwriteSet := make(map[string]struct{}, len(fields))
+	for _, field := range fields {
+		name := strings.TrimSpace(field)
+		if name == "" {
+			continue
+		}
+		overwriteSet[name] = struct{}{}
+	}
+
+	result := make(map[string]interface{}, len(localPatch))
+	for key, value := range localPatch {
+		if _, ok := overwriteSet[key]; ok {
+			continue
+		}
+		result[key] = value
+	}
+	return result
+}
+
+// diffTopLevelFields 比较本地与远程顶层字段差异
+func diffTopLevelFields(local map[string]interface{}, remote map[string]interface{}) []string {
+	keySet := make(map[string]struct{}, len(local)+len(remote))
+	for key := range local {
+		keySet[key] = struct{}{}
+	}
+	for key := range remote {
+		keySet[key] = struct{}{}
+	}
+
+	diff := make([]string, 0)
+	for key := range keySet {
+		localValue, localOK := local[key]
+		remoteValue, remoteOK := remote[key]
+		if !localOK || !remoteOK || !reflect.DeepEqual(localValue, remoteValue) {
+			diff = append(diff, key)
+		}
+	}
+	sort.Strings(diff)
+	return diff
+}
+
+func mapString(data map[string]interface{}, key string) string {
+	value, ok := data[key]
+	if !ok || value == nil {
+		return ""
+	}
+	switch v := value.(type) {
+	case string:
+		return v
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+func mapFloat64(data map[string]interface{}, key string) float64 {
+	value, ok := data[key]
+	if !ok || value == nil {
+		return 0
+	}
+	switch v := value.(type) {
+	case float64:
+		return v
+	case float32:
+		return float64(v)
+	case int:
+		return float64(v)
+	case int32:
+		return float64(v)
+	case int64:
+		return float64(v)
+	case uint:
+		return float64(v)
+	case uint32:
+		return float64(v)
+	case uint64:
+		return float64(v)
+	default:
+		return 0
+	}
+}
+
+func mapInt(data map[string]interface{}, key string) int {
+	value, ok := data[key]
+	if !ok || value == nil {
+		return 0
+	}
+	switch v := value.(type) {
+	case int:
+		return v
+	case int32:
+		return int(v)
+	case int64:
+		return int(v)
+	case float64:
+		return int(math.Trunc(v))
+	case float32:
+		return int(math.Trunc(float64(v)))
+	case uint:
+		return int(v)
+	case uint32:
+		return int(v)
+	case uint64:
+		return int(v)
+	default:
+		return 0
+	}
+}
+
+func mapInt64(data map[string]interface{}, key string) int64 {
+	value, ok := data[key]
+	if !ok || value == nil {
+		return 0
+	}
+	switch v := value.(type) {
+	case int:
+		return int64(v)
+	case int32:
+		return int64(v)
+	case int64:
+		return v
+	case float64:
+		return int64(math.Trunc(v))
+	case float32:
+		return int64(math.Trunc(float64(v)))
+	case uint:
+		return int64(v)
+	case uint32:
+		return int64(v)
+	case uint64:
+		return int64(v)
+	default:
+		return 0
+	}
+}
+
+func mapBool(data map[string]interface{}, key string) bool {
+	value, ok := data[key]
+	if !ok || value == nil {
+		return false
+	}
+	v, ok := value.(bool)
+	if !ok {
+		return false
+	}
+	return v
 }

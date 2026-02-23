@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { updateTV } from "@/api/admin";
+import { compareTVRemote, syncTV, updateTV } from "@/api/admin";
+import type { AdminSyncMode } from "@/api/admin";
+import DetailSyncPanel from "@/components/DetailSyncPanel.vue";
 import { getTVDetail, getTVGenreList } from "@/api/tv";
 import { tmdbImg } from "@/api/tmdb";
 
@@ -29,6 +31,13 @@ type TVEditForm = {
   overview: string;
 };
 
+type RemoteDiffNotice = {
+  summary: string;
+  fields: string[];
+};
+
+type RemoteDiffDecision = "unknown" | "has_diff_pending" | "keep_local" | "overwritten" | "no_diff";
+
 const route = useRoute();
 const loading = ref(false);
 const error = ref("");
@@ -37,6 +46,13 @@ const isEditing = ref(false);
 const saving = ref(false);
 const saveError = ref("");
 const saveMessage = ref("");
+const comparedRemoteId = ref<number | null>(null);
+const checkingRemoteDiff = ref(false);
+const remoteDiffNotice = ref<RemoteDiffNotice | null>(null);
+const resolvingRemoteDiff = ref(false);
+const remoteDiffMessage = ref("");
+const remoteDiffError = ref("");
+const remoteDiffDecision = ref<RemoteDiffDecision>("unknown");
 const genreOptions = ref<GenreOption[]>([]);
 const genreKeyword = ref("");
 const filteredGenreOptions = computed(() => {
@@ -66,6 +82,21 @@ const editForm = ref<TVEditForm>({
 });
 
 const tvId = computed(() => Number(route.params.id));
+const shouldShowSyncPanel = computed(() => {
+  return remoteDiffDecision.value === "has_diff_pending" || remoteDiffDecision.value === "keep_local";
+});
+const allowedSyncModes = computed<AdminSyncMode[]>(() => {
+  if (remoteDiffDecision.value === "no_diff") {
+    return ["update_unmodified"];
+  }
+  if (remoteDiffDecision.value === "has_diff_pending") {
+    return ["overwrite_all", "selective"];
+  }
+  if (remoteDiffDecision.value === "keep_local") {
+    return ["update_unmodified", "selective"];
+  }
+  return ["update_unmodified", "overwrite_all", "selective"];
+});
 
 function resetEditForm(data: any) {
   editForm.value = {
@@ -131,13 +162,72 @@ function cancelEditMode() {
   isEditing.value = false;
 }
 
-async function loadData() {
+async function checkRemoteDiffAndPrompt() {
+  if (!tvId.value || checkingRemoteDiff.value || comparedRemoteId.value === tvId.value) {
+    return;
+  }
+  comparedRemoteId.value = tvId.value;
+  checkingRemoteDiff.value = true;
+  try {
+    const resp = await compareTVRemote(tvId.value);
+    const diffFields = Array.isArray(resp.data?.diff_fields) ? resp.data.diff_fields : [];
+    if (!resp.data?.has_diff) {
+      remoteDiffNotice.value = null;
+      remoteDiffDecision.value = "no_diff";
+      return;
+    }
+
+    const fieldPreview = diffFields.slice(0, 6).join("、");
+    const summary = diffFields.length > 6 ? `${fieldPreview} 等 ${diffFields.length} 项` : `${fieldPreview}（共 ${diffFields.length} 项）`;
+    remoteDiffNotice.value = {
+      summary,
+      fields: diffFields,
+    };
+    remoteDiffDecision.value = "has_diff_pending";
+  } catch (err: any) {
+    remoteDiffError.value = err.message ?? "远程差异检测失败";
+  } finally {
+    checkingRemoteDiff.value = false;
+  }
+}
+
+async function overwriteWithRemoteData() {
+  if (!tvId.value || resolvingRemoteDiff.value) {
+    return;
+  }
+
+  resolvingRemoteDiff.value = true;
+  remoteDiffError.value = "";
+  remoteDiffMessage.value = "";
+  try {
+    await syncTV(tvId.value, { mode: "overwrite_all" });
+    remoteDiffNotice.value = null;
+    remoteDiffDecision.value = "overwritten";
+    remoteDiffMessage.value = "已覆盖并拉取最新远程数据";
+    await loadData({ checkRemoteDiff: false });
+  } catch (err: any) {
+    remoteDiffError.value = err.message ?? "覆盖拉取失败";
+  } finally {
+    resolvingRemoteDiff.value = false;
+  }
+}
+
+function keepLocalData() {
+  remoteDiffNotice.value = null;
+  remoteDiffDecision.value = "keep_local";
+  remoteDiffError.value = "";
+  remoteDiffMessage.value = "已保留本地数据，可在“数据库同步”区域手动更新";
+}
+
+async function loadData(options: { checkRemoteDiff?: boolean } = {}) {
+  const { checkRemoteDiff = true } = options;
   if (!tvId.value) {
     error.value = "无效剧集 ID";
     return;
   }
   loading.value = true;
   error.value = "";
+  remoteDiffError.value = "";
   try {
     const resp = await getTVDetail(tvId.value);
     detail.value = resp.data;
@@ -145,6 +235,9 @@ async function loadData() {
     await loadGenreOptions();
     genreKeyword.value = "";
     isEditing.value = false;
+    if (checkRemoteDiff) {
+      await checkRemoteDiffAndPrompt();
+    }
   } catch (err: any) {
     error.value = err.message ?? "加载失败";
   } finally {
@@ -237,7 +330,9 @@ async function saveTVChanges() {
 }
 
 onMounted(loadData);
-watch(tvId, loadData);
+watch(tvId, () => {
+  void loadData();
+});
 </script>
 
 <template>
@@ -294,6 +389,55 @@ watch(tvId, loadData);
           <p class="mt-4 text-sm leading-relaxed text-black/75">
             {{ detail.overview || "暂无简介" }}
           </p>
+
+          <div
+            v-if="checkingRemoteDiff || remoteDiffNotice || remoteDiffMessage || remoteDiffError"
+            class="mt-4 rounded-xl border border-amber-200 bg-amber-50/80 p-4"
+          >
+            <p v-if="checkingRemoteDiff" class="text-xs text-amber-700">
+              正在检测远程数据差异...
+            </p>
+
+            <template v-else-if="remoteDiffNotice">
+              <p class="text-sm font-medium text-amber-800">
+                检测到远程剧集数据与本地不一致
+              </p>
+              <p class="mt-1 text-xs text-amber-700">
+                变化字段：{{ remoteDiffNotice.summary }}
+              </p>
+              <div class="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  class="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-60"
+                  :disabled="resolvingRemoteDiff"
+                  @click="overwriteWithRemoteData"
+                >
+                  {{ resolvingRemoteDiff ? "更新中..." : "覆盖拉取最新数据" }}
+                </button>
+                <button
+                  class="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-100 disabled:opacity-60"
+                  :disabled="resolvingRemoteDiff"
+                  @click="keepLocalData"
+                >
+                  保留本地数据
+                </button>
+              </div>
+            </template>
+
+            <p v-else-if="remoteDiffMessage" class="text-xs text-green-700">
+              {{ remoteDiffMessage }}
+            </p>
+            <p v-if="remoteDiffError" class="mt-1 text-xs text-red-600">
+              {{ remoteDiffError }}
+            </p>
+          </div>
+
+          <DetailSyncPanel
+            v-if="shouldShowSyncPanel"
+            media-type="tv"
+            :target-id="tvId"
+            :allowed-modes="allowedSyncModes"
+            @synced="loadData"
+          />
 
           <div class="mt-6 rounded-xl border border-black/10 bg-white/70 p-4">
             <div class="flex items-center justify-between gap-3">

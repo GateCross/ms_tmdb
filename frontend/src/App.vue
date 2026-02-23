@@ -3,7 +3,7 @@ const navItems = [
   { to: "/", label: "首页" },
   { to: "/search", label: "搜索" },
   { to: "/library", label: "库" },
-  { to: "/admin", label: "管理" },
+  { to: "/proxy-settings", label: "代理设置" },
 ];
 </script>
 

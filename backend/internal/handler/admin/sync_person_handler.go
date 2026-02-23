@@ -18,11 +18,11 @@ func SyncPersonHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := admin.NewSyncPersonLogic(r.Context(), svcCtx)
-		err := l.SyncPerson(&req)
+		resp, err := l.SyncPerson(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
-			httpx.Ok(w)
+			httpx.OkJsonCtx(r.Context(), w, resp)
 		}
 	}
 }

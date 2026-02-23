@@ -27,6 +27,21 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	server.AddRoutes(
 		[]rest.Route{
 			{
+				Method:  http.MethodGet,
+				Path:    "/compare/movie/:id",
+				Handler: admin.CompareMovieRemoteHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/compare/person/:id",
+				Handler: admin.ComparePersonRemoteHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/compare/tv/:id",
+				Handler: admin.CompareTvRemoteHandler(serverCtx),
+			},
+			{
 				Method:  http.MethodPut,
 				Path:    "/movie/:id",
 				Handler: admin.UpdateMovieHandler(serverCtx),
@@ -45,6 +60,16 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPut,
 				Path:    "/person/:id",
 				Handler: admin.UpdatePersonHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/proxy",
+				Handler: admin.GetProxySettingsHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/proxy",
+				Handler: admin.UpdateProxySettingsHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,

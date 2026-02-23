@@ -44,6 +44,9 @@ func main() {
 			{Method: http.MethodPut, Path: "/movie/:id", Handler: admin.UpdateMovieHandler(ctx)},
 			{Method: http.MethodPut, Path: "/tv/:id", Handler: admin.UpdateTvSeriesHandler(ctx)},
 			{Method: http.MethodPut, Path: "/person/:id", Handler: admin.UpdatePersonHandler(ctx)},
+			{Method: http.MethodGet, Path: "/compare/movie/:id", Handler: admin.CompareMovieRemoteHandler(ctx)},
+			{Method: http.MethodGet, Path: "/compare/tv/:id", Handler: admin.CompareTvRemoteHandler(ctx)},
+			{Method: http.MethodGet, Path: "/compare/person/:id", Handler: admin.ComparePersonRemoteHandler(ctx)},
 			{Method: http.MethodPost, Path: "/sync/movie/:id", Handler: admin.SyncMovieHandler(ctx)},
 			{Method: http.MethodPost, Path: "/sync/tv/:id", Handler: admin.SyncTvSeriesHandler(ctx)},
 			{Method: http.MethodPost, Path: "/sync/person/:id", Handler: admin.SyncPersonHandler(ctx)},
@@ -52,6 +55,8 @@ func main() {
 			{Method: http.MethodGet, Path: "/stats", Handler: admin.GetStatsHandler(ctx)},
 			{Method: http.MethodGet, Path: "/movies", Handler: admin.ListMoviesHandler(ctx)},
 			{Method: http.MethodGet, Path: "/tv", Handler: admin.ListTvSeriesHandler(ctx)},
+			{Method: http.MethodGet, Path: "/proxy", Handler: admin.GetProxySettingsHandler(ctx)},
+			{Method: http.MethodPut, Path: "/proxy", Handler: admin.UpdateProxySettingsHandler(ctx)},
 		},
 		rest.WithPrefix("/api/admin"),
 	)

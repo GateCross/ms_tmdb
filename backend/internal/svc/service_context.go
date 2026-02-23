@@ -36,6 +36,7 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		c.Tmdb.BaseURL,
 		c.Tmdb.DefaultLanguage,
 		c.Tmdb.RateLimit,
+		c.Tmdb.ProxyURL,
 	)
 
 	return &ServiceContext{

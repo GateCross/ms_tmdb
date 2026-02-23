@@ -35,7 +35,9 @@ function topCredits(d: any) {
 }
 
 onMounted(loadData);
-watch(personId, loadData);
+watch(personId, () => {
+  void loadData();
+});
 </script>
 
 <template>

@@ -18,11 +18,11 @@ func SyncTvSeriesHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := admin.NewSyncTvSeriesLogic(r.Context(), svcCtx)
-		err := l.SyncTvSeries(&req)
+		resp, err := l.SyncTvSeries(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
-			httpx.Ok(w)
+			httpx.OkJsonCtx(r.Context(), w, resp)
 		}
 	}
 }

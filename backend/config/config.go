@@ -19,6 +19,7 @@ type Config struct {
 		BaseURL         string
 		DefaultLanguage string
 		RateLimit       int
+		ProxyURL        string
 	}
 
 	// 缓存配置
