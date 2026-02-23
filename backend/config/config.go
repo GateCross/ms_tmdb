@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/zeromicro/go-zero/rest"
 )
@@ -32,23 +31,17 @@ type Config struct {
 
 // PostgresConf PostgreSQL 连接配置
 type PostgresConf struct {
-	// DataSource 兼容旧配置；有值时优先使用
-	DataSource string
-	Host       string
-	Port       int
-	User       string
-	Password   string
-	DBName     string
-	SSLMode    string
-	TimeZone   string
+	Host     string
+	Port     int
+	User     string
+	Password string
+	DBName   string
+	SSLMode  string
+	TimeZone string
 }
 
 // DSN 构建 GORM 使用的 PostgreSQL 连接串
 func (p PostgresConf) DSN() string {
-	if strings.TrimSpace(p.DataSource) != "" {
-		return p.DataSource
-	}
-
 	host := p.Host
 	if host == "" {
 		host = "127.0.0.1"
