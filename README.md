@@ -32,8 +32,8 @@ ms_tmdb/
 ### 1. 配置后端数据库与 TMDB
 
 ```bash
-# 按需修改数据库地址、账号和 Tmdb.ApiKey
-backend/etc/tmdb.yaml
+cp backend/etc/tmdb.example.yaml backend/etc/tmdb.yaml
+# 再按需修改数据库地址、账号和 Tmdb.ApiKey
 ```
 
 ### 2. 开发环境（命令运行）
@@ -198,6 +198,7 @@ if cmp_resp.get("has_diff"):
 ## 配置说明
 
 - 后端配置文件：`backend/etc/tmdb.yaml`
+- 后端配置模板：`backend/etc/tmdb.example.yaml`
 - Docker 运行配置：`docker/tmdb.yaml`
 - 关键配置项：
   - `Postgres.Host / Postgres.Port / Postgres.User / Postgres.Password / Postgres.DBName / Postgres.SSLMode`

@@ -4,7 +4,7 @@ Port: 8888
 
 # PostgreSQL 配置
 Postgres:
-  Host: "192.168.50.10"
+  Host: "127.0.0.1"
   Port: 5432
   User: "postgres"
   Password: "postgres"
@@ -13,7 +13,7 @@ Postgres:
 
 # TMDB 配置
 Tmdb:
-  ApiKey: "54b2972675bc4cfb90a55b5612428189"
+  ApiKey: "your_tmdb_api_key"
   BaseURL: "https://api.themoviedb.org/3"
   DefaultLanguage: "zh-CN"
   RateLimit: 40
