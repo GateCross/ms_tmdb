@@ -2,6 +2,8 @@ package proxy
 
 import (
 	"encoding/json"
+	"errors"
+	"strconv"
 	"time"
 
 	"ms_tmdb/internal/model"
@@ -10,6 +12,8 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 	"gorm.io/gorm"
 )
+
+const tvSeasonLocalDataKey = "_ms_tv_season_local"
 
 // ProxyService 代理服务，封装 Read-Through 缓存逻辑
 type ProxyService struct {
@@ -66,6 +70,96 @@ func (s *ProxyService) GetTvSeriesDetail(tmdbID int, opts *tmdbclient.RequestOpt
 
 	s.upsertTVSeries(tmdbID, data)
 	return data, nil
+}
+
+// GetTvSeasonDetail 优先返回本地保存的季明细，未保存时透传 TMDB
+func (s *ProxyService) GetTvSeasonDetail(seriesID, seasonNumber int, opts *tmdbclient.RequestOption) (json.RawMessage, error) {
+	localData, hasLocal, localErr := s.GetLocalTvSeason(seriesID, seasonNumber)
+	if localErr != nil {
+		return nil, localErr
+	}
+	if hasLocal {
+		raw, err := json.Marshal(localData)
+		if err != nil {
+			return nil, err
+		}
+		return raw, nil
+	}
+
+	return s.TmdbClient.GetTVSeason(seriesID, seasonNumber, opts)
+}
+
+// GetLocalTvSeason 获取本地已保存季明细
+func (s *ProxyService) GetLocalTvSeason(seriesID, seasonNumber int) (map[string]interface{}, bool, error) {
+	var tv model.TVSeries
+	if err := s.DB.Where("tmdb_id = ?", seriesID).First(&tv).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+
+	localPatch, err := rawJSONToMap(tv.LocalData)
+	if err != nil {
+		return nil, false, err
+	}
+
+	seasons, ok := localPatch[tvSeasonLocalDataKey].(map[string]interface{})
+	if !ok {
+		return nil, false, nil
+	}
+
+	seasonData, ok := seasons[strconv.Itoa(seasonNumber)].(map[string]interface{})
+	if !ok {
+		return nil, false, nil
+	}
+
+	normalized, err := normalizeSeasonDetailPayload(seasonData, seasonNumber)
+	if err != nil {
+		return nil, false, err
+	}
+	return normalized, true, nil
+}
+
+// SaveTvSeasonToLocal 从 TMDB 拉取季明细并写入本地（重复调用即覆盖）
+func (s *ProxyService) SaveTvSeasonToLocal(seriesID, seasonNumber int, opts *tmdbclient.RequestOption) (map[string]interface{}, error) {
+	if err := s.ensureTVSeriesExists(seriesID, opts); err != nil {
+		return nil, err
+	}
+
+	raw, err := s.TmdbClient.GetTVSeason(seriesID, seasonNumber, opts)
+	if err != nil {
+		return nil, err
+	}
+	payload, err := unmarshalRawToMap(raw)
+	if err != nil {
+		return nil, err
+	}
+
+	normalized, err := normalizeSeasonDetailPayload(payload, seasonNumber)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.saveTvSeasonPayload(seriesID, seasonNumber, normalized); err != nil {
+		return nil, err
+	}
+	return normalized, nil
+}
+
+// UpdateLocalTvSeason 更新本地季明细（仅修改本地覆盖数据）
+func (s *ProxyService) UpdateLocalTvSeason(seriesID, seasonNumber int, payload map[string]interface{}) (map[string]interface{}, error) {
+	if err := s.ensureTVSeriesExists(seriesID, nil); err != nil {
+		return nil, err
+	}
+
+	normalized, err := normalizeSeasonDetailPayload(payload, seasonNumber)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.saveTvSeasonPayload(seriesID, seasonNumber, normalized); err != nil {
+		return nil, err
+	}
+	return normalized, nil
 }
 
 // GetPersonDetail Read-Through 获取人物详情
@@ -199,4 +293,91 @@ func isExpired(syncedAt *time.Time, ttl time.Duration) bool {
 		return true
 	}
 	return time.Since(*syncedAt) > ttl
+}
+
+func (s *ProxyService) ensureTVSeriesExists(seriesID int, opts *tmdbclient.RequestOption) error {
+	var tv model.TVSeries
+	if err := s.DB.Where("tmdb_id = ?", seriesID).First(&tv).Error; err == nil {
+		return nil
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+
+	_, err := s.GetTvSeriesDetail(seriesID, opts)
+	return err
+}
+
+func (s *ProxyService) saveTvSeasonPayload(seriesID, seasonNumber int, payload map[string]interface{}) error {
+	var tv model.TVSeries
+	if err := s.DB.Where("tmdb_id = ?", seriesID).First(&tv).Error; err != nil {
+		return err
+	}
+
+	localPatch, err := rawJSONToMap(tv.LocalData)
+	if err != nil {
+		return err
+	}
+	seasons, _ := localPatch[tvSeasonLocalDataKey].(map[string]interface{})
+	if seasons == nil {
+		seasons = map[string]interface{}{}
+	}
+	seasons[strconv.Itoa(seasonNumber)] = payload
+	localPatch[tvSeasonLocalDataKey] = seasons
+
+	rawPatch, err := marshalMapToRawJSON(localPatch)
+	if err != nil {
+		return err
+	}
+
+	return s.DB.Model(&model.TVSeries{}).Where("tmdb_id = ?", seriesID).Updates(map[string]interface{}{
+		"local_data":  rawPatch,
+		"is_modified": true,
+	}).Error
+}
+
+func rawJSONToMap(raw model.RawJSON) (map[string]interface{}, error) {
+	result := map[string]interface{}{}
+	if len(raw) == 0 {
+		return result, nil
+	}
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func marshalMapToRawJSON(payload map[string]interface{}) (model.RawJSON, error) {
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	return model.RawJSON(raw), nil
+}
+
+func unmarshalRawToMap(raw json.RawMessage) (map[string]interface{}, error) {
+	result := map[string]interface{}{}
+	if len(raw) == 0 {
+		return result, nil
+	}
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func normalizeSeasonDetailPayload(input map[string]interface{}, seasonNumber int) (map[string]interface{}, error) {
+	raw, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+
+	result := map[string]interface{}{}
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return nil, err
+	}
+	result["season_number"] = seasonNumber
+	if _, ok := result["episodes"].([]interface{}); !ok {
+		result["episodes"] = []interface{}{}
+	}
+	return result, nil
 }

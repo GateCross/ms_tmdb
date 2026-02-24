@@ -98,6 +98,32 @@ curl "http://localhost:8888/api/v3/movie/550?language=zh-CN&append_to_response=c
 - 无需传 `api_key`，服务端会自动附加 TMDB Key。
 - `/api/v3/movie/{id}`、`/api/v3/tv/{id}`、`/api/v3/person/{id}` 都支持同类调用。
 
+读取剧集某一季并返回该季 `episodes` 集明细（供三方系统直接调用）：
+
+```bash
+curl "http://localhost:8888/api/v3/tv/279446/season/1?language=zh-CN"
+```
+
+说明：
+- 返回 JSON 中包含 `episodes` 数组，可直接用于展示“第几集 / 标题 / 播出日期 / 简介 / 评分”等信息。
+- 如需额外字段，可通过 `append_to_response` 追加，例如 `credits,images,videos`。
+
+保存剧集季明细到本地数据库（默认不保存，调用后才落库）：
+
+```bash
+curl -X POST "http://localhost:8888/api/admin/tv/279446/season/1/local?language=zh-CN"
+```
+
+更新本地季明细（可修改后保存）：
+
+```bash
+curl -X PUT "http://localhost:8888/api/admin/tv/279446/season/1/local" \
+  -H "Content-Type: application/json" \
+  -d "{\"payload\":{\"name\":\"第1季\",\"season_number\":1,\"episodes\":[{\"episode_number\":1,\"name\":\"第一集\"}]}}"
+```
+
+再次调用 `POST /api/admin/tv/{id}/season/{season_number}/local` 可用 TMDB 最新数据覆盖本地季明细。
+
 ### 2. 对比远程与本地差异（推荐先调用）
 
 ```bash

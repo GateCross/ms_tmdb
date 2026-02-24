@@ -50,6 +50,10 @@
 - `/api/v3/tv/{series_id}/season/{season_number}`
 - `/api/v3/tv/{series_id}/season/{season_number}/episode/{episode_number}`
 
+其中：
+
+- `GET /api/v3/tv/{series_id}/season/{season_number}` 的响应包含 `episodes` 数组，可直接用于“分集明细”展示与第三方系统拉取。
+
 人物：
 
 - `/api/v3/person/{id}/movie_credits`
@@ -80,6 +84,9 @@
 - `PUT /api/admin/movie/{id}`
 - `PUT /api/admin/tv/{id}`
 - `PUT /api/admin/person/{id}`
+- `GET /api/admin/tv/{id}/season/{season_number}/local`（查询某季是否已保存本地）
+- `POST /api/admin/tv/{id}/season/{season_number}/local`（拉取 TMDB 季明细并保存/覆盖本地）
+- `PUT /api/admin/tv/{id}/season/{season_number}/local`（更新本地季明细，`payload` 为季详情对象）
 
 ### 2.2 同步 TMDB 数据
 
@@ -130,6 +137,18 @@ curl "http://localhost:8888/api/admin/compare/movie/550"
 curl -X POST "http://localhost:8888/api/admin/sync/movie/550" \
   -H "Content-Type: application/json" \
   -d "{\"mode\":\"update_unmodified\"}"
+```
+
+读取剧集某季分集明细（第三方调用）：
+
+```bash
+curl "http://localhost:8888/api/v3/tv/279446/season/1?language=zh-CN&append_to_response=credits,images,videos"
+```
+
+保存并覆盖本地季明细：
+
+```bash
+curl -X POST "http://localhost:8888/api/admin/tv/279446/season/1/local?language=zh-CN"
 ```
 
 ## 四、维护建议

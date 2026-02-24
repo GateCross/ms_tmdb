@@ -46,6 +46,12 @@ export type AdminCreateResp = {
   message: string;
 };
 
+export type AdminTVSeasonLocalResp = {
+  saved: boolean;
+  data: Record<string, unknown> | null;
+  message?: string;
+};
+
 export type AdminCreateMoviePayload = {
   title: string;
   original_title?: string;
@@ -156,6 +162,20 @@ export function createTV(payload: AdminCreateTVPayload) {
 
 export function deleteTV(id: number) {
   return http.delete(`/api/admin/tv/${id}`);
+}
+
+export function getTVSeasonLocal(id: number, seasonNumber: number) {
+  return http.get<AdminTVSeasonLocalResp>(`/api/admin/tv/${id}/season/${seasonNumber}/local`);
+}
+
+export function saveTVSeasonLocal(id: number, seasonNumber: number, language = "zh-CN") {
+  return http.post<AdminTVSeasonLocalResp>(`/api/admin/tv/${id}/season/${seasonNumber}/local`, null, {
+    params: { language },
+  });
+}
+
+export function updateTVSeasonLocal(id: number, seasonNumber: number, payload: Record<string, unknown>) {
+  return http.put<AdminTVSeasonLocalResp>(`/api/admin/tv/${id}/season/${seasonNumber}/local`, { payload });
 }
 
 export function listPeople(page = 1, pageSize = 20) {

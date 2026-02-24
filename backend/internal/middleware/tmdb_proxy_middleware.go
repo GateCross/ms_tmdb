@@ -147,7 +147,7 @@ func (m *TmdbProxyMiddleware) dispatch(path string, opts *tmdbclient.RequestOpti
 	if matches := reTVSeason.FindStringSubmatch(path); matches != nil {
 		seriesID, _ := strconv.Atoi(matches[1])
 		seasonNum, _ := strconv.Atoi(matches[2])
-		return m.Client.GetTVSeason(seriesID, seasonNum, opts)
+		return m.ProxyService.GetTvSeasonDetail(seriesID, seasonNum, opts)
 	}
 
 	// TV 详情（Read-Through 缓存）

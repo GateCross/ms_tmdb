@@ -516,10 +516,11 @@ func filterIgnoredRemoteDiffFields(diffFields []string) []string {
 	}
 
 	ignored := map[string]struct{}{
-		"images":          {},
-		"videos":          {},
-		"recommendations": {},
-		"similar":         {},
+		"images":              {},
+		"videos":              {},
+		"recommendations":     {},
+		"similar":             {},
+		"_ms_tv_season_local": {},
 	}
 
 	filtered := make([]string, 0, len(diffFields))
