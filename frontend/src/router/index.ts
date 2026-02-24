@@ -9,7 +9,9 @@ const router = createRouter({
     { path: "/tv/:id", component: () => import("@/pages/TVPage.vue") },
     { path: "/person/:id", component: () => import("@/pages/PersonPage.vue") },
     { path: "/library", component: () => import("@/pages/LibraryPage.vue") },
-    { path: "/proxy-settings", component: () => import("@/pages/ProxySettingsPage.vue") },
+    { path: "/system-settings", component: () => import("@/pages/SystemSettingsPage.vue") },
+    { path: "/proxy-settings", redirect: "/system-settings" },
+    { path: "/auto-sync-settings", redirect: "/system-settings" },
     { path: "/:pathMatch(.*)*", component: () => import("@/pages/NotFoundPage.vue") },
   ],
 });

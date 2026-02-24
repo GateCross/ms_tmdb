@@ -50,6 +50,53 @@ type AdminProxyResp struct {
 	Enabled  bool   `json:"enabled"`
 }
 
+type AdminAutoSyncReq struct {
+	Enabled          *bool  `json:"enabled,optional"`
+	CronExpr         string `json:"cron_expr,optional"`
+	Mode             string `json:"mode,optional"`
+	BatchSize        *int   `json:"batch_size,optional"`
+	StartDelaySecond *int   `json:"start_delay_second,optional"`
+}
+
+type AdminAutoSyncResp struct {
+	Enabled          bool   `json:"enabled"`
+	CronExpr         string `json:"cron_expr"`
+	Mode             string `json:"mode"`
+	BatchSize        int    `json:"batch_size"`
+	StartDelaySecond int    `json:"start_delay_second"`
+	Running          bool   `json:"running"`
+}
+
+type AdminAutoSyncLogListReq struct {
+	Page     int    `form:"page,optional,default=1"`
+	PageSize int    `form:"page_size,optional,default=20"`
+	Status   string `form:"status,optional"`
+}
+
+type AdminAutoSyncLogItem struct {
+	Id          int64  `json:"id"`
+	TriggeredAt string `json:"triggered_at"`
+	CronExpr    string `json:"cron_expr"`
+	Mode        string `json:"mode"`
+	BatchSize   int    `json:"batch_size"`
+	Status      string `json:"status"`
+	Checked     int    `json:"checked"`
+	Synced      int    `json:"synced"`
+	Failed      int    `json:"failed"`
+	DurationMs  int64  `json:"duration_ms"`
+	Message     string `json:"message"`
+	StartedAt   string `json:"started_at"`
+	FinishedAt  string `json:"finished_at"`
+	CreatedAt   string `json:"created_at"`
+}
+
+type AdminAutoSyncLogListResp struct {
+	Total    int64                  `json:"total"`
+	Page     int                    `json:"page"`
+	PageSize int                    `json:"page_size"`
+	Results  []AdminAutoSyncLogItem `json:"results"`
+}
+
 type AdminSyncReq struct {
 	Id              int      `path:"id"`
 	Mode            string   `json:"mode,optional"`

@@ -20,8 +20,18 @@ type Config struct {
 		BaseURL         string
 		DefaultLanguage string
 		RateLimit       int
-		ProxyURL        string `json:",optional"`
+		ProxyURL        string           `json:",optional"`
+		AutoSync        TmdbAutoSyncConf `json:",optional"`
 	}
+}
+
+// TmdbAutoSyncConf TMDB 自动同步配置
+type TmdbAutoSyncConf struct {
+	Enabled          bool   `json:",optional"`
+	CronExpr         string `json:",optional"`
+	Mode             string `json:",optional"`
+	BatchSize        int    `json:",optional"`
+	StartDelaySecond int    `json:",optional"`
 }
 
 // PostgresConf PostgreSQL 连接配置

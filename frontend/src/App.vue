@@ -5,7 +5,7 @@ const navItems = [
   { to: "/", label: "首页" },
   { to: "/search", label: "搜索" },
   { to: "/library", label: "库" },
-  { to: "/proxy-settings", label: "代理设置" },
+  { to: "/system-settings", label: "系统设置" },
 ];
 
 const showBackToTop = ref(false);

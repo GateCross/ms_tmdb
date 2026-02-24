@@ -6,7 +6,8 @@ import (
 	"net/http"
 
 	"ms_tmdb/config"
-	"ms_tmdb/internal/handler/admin"
+	adminhandler "ms_tmdb/internal/handler/admin"
+	adminlogic "ms_tmdb/internal/logic/admin"
 	"ms_tmdb/internal/middleware"
 	"ms_tmdb/internal/svc"
 
@@ -28,6 +29,9 @@ func main() {
 	defer server.Stop()
 
 	ctx := svc.NewServiceContext(c)
+	autoSyncScheduler := adminlogic.NewLibraryAutoSyncScheduler(ctx)
+	adminlogic.SetLibraryAutoSyncScheduler(autoSyncScheduler)
+	autoSyncScheduler.Start()
 
 	// 注册 TMDB 代理中间件（拦截所有 /api/v3/* 请求）
 	tmdbProxy := middleware.NewTmdbProxyMiddleware(ctx.TmdbClient, ctx.ProxyService)
@@ -44,37 +48,40 @@ func main() {
 	// 注册 Admin 路由
 	server.AddRoutes(
 		[]rest.Route{
-			{Method: http.MethodPost, Path: "/movie", Handler: admin.CreateMovieHandler(ctx)},
-			{Method: http.MethodDelete, Path: "/movie/:id", Handler: admin.DeleteMovieHandler(ctx)},
-			{Method: http.MethodPut, Path: "/movie/:id", Handler: admin.UpdateMovieHandler(ctx)},
-			{Method: http.MethodPost, Path: "/tv", Handler: admin.CreateTvSeriesHandler(ctx)},
-			{Method: http.MethodDelete, Path: "/tv/:id", Handler: admin.DeleteTvSeriesHandler(ctx)},
-			{Method: http.MethodPut, Path: "/tv/:id", Handler: admin.UpdateTvSeriesHandler(ctx)},
-			{Method: http.MethodGet, Path: "/tv/:id/season/:season_number/local", Handler: admin.GetTvSeasonLocalHandler(ctx)},
-			{Method: http.MethodPost, Path: "/tv/:id/season/:season_number/local", Handler: admin.SaveTvSeasonLocalHandler(ctx)},
-			{Method: http.MethodPut, Path: "/tv/:id/season/:season_number/local", Handler: admin.UpdateTvSeasonLocalHandler(ctx)},
-			{Method: http.MethodPut, Path: "/person/:id", Handler: admin.UpdatePersonHandler(ctx)},
-			{Method: http.MethodGet, Path: "/compare/movie/:id", Handler: admin.CompareMovieRemoteHandler(ctx)},
-			{Method: http.MethodGet, Path: "/compare/tv/:id", Handler: admin.CompareTvRemoteHandler(ctx)},
-			{Method: http.MethodGet, Path: "/compare/person/:id", Handler: admin.ComparePersonRemoteHandler(ctx)},
-			{Method: http.MethodPost, Path: "/sync/movie/:id", Handler: admin.SyncMovieHandler(ctx)},
-			{Method: http.MethodPost, Path: "/sync/tv/:id", Handler: admin.SyncTvSeriesHandler(ctx)},
-			{Method: http.MethodPost, Path: "/sync/person/:id", Handler: admin.SyncPersonHandler(ctx)},
-			{Method: http.MethodDelete, Path: "/movie/:id/local", Handler: admin.ClearMovieLocalHandler(ctx)},
-			{Method: http.MethodDelete, Path: "/tv/:id/local", Handler: admin.ClearTvSeriesLocalHandler(ctx)},
-			{Method: http.MethodGet, Path: "/stats", Handler: admin.GetStatsHandler(ctx)},
-			{Method: http.MethodGet, Path: "/movies", Handler: admin.ListMoviesHandler(ctx)},
-			{Method: http.MethodGet, Path: "/tv", Handler: admin.ListTvSeriesHandler(ctx)},
-			{Method: http.MethodGet, Path: "/proxy", Handler: admin.GetProxySettingsHandler(ctx)},
-			{Method: http.MethodPut, Path: "/proxy", Handler: admin.UpdateProxySettingsHandler(ctx)},
-			{Method: http.MethodPost, Path: "/upload/image", Handler: admin.UploadImageHandler(ctx)},
+			{Method: http.MethodPost, Path: "/movie", Handler: adminhandler.CreateMovieHandler(ctx)},
+			{Method: http.MethodDelete, Path: "/movie/:id", Handler: adminhandler.DeleteMovieHandler(ctx)},
+			{Method: http.MethodPut, Path: "/movie/:id", Handler: adminhandler.UpdateMovieHandler(ctx)},
+			{Method: http.MethodPost, Path: "/tv", Handler: adminhandler.CreateTvSeriesHandler(ctx)},
+			{Method: http.MethodDelete, Path: "/tv/:id", Handler: adminhandler.DeleteTvSeriesHandler(ctx)},
+			{Method: http.MethodPut, Path: "/tv/:id", Handler: adminhandler.UpdateTvSeriesHandler(ctx)},
+			{Method: http.MethodGet, Path: "/tv/:id/season/:season_number/local", Handler: adminhandler.GetTvSeasonLocalHandler(ctx)},
+			{Method: http.MethodPost, Path: "/tv/:id/season/:season_number/local", Handler: adminhandler.SaveTvSeasonLocalHandler(ctx)},
+			{Method: http.MethodPut, Path: "/tv/:id/season/:season_number/local", Handler: adminhandler.UpdateTvSeasonLocalHandler(ctx)},
+			{Method: http.MethodPut, Path: "/person/:id", Handler: adminhandler.UpdatePersonHandler(ctx)},
+			{Method: http.MethodGet, Path: "/compare/movie/:id", Handler: adminhandler.CompareMovieRemoteHandler(ctx)},
+			{Method: http.MethodGet, Path: "/compare/tv/:id", Handler: adminhandler.CompareTvRemoteHandler(ctx)},
+			{Method: http.MethodGet, Path: "/compare/person/:id", Handler: adminhandler.ComparePersonRemoteHandler(ctx)},
+			{Method: http.MethodPost, Path: "/sync/movie/:id", Handler: adminhandler.SyncMovieHandler(ctx)},
+			{Method: http.MethodPost, Path: "/sync/tv/:id", Handler: adminhandler.SyncTvSeriesHandler(ctx)},
+			{Method: http.MethodPost, Path: "/sync/person/:id", Handler: adminhandler.SyncPersonHandler(ctx)},
+			{Method: http.MethodDelete, Path: "/movie/:id/local", Handler: adminhandler.ClearMovieLocalHandler(ctx)},
+			{Method: http.MethodDelete, Path: "/tv/:id/local", Handler: adminhandler.ClearTvSeriesLocalHandler(ctx)},
+			{Method: http.MethodGet, Path: "/stats", Handler: adminhandler.GetStatsHandler(ctx)},
+			{Method: http.MethodGet, Path: "/movies", Handler: adminhandler.ListMoviesHandler(ctx)},
+			{Method: http.MethodGet, Path: "/tv", Handler: adminhandler.ListTvSeriesHandler(ctx)},
+			{Method: http.MethodGet, Path: "/proxy", Handler: adminhandler.GetProxySettingsHandler(ctx)},
+			{Method: http.MethodPut, Path: "/proxy", Handler: adminhandler.UpdateProxySettingsHandler(ctx)},
+			{Method: http.MethodGet, Path: "/auto-sync", Handler: adminhandler.GetAutoSyncSettingsHandler(ctx)},
+			{Method: http.MethodPut, Path: "/auto-sync", Handler: adminhandler.UpdateAutoSyncSettingsHandler(ctx)},
+			{Method: http.MethodGet, Path: "/auto-sync/logs", Handler: adminhandler.ListAutoSyncLogsHandler(ctx)},
+			{Method: http.MethodPost, Path: "/upload/image", Handler: adminhandler.UploadImageHandler(ctx)},
 		},
 		rest.WithPrefix("/api/admin"),
 	)
 
 	server.AddRoutes(
 		[]rest.Route{
-			{Method: http.MethodGet, Path: "/:filename", Handler: admin.GetUploadedFileHandler(ctx)},
+			{Method: http.MethodGet, Path: "/:filename", Handler: adminhandler.GetUploadedFileHandler(ctx)},
 		},
 		rest.WithPrefix("/uploads"),
 	)

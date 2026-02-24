@@ -18,3 +18,9 @@ Tmdb:
   DefaultLanguage: "zh-CN"
   RateLimit: 40
   ProxyURL: ""
+  AutoSync:
+    Enabled: true
+    CronExpr: "*/30 * * * *"
+    Mode: "update_unmodified"
+    BatchSize: 50
+    StartDelaySecond: 15

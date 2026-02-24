@@ -25,6 +25,55 @@ export type AdminProxyPayload = {
   proxy_url?: string;
 };
 
+export type AdminAutoSyncMode = "overwrite_all" | "update_unmodified";
+
+export type AdminAutoSyncResp = {
+  enabled: boolean;
+  cron_expr: string;
+  mode: AdminAutoSyncMode | string;
+  batch_size: number;
+  start_delay_second: number;
+  running: boolean;
+};
+
+export type AdminAutoSyncPayload = {
+  enabled?: boolean;
+  cron_expr?: string;
+  mode?: AdminAutoSyncMode;
+  batch_size?: number;
+  start_delay_second?: number;
+};
+
+export type AdminAutoSyncLogItem = {
+  id: number;
+  triggered_at: string;
+  cron_expr: string;
+  mode: string;
+  batch_size: number;
+  status: string;
+  checked: number;
+  synced: number;
+  failed: number;
+  duration_ms: number;
+  message: string;
+  started_at: string;
+  finished_at: string;
+  created_at: string;
+};
+
+export type AdminAutoSyncLogListResp = {
+  total: number;
+  page: number;
+  page_size: number;
+  results: AdminAutoSyncLogItem[];
+};
+
+export type AdminAutoSyncLogListParams = {
+  page?: number;
+  page_size?: number;
+  status?: string;
+};
+
 export type AdminCompareResp = {
   has_diff: boolean;
   diff_fields: string[];
@@ -188,6 +237,18 @@ export function getProxySettings() {
 
 export function updateProxySettings(payload: AdminProxyPayload) {
   return http.put<AdminProxyResp>("/api/admin/proxy", payload);
+}
+
+export function getAutoSyncSettings() {
+  return http.get<AdminAutoSyncResp>("/api/admin/auto-sync");
+}
+
+export function updateAutoSyncSettings(payload: AdminAutoSyncPayload) {
+  return http.put<AdminAutoSyncResp>("/api/admin/auto-sync", payload);
+}
+
+export function getAutoSyncLogs(params: AdminAutoSyncLogListParams = {}) {
+  return http.get<AdminAutoSyncLogListResp>("/api/admin/auto-sync/logs", { params });
 }
 
 export function uploadAdminImage(file: File) {

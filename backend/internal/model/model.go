@@ -125,11 +125,31 @@ type Person struct {
 	LastSyncedAt       *time.Time `json:"last_synced_at"`
 }
 
+// AutoSyncExecutionLog 自动同步执行日志
+type AutoSyncExecutionLog struct {
+	gorm.Model
+	TriggeredAt time.Time `gorm:"index" json:"triggered_at"`
+	CronExpr    string    `gorm:"size:64;index" json:"cron_expr"`
+	Mode        string    `gorm:"size:32;index" json:"mode"`
+	BatchSize   int       `json:"batch_size"`
+
+	StartedAt  time.Time `gorm:"index" json:"started_at"`
+	FinishedAt time.Time `gorm:"index" json:"finished_at"`
+	DurationMs int64     `json:"duration_ms"`
+
+	Status  string `gorm:"size:32;index" json:"status"`
+	Checked int    `json:"checked"`
+	Synced  int    `json:"synced"`
+	Failed  int    `json:"failed"`
+	Message string `gorm:"type:text" json:"message"`
+}
+
 // AutoMigrate 自动建表迁移
 func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&Movie{},
 		&TVSeries{},
 		&Person{},
+		&AutoSyncExecutionLog{},
 	)
 }

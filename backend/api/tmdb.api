@@ -154,6 +154,53 @@ type (
 		ProxyURL string `json:"proxy_url"`
 		Enabled  bool   `json:"enabled"`
 	}
+	// 管理接口 - 自动同步设置请求
+	AdminAutoSyncReq {
+		Enabled          *bool  `json:"enabled,optional"`
+		CronExpr         string `json:"cron_expr,optional"`
+		Mode             string `json:"mode,optional"`
+		BatchSize        *int   `json:"batch_size,optional"`
+		StartDelaySecond *int   `json:"start_delay_second,optional"`
+	}
+	// 管理接口 - 自动同步设置响应
+	AdminAutoSyncResp {
+		Enabled          bool   `json:"enabled"`
+		CronExpr         string `json:"cron_expr"`
+		Mode             string `json:"mode"`
+		BatchSize        int    `json:"batch_size"`
+		StartDelaySecond int    `json:"start_delay_second"`
+		Running          bool   `json:"running"`
+	}
+	// 管理接口 - 自动同步日志列表请求
+	AdminAutoSyncLogListReq {
+		Page     int    `form:"page,optional,default=1"`
+		PageSize int    `form:"page_size,optional,default=20"`
+		Status   string `form:"status,optional"`
+	}
+	// 管理接口 - 自动同步日志项
+	AdminAutoSyncLogItem {
+		Id         int64  `json:"id"`
+		TriggeredAt string `json:"triggered_at"`
+		CronExpr   string `json:"cron_expr"`
+		Mode       string `json:"mode"`
+		BatchSize  int    `json:"batch_size"`
+		Status     string `json:"status"`
+		Checked    int    `json:"checked"`
+		Synced     int    `json:"synced"`
+		Failed     int    `json:"failed"`
+		DurationMs int64  `json:"duration_ms"`
+		Message    string `json:"message"`
+		StartedAt  string `json:"started_at"`
+		FinishedAt string `json:"finished_at"`
+		CreatedAt  string `json:"created_at"`
+	}
+	// 管理接口 - 自动同步日志列表响应
+	AdminAutoSyncLogListResp {
+		Total    int64                  `json:"total"`
+		Page     int                    `json:"page"`
+		PageSize int                    `json:"page_size"`
+		Results  []AdminAutoSyncLogItem `json:"results"`
+	}
 	// 管理接口 - 远程差异检测响应
 	AdminCompareFieldDetail {
 		Field    string `json:"field"`
@@ -541,6 +588,15 @@ service tmdb-api {
 
 	@handler UpdateProxySettings
 	put /proxy (AdminProxyReq) returns (AdminProxyResp)
+
+	@handler GetAutoSyncSettings
+	get /auto-sync returns (AdminAutoSyncResp)
+
+	@handler UpdateAutoSyncSettings
+	put /auto-sync (AdminAutoSyncReq) returns (AdminAutoSyncResp)
+
+	@handler ListAutoSyncLogs
+	get /auto-sync/logs (AdminAutoSyncLogListReq) returns (AdminAutoSyncLogListResp)
 
 	@handler UploadImage
 	post /upload/image returns (AdminUploadResp)
