@@ -22,13 +22,6 @@ type Config struct {
 		RateLimit       int
 		ProxyURL        string `json:",optional"`
 	}
-
-	// 缓存配置
-	Cache struct {
-		MovieTTL  int // 电影缓存时长(小时)
-		TVTTL     int // 电视剧缓存时长(小时)
-		PersonTTL int // 人物缓存时长(小时)
-	}
 }
 
 // PostgresConf PostgreSQL 连接配置

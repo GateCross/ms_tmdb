@@ -18,9 +18,3 @@ Tmdb:
   DefaultLanguage: "zh-CN"
   RateLimit: 40
   ProxyURL: ""
-
-# 缓存配置
-Cache:
-  MovieTTL: 24
-  TVTTL: 24
-  PersonTTL: 48
