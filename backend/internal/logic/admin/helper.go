@@ -6,9 +6,11 @@ import (
 	"math"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 
 	"ms_tmdb/internal/model"
+	"ms_tmdb/internal/types"
 
 	"gorm.io/gorm"
 )
@@ -287,9 +289,29 @@ func splitDiffFieldsByLocalPatch(diffFields []string, localPatch map[string]inte
 }
 
 func shouldIgnoreLocalOverrideDiff(field string, patchValue interface{}, remoteValue interface{}) bool {
+	return valuesEquivalent(field, patchValue, remoteValue)
+}
+
+func valuesEquivalent(field string, left interface{}, right interface{}) bool {
 	switch field {
 	case "genres":
-		return equalGenresByName(patchValue, remoteValue)
+		return equalGenresByName(left, right)
+	case "credits", "combined_credits":
+		return equalCreditsBySignature(left, right)
+	case "production_companies":
+		return equalObjectSliceByKeys(left, right, "id", "name")
+	case "production_countries":
+		return equalObjectSliceByKeys(left, right, "iso_3166_1", "name")
+	case "spoken_languages":
+		return equalObjectSliceByKeys(left, right, "iso_639_1", "english_name", "name")
+	case "created_by":
+		return equalObjectSliceByKeys(left, right, "id", "name")
+	case "networks":
+		return equalObjectSliceByKeys(left, right, "id", "name")
+	case "seasons":
+		return equalObjectSliceByKeys(left, right, "id", "season_number", "episode_count", "name")
+	case "origin_country", "languages", "episode_run_time":
+		return equalPrimitiveSlice(left, right)
 	default:
 		return false
 	}
@@ -297,6 +319,168 @@ func shouldIgnoreLocalOverrideDiff(field string, patchValue interface{}, remoteV
 
 func equalGenresByName(patchValue interface{}, remoteValue interface{}) bool {
 	return reflect.DeepEqual(normalizeGenreNames(patchValue), normalizeGenreNames(remoteValue))
+}
+
+func equalCreditsBySignature(left interface{}, right interface{}) bool {
+	leftMap, leftOK := left.(map[string]interface{})
+	rightMap, rightOK := right.(map[string]interface{})
+	if !leftOK || !rightOK {
+		return reflect.DeepEqual(left, right)
+	}
+
+	return reflect.DeepEqual(creditEntrySignatures(leftMap, "cast"), creditEntrySignatures(rightMap, "cast")) &&
+		reflect.DeepEqual(creditEntrySignatures(leftMap, "crew"), creditEntrySignatures(rightMap, "crew"))
+}
+
+func creditEntrySignatures(payload map[string]interface{}, key string) []string {
+	items, ok := payload[key].([]interface{})
+	if !ok || len(items) == 0 {
+		return []string{}
+	}
+
+	signatures := make([]string, 0, len(items))
+	for _, item := range items {
+		entry, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		signatures = append(signatures, buildCreditEntrySignature(entry))
+	}
+	sort.Strings(signatures)
+	return signatures
+}
+
+func buildCreditEntrySignature(entry map[string]interface{}) string {
+	keys := []string{
+		"id",
+		"credit_id",
+		"name",
+		"title",
+		"original_name",
+		"original_title",
+		"character",
+		"job",
+		"department",
+		"media_type",
+		"episode_count",
+	}
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		value, ok := entry[key]
+		if !ok || value == nil {
+			continue
+		}
+
+		text := strings.TrimSpace(fmt.Sprintf("%v", value))
+		if text == "" {
+			continue
+		}
+		parts = append(parts, key+"="+text)
+	}
+
+	if len(parts) == 0 {
+		raw, err := json.Marshal(entry)
+		if err != nil {
+			return ""
+		}
+		return string(raw)
+	}
+	return strings.Join(parts, "|")
+}
+
+func equalObjectSliceByKeys(left interface{}, right interface{}, keys ...string) bool {
+	leftItems, leftOK := left.([]interface{})
+	rightItems, rightOK := right.([]interface{})
+	if !leftOK || !rightOK {
+		return reflect.DeepEqual(left, right)
+	}
+	return reflect.DeepEqual(objectSliceSignatures(leftItems, keys...), objectSliceSignatures(rightItems, keys...))
+}
+
+func objectSliceSignatures(items []interface{}, keys ...string) []string {
+	if len(items) == 0 {
+		return []string{}
+	}
+
+	signatures := make([]string, 0, len(items))
+	for _, item := range items {
+		entry, ok := item.(map[string]interface{})
+		if !ok {
+			signatures = append(signatures, strings.TrimSpace(fmt.Sprintf("%v", item)))
+			continue
+		}
+
+		parts := make([]string, 0, len(keys))
+		for _, key := range keys {
+			value, ok := entry[key]
+			if !ok || value == nil {
+				continue
+			}
+			text := strings.TrimSpace(fmt.Sprintf("%v", value))
+			if text == "" {
+				continue
+			}
+			parts = append(parts, key+"="+text)
+		}
+
+		if len(parts) == 0 {
+			raw, err := json.Marshal(entry)
+			if err != nil {
+				signatures = append(signatures, "")
+			} else {
+				signatures = append(signatures, string(raw))
+			}
+			continue
+		}
+		signatures = append(signatures, strings.Join(parts, "|"))
+	}
+
+	sort.Strings(signatures)
+	return signatures
+}
+
+func equalPrimitiveSlice(left interface{}, right interface{}) bool {
+	leftItems, leftOK := left.([]interface{})
+	rightItems, rightOK := right.([]interface{})
+	if !leftOK || !rightOK {
+		return reflect.DeepEqual(left, right)
+	}
+	leftSignatures := primitiveSliceSignatures(leftItems)
+	rightSignatures := primitiveSliceSignatures(rightItems)
+	return reflect.DeepEqual(leftSignatures, rightSignatures)
+}
+
+func primitiveSliceSignatures(items []interface{}) []string {
+	if len(items) == 0 {
+		return []string{}
+	}
+	result := make([]string, 0, len(items))
+	for _, item := range items {
+		result = append(result, strings.TrimSpace(fmt.Sprintf("%v", item)))
+	}
+	sort.Strings(result)
+	return result
+}
+
+func filterEquivalentDiffFields(diffFields []string, local map[string]interface{}, remote map[string]interface{}) []string {
+	if len(diffFields) == 0 {
+		return diffFields
+	}
+
+	filtered := make([]string, 0, len(diffFields))
+	for _, field := range diffFields {
+		localValue, localOK := local[field]
+		remoteValue, remoteOK := remote[field]
+		if !localOK || !remoteOK {
+			filtered = append(filtered, field)
+			continue
+		}
+		if valuesEquivalent(field, localValue, remoteValue) {
+			continue
+		}
+		filtered = append(filtered, field)
+	}
+	return filtered
 }
 
 func normalizeGenreNames(raw interface{}) []string {
@@ -346,6 +530,210 @@ func filterIgnoredRemoteDiffFields(diffFields []string) []string {
 		filtered = append(filtered, field)
 	}
 	return filtered
+}
+
+func buildCompareDiffDetails(remoteDiffFields []string, localOverrideDiffFields []string, localData map[string]interface{}, localOverrideData map[string]interface{}, remoteData map[string]interface{}) []types.AdminCompareFieldDetail {
+	details := make([]types.AdminCompareFieldDetail, 0, len(remoteDiffFields)+len(localOverrideDiffFields))
+	details = appendCompareDiffDetails(details, remoteDiffFields, "remote", localData, remoteData)
+	details = appendCompareDiffDetails(details, localOverrideDiffFields, "local_override", localOverrideData, remoteData)
+	return details
+}
+
+func appendCompareDiffDetails(details []types.AdminCompareFieldDetail, fields []string, diffType string, localData map[string]interface{}, remoteData map[string]interface{}) []types.AdminCompareFieldDetail {
+	for _, field := range fields {
+		localValue, localOK := localData[field]
+		remoteValue, remoteOK := remoteData[field]
+		localText := "-"
+		remoteText := "-"
+		if localOK {
+			localText = summarizeDiffValue(field, localValue)
+		}
+		if remoteOK {
+			remoteText = summarizeDiffValue(field, remoteValue)
+		}
+
+		details = append(details, types.AdminCompareFieldDetail{
+			Field:    field,
+			DiffType: diffType,
+			Local:    localText,
+			Remote:   remoteText,
+		})
+	}
+	return details
+}
+
+func summarizeDiffValue(field string, value interface{}) string {
+	switch field {
+	case "credits", "combined_credits":
+		return summarizeCreditsValue(value)
+	}
+
+	switch v := value.(type) {
+	case nil:
+		return "-"
+	case string:
+		text := strings.TrimSpace(v)
+		if text == "" {
+			return "-"
+		}
+		return truncateText(text, 80)
+	case bool:
+		if v {
+			return "true"
+		}
+		return "false"
+	case float64:
+		return strconv.FormatFloat(v, 'f', -1, 64)
+	case float32:
+		return strconv.FormatFloat(float64(v), 'f', -1, 32)
+	case int:
+		return strconv.Itoa(v)
+	case int8:
+		return strconv.FormatInt(int64(v), 10)
+	case int16:
+		return strconv.FormatInt(int64(v), 10)
+	case int32:
+		return strconv.FormatInt(int64(v), 10)
+	case int64:
+		return strconv.FormatInt(v, 10)
+	case uint:
+		return strconv.FormatUint(uint64(v), 10)
+	case uint8:
+		return strconv.FormatUint(uint64(v), 10)
+	case uint16:
+		return strconv.FormatUint(uint64(v), 10)
+	case uint32:
+		return strconv.FormatUint(uint64(v), 10)
+	case uint64:
+		return strconv.FormatUint(v, 10)
+	case []interface{}:
+		return summarizeSliceValue(v)
+	case map[string]interface{}:
+		return summarizeMapValue(v)
+	default:
+		raw, err := json.Marshal(v)
+		if err != nil {
+			return truncateText(fmt.Sprintf("%v", v), 80)
+		}
+		return truncateText(string(raw), 80)
+	}
+}
+
+func summarizeCreditsValue(value interface{}) string {
+	credits, ok := value.(map[string]interface{})
+	if !ok {
+		return summarizeDiffValue("", value)
+	}
+
+	castCount := mapArrayLen(credits, "cast")
+	crewCount := mapArrayLen(credits, "crew")
+	return fmt.Sprintf("cast:%d, crew:%d", castCount, crewCount)
+}
+
+func mapArrayLen(data map[string]interface{}, key string) int {
+	items, ok := data[key].([]interface{})
+	if !ok {
+		return 0
+	}
+	return len(items)
+}
+
+func summarizeSliceValue(items []interface{}) string {
+	if len(items) == 0 {
+		return "0 项"
+	}
+
+	names := make([]string, 0, 3)
+	for _, item := range items {
+		name := pickDisplayName(item)
+		if name == "" {
+			continue
+		}
+		names = append(names, name)
+		if len(names) >= 3 {
+			break
+		}
+	}
+
+	if len(names) == 0 {
+		return fmt.Sprintf("%d 项", len(items))
+	}
+	return fmt.Sprintf("%s（共 %d 项）", strings.Join(names, "、"), len(items))
+}
+
+func summarizeMapValue(data map[string]interface{}) string {
+	if len(data) == 0 {
+		return "{}"
+	}
+
+	keys := sortedKeys(data)
+	if len(keys) > 4 {
+		keys = keys[:4]
+	}
+
+	parts := make([]string, 0, len(keys))
+	for _, key := range keys {
+		value := data[key]
+		parts = append(parts, fmt.Sprintf("%s:%s", key, summarizeMapItemValue(value)))
+	}
+	return truncateText(strings.Join(parts, ", "), 80)
+}
+
+func summarizeMapItemValue(value interface{}) string {
+	switch v := value.(type) {
+	case nil:
+		return "-"
+	case string:
+		text := strings.TrimSpace(v)
+		if text == "" {
+			return "-"
+		}
+		return truncateText(text, 20)
+	case float64:
+		return strconv.FormatFloat(v, 'f', -1, 64)
+	case float32:
+		return strconv.FormatFloat(float64(v), 'f', -1, 32)
+	case int:
+		return strconv.Itoa(v)
+	case bool:
+		if v {
+			return "true"
+		}
+		return "false"
+	case []interface{}:
+		return fmt.Sprintf("%d项", len(v))
+	case map[string]interface{}:
+		return fmt.Sprintf("%d键", len(v))
+	default:
+		return truncateText(fmt.Sprintf("%v", v), 20)
+	}
+}
+
+func pickDisplayName(value interface{}) string {
+	entry, ok := value.(map[string]interface{})
+	if !ok {
+		return ""
+	}
+
+	candidates := []string{"name", "title", "original_name", "original_title", "character", "job"}
+	for _, key := range candidates {
+		text := strings.TrimSpace(mapString(entry, key))
+		if text != "" {
+			return truncateText(text, 24)
+		}
+	}
+	return ""
+}
+
+func truncateText(text string, maxLen int) string {
+	if maxLen <= 0 {
+		return ""
+	}
+	runes := []rune(text)
+	if len(runes) <= maxLen {
+		return text
+	}
+	return string(runes[:maxLen]) + "..."
 }
 
 func mapString(data map[string]interface{}, key string) string {

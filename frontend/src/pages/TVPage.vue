@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { compareTVRemote, deleteTV, updateTV } from "@/api/admin";
-import type { AdminSyncMode } from "@/api/admin";
+import type { AdminCompareFieldDetail, AdminSyncMode } from "@/api/admin";
 import DetailSyncPanel from "@/components/DetailSyncPanel.vue";
 import { getTVDetail, getTVGenreList } from "@/api/tv";
 import { tmdbImg } from "@/api/tmdb";
@@ -37,6 +37,8 @@ type RemoteDiffNotice = {
   localOverrideSummary: string;
   remoteFields: string[];
   localOverrideFields: string[];
+  remoteDetails: AdminCompareFieldDetail[];
+  localOverrideDetails: AdminCompareFieldDetail[];
 };
 
 type RemoteDiffDecision = "unknown" | "has_diff_pending" | "keep_local" | "overwritten" | "no_diff";
@@ -58,6 +60,8 @@ const remoteDiffNotice = ref<RemoteDiffNotice | null>(null);
 const remoteDiffMessage = ref("");
 const remoteDiffError = ref("");
 const remoteDiffDecision = ref<RemoteDiffDecision>("unknown");
+const showRemoteDiffDetails = ref(false);
+const showLocalOverrideDiffDetails = ref(false);
 const genreOptions = ref<GenreOption[]>([]);
 const genreKeyword = ref("");
 const filteredGenreOptions = computed(() => {
@@ -228,6 +232,8 @@ async function checkRemoteDiffAndPrompt() {
   }
   if (tvId.value < 0) {
     remoteDiffNotice.value = null;
+    showRemoteDiffDetails.value = false;
+    showLocalOverrideDiffDetails.value = false;
     remoteDiffDecision.value = "keep_local";
     remoteDiffError.value = "";
     remoteDiffMessage.value = "本地新建条目不参与 TMDB 远程差异检测";
@@ -243,6 +249,8 @@ async function checkRemoteDiffAndPrompt() {
     const hasDiff = Boolean(resp.data?.has_diff) && (remoteFields.length > 0 || localOverrideFields.length > 0);
     if (!hasDiff) {
       remoteDiffNotice.value = null;
+      showRemoteDiffDetails.value = false;
+      showLocalOverrideDiffDetails.value = false;
       remoteDiffDecision.value = "no_diff";
       remoteDiffMessage.value = "";
       comparedRemoteId.value = tvId.value;
@@ -261,12 +269,19 @@ async function checkRemoteDiffAndPrompt() {
       : localOverrideFields.length > 6
         ? `${localOverridePreview} 等 ${localOverrideFields.length} 项`
         : `${localOverridePreview}（共 ${localOverrideFields.length} 项）`;
+    const detailItems = normalizeDiffDetails(resp.data?.diff_details);
+    const remoteDetails = buildDiffDetailsByFields(remoteFields, detailItems, "remote");
+    const localOverrideDetails = buildDiffDetailsByFields(localOverrideFields, detailItems, "local_override");
     remoteDiffNotice.value = {
       remoteSummary,
       localOverrideSummary,
       remoteFields,
       localOverrideFields,
+      remoteDetails,
+      localOverrideDetails,
     };
+    showRemoteDiffDetails.value = false;
+    showLocalOverrideDiffDetails.value = false;
     remoteDiffMessage.value = "";
     remoteDiffDecision.value = "has_diff_pending";
     comparedRemoteId.value = tvId.value;
@@ -279,6 +294,8 @@ async function checkRemoteDiffAndPrompt() {
 
 function keepLocalData() {
   remoteDiffNotice.value = null;
+  showRemoteDiffDetails.value = false;
+  showLocalOverrideDiffDetails.value = false;
   remoteDiffDecision.value = "keep_local";
   remoteDiffError.value = "";
   remoteDiffMessage.value = "已保留本地数据，已跳过本次远程差异处理";
@@ -329,6 +346,36 @@ function parseOptionalFloat(raw: string): number | undefined {
   const value = Number(text);
   if (!Number.isFinite(value)) return undefined;
   return value;
+}
+
+function normalizeDiffDetails(raw: unknown): AdminCompareFieldDetail[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item: any) => ({
+      field: String(item?.field ?? "").trim(),
+      diff_type: String(item?.diff_type ?? "remote").trim() || "remote",
+      local: String(item?.local ?? "-"),
+      remote: String(item?.remote ?? "-"),
+    }))
+    .filter((item) => item.field.length > 0);
+}
+
+function buildDiffDetailsByFields(
+  fields: string[],
+  details: AdminCompareFieldDetail[],
+  diffType: "remote" | "local_override",
+): AdminCompareFieldDetail[] {
+  const detailMap = new Map(
+    details
+      .filter((item) => item.diff_type === diffType)
+      .map((item) => [item.field, item]),
+  );
+  return fields.map((field) => detailMap.get(field) ?? {
+    field,
+    diff_type: diffType,
+    local: "-",
+    remote: "-",
+  });
 }
 
 async function saveTVChanges() {
@@ -490,11 +537,55 @@ watch(tvId, () => {
               </p>
               <div class="mt-2 flex flex-wrap items-center gap-2">
                 <button
+                  v-if="remoteDiffNotice.remoteDetails.length"
+                  class="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-100"
+                  @click="showRemoteDiffDetails = !showRemoteDiffDetails"
+                >
+                  {{ showRemoteDiffDetails ? "收起远程变化明细" : "查看远程变化明细" }}
+                </button>
+                <button
+                  v-if="remoteDiffNotice.localOverrideDetails.length"
+                  class="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-100"
+                  @click="showLocalOverrideDiffDetails = !showLocalOverrideDiffDetails"
+                >
+                  {{ showLocalOverrideDiffDetails ? "收起本地修改明细" : "查看本地修改明细" }}
+                </button>
+                <button
                   class="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-100 disabled:opacity-60"
                   @click="keepLocalData"
                 >
                   暂不处理，保留本地
                 </button>
+              </div>
+
+              <div
+                v-if="showRemoteDiffDetails && remoteDiffNotice.remoteDetails.length"
+                class="mt-2 space-y-2 rounded-lg border border-amber-200 bg-white/70 p-2"
+              >
+                <div
+                  v-for="item in remoteDiffNotice.remoteDetails"
+                  :key="`remote-${item.field}`"
+                  class="rounded-md bg-amber-50/70 p-2"
+                >
+                  <p class="text-xs font-semibold text-amber-900">{{ item.field }}</p>
+                  <p class="mt-1 text-xs text-amber-800">本地：{{ item.local }}</p>
+                  <p class="mt-1 text-xs text-amber-800">远程：{{ item.remote }}</p>
+                </div>
+              </div>
+
+              <div
+                v-if="showLocalOverrideDiffDetails && remoteDiffNotice.localOverrideDetails.length"
+                class="mt-2 space-y-2 rounded-lg border border-amber-200 bg-white/70 p-2"
+              >
+                <div
+                  v-for="item in remoteDiffNotice.localOverrideDetails"
+                  :key="`local-${item.field}`"
+                  class="rounded-md bg-amber-50/70 p-2"
+                >
+                  <p class="text-xs font-semibold text-amber-900">{{ item.field }}</p>
+                  <p class="mt-1 text-xs text-amber-800">本地：{{ item.local }}</p>
+                  <p class="mt-1 text-xs text-amber-800">远程：{{ item.remote }}</p>
+                </div>
               </div>
             </template>
 

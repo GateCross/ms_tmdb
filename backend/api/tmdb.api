@@ -155,10 +155,18 @@ type (
 		Enabled  bool   `json:"enabled"`
 	}
 	// 管理接口 - 远程差异检测响应
+	AdminCompareFieldDetail {
+		Field    string `json:"field"`
+		DiffType string `json:"diff_type"`
+		Local    string `json:"local"`
+		Remote   string `json:"remote"`
+	}
+	// 管理接口 - 远程差异检测响应
 	AdminCompareResp {
 		HasDiff                 bool     `json:"has_diff"`
 		DiffFields              []string `json:"diff_fields"`
 		LocalOverrideDiffFields []string `json:"local_override_diff_fields"`
+		DiffDetails             []AdminCompareFieldDetail `json:"diff_details"`
 		Message                 string   `json:"message"`
 	}
 	// 类型列表请求

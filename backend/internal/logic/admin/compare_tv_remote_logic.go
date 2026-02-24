@@ -52,7 +52,15 @@ func (l *CompareTvRemoteLogic) CompareTvRemote(req *types.AdminSyncReq) (resp *t
 				HasDiff:                 true,
 				DiffFields:              []string{"local_record_missing"},
 				LocalOverrideDiffFields: []string{},
-				Message:                 "本地不存在该剧集数据，建议覆盖拉取",
+				DiffDetails: []types.AdminCompareFieldDetail{
+					{
+						Field:    "local_record_missing",
+						DiffType: "remote",
+						Local:    "本地不存在",
+						Remote:   "TMDB 存在该条目",
+					},
+				},
+				Message: "本地不存在该剧集数据，建议覆盖拉取",
 			}, nil
 		}
 		return nil, err
@@ -69,12 +77,16 @@ func (l *CompareTvRemoteLogic) CompareTvRemote(req *types.AdminSyncReq) (resp *t
 	allDiffFields := diffTopLevelFields(localData, remoteData)
 	diffFields, localOverrideDiffFields := splitDiffFieldsByLocalPatch(allDiffFields, localPatch, remoteData)
 	diffFields = filterIgnoredRemoteDiffFields(diffFields)
+	diffFields = filterEquivalentDiffFields(diffFields, localData, remoteData)
 	localOverrideDiffFields = filterIgnoredRemoteDiffFields(localOverrideDiffFields)
+	localOverrideDiffFields = filterEquivalentDiffFields(localOverrideDiffFields, localPatch, remoteData)
+	diffDetails := buildCompareDiffDetails(diffFields, localOverrideDiffFields, localData, localPatch, remoteData)
 	hasDiff := len(diffFields) > 0 || len(localOverrideDiffFields) > 0
 	return &types.AdminCompareResp{
 		HasDiff:                 hasDiff,
 		DiffFields:              diffFields,
 		LocalOverrideDiffFields: localOverrideDiffFields,
+		DiffDetails:             diffDetails,
 		Message:                 fmt.Sprintf("检测到远程差异 %d 项，本地修改字段 %d 项", len(diffFields), len(localOverrideDiffFields)),
 	}, nil
 }

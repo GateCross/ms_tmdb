@@ -52,7 +52,15 @@ func (l *ComparePersonRemoteLogic) ComparePersonRemote(req *types.AdminSyncReq) 
 				HasDiff:                 true,
 				DiffFields:              []string{"local_record_missing"},
 				LocalOverrideDiffFields: []string{},
-				Message:                 "本地不存在该人物数据，建议覆盖拉取",
+				DiffDetails: []types.AdminCompareFieldDetail{
+					{
+						Field:    "local_record_missing",
+						DiffType: "remote",
+						Local:    "本地不存在",
+						Remote:   "TMDB 存在该条目",
+					},
+				},
+				Message: "本地不存在该人物数据，建议覆盖拉取",
 			}, nil
 		}
 		return nil, err
@@ -63,10 +71,14 @@ func (l *ComparePersonRemoteLogic) ComparePersonRemote(req *types.AdminSyncReq) 
 		return nil, err
 	}
 	diffFields := diffTopLevelFields(localData, remoteData)
+	diffFields = filterIgnoredRemoteDiffFields(diffFields)
+	diffFields = filterEquivalentDiffFields(diffFields, localData, remoteData)
+	diffDetails := buildCompareDiffDetails(diffFields, []string{}, localData, localData, remoteData)
 	return &types.AdminCompareResp{
 		HasDiff:                 len(diffFields) > 0,
 		DiffFields:              diffFields,
 		LocalOverrideDiffFields: []string{},
+		DiffDetails:             diffDetails,
 		Message:                 fmt.Sprintf("检测到 %d 项远程差异", len(diffFields)),
 	}, nil
 }

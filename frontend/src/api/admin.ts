@@ -29,7 +29,15 @@ export type AdminCompareResp = {
   has_diff: boolean;
   diff_fields: string[];
   local_override_diff_fields: string[];
+  diff_details: AdminCompareFieldDetail[];
   message: string;
+};
+
+export type AdminCompareFieldDetail = {
+  field: string;
+  diff_type: "remote" | "local_override" | string;
+  local: string;
+  remote: string;
 };
 
 export type AdminCreateResp = {

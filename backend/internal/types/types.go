@@ -4,10 +4,18 @@
 package types
 
 type AdminCompareResp struct {
-	HasDiff                 bool     `json:"has_diff"`
-	DiffFields              []string `json:"diff_fields"`
-	LocalOverrideDiffFields []string `json:"local_override_diff_fields"`
-	Message                 string   `json:"message"`
+	HasDiff                 bool                      `json:"has_diff"`
+	DiffFields              []string                  `json:"diff_fields"`
+	LocalOverrideDiffFields []string                  `json:"local_override_diff_fields"`
+	DiffDetails             []AdminCompareFieldDetail `json:"diff_details"`
+	Message                 string                    `json:"message"`
+}
+
+type AdminCompareFieldDetail struct {
+	Field    string `json:"field"`
+	DiffType string `json:"diff_type"`
+	Local    string `json:"local"`
+	Remote   string `json:"remote"`
 }
 
 type AdminCreateMovieReq struct {
