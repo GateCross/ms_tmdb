@@ -17,6 +17,7 @@ Tmdb:
   BaseURL: "https://api.themoviedb.org/3"
   DefaultLanguage: "zh-CN"
   RateLimit: 40
+  ProxyURL: ""
 
 # 缓存配置
 Cache:
