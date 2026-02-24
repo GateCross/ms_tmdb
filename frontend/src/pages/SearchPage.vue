@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import GlassSelect from "@/components/GlassSelect.vue";
 import { searchByType, type SearchType } from "@/api/search";
 import { tmdbImg, profileImg } from "@/api/tmdb";
 
@@ -8,6 +9,13 @@ const type = ref<SearchType>("multi");
 const loading = ref(false);
 const error = ref("");
 const results = ref<any[]>([]);
+
+const typeOptions = [
+  { label: "综合", value: "multi" },
+  { label: "电影", value: "movie" },
+  { label: "剧集", value: "tv" },
+  { label: "人物", value: "person" },
+] as const;
 
 async function handleSearch() {
   if (!query.value.trim()) {
@@ -57,12 +65,7 @@ function subtitleByItem(item: any) {
   <section class="card">
     <h2 class="mb-4 text-lg font-semibold text-slate-800">全站搜索</h2>
     <div class="grid gap-3 md:grid-cols-[140px_1fr_auto]">
-      <select v-model="type" class="field-control">
-        <option value="multi">综合</option>
-        <option value="movie">电影</option>
-        <option value="tv">剧集</option>
-        <option value="person">人物</option>
-      </select>
+      <GlassSelect v-model="type" :options="typeOptions" />
       <input
         v-model="query"
         type="text"

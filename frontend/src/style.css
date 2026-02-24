@@ -14,6 +14,9 @@
   --glass-shadow-soft: 0 10px 24px rgba(19, 38, 52, 0.1);
   --accent: #3b6b83;
   --accent-strong: #2b5368;
+  --field-bg: #ffffff;
+  --field-border: #cfd9e3;
+  --field-border-focus: #5a8198;
 }
 
 html,
@@ -305,28 +308,117 @@ body::after {
 
 .field-control {
   @apply rounded-xl px-3 py-2;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: var(--field-bg);
+  border: 1px solid var(--field-border);
   color: #1b232a;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .field-control:focus {
   outline: none;
-  border-color: rgba(59, 107, 131, 0.45);
-  box-shadow: 0 0 0 3px rgba(59, 107, 131, 0.14);
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 3px rgba(90, 129, 152, 0.14);
+}
+
+select.field-control {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 2.25rem;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.12) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%23415B6B' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position: 0 0, right 0.7rem center;
+  background-size: 100% 100%, 1rem 1rem;
+  cursor: pointer;
+}
+
+select.field-control:disabled {
+  cursor: not-allowed;
+  opacity: 0.78;
+}
+
+select.field-control option {
+  color: #1b232a;
+  background: #f4f8fb;
+}
+
+select.field-control option:checked {
+  color: #132733;
+  background: #dce9f1;
 }
 
 .field-control-xs {
   @apply rounded-lg px-2.5 py-1.5 text-xs;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: var(--field-bg);
+  border: 1px solid var(--field-border);
   color: #1b232a;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .field-control-xs:focus {
   outline: none;
-  border-color: rgba(59, 107, 131, 0.45);
-  box-shadow: 0 0 0 3px rgba(59, 107, 131, 0.14);
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 3px rgba(90, 129, 152, 0.14);
+}
+
+.check-control,
+.radio-control {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  border: 1.5px solid var(--field-border);
+  background: #fff;
+  display: inline-grid;
+  place-content: center;
+  transition: border-color 0.14s ease, background-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.check-control {
+  border-radius: 0.3rem;
+}
+
+.radio-control {
+  border-radius: 9999px;
+}
+
+.check-control::after {
+  content: "";
+  width: 0.58rem;
+  height: 0.58rem;
+  transform: scale(0);
+  transition: transform 0.14s ease;
+  clip-path: polygon(14% 53%, 0 67%, 40% 100%, 100% 26%, 84% 12%, 39% 70%);
+  background: #fff;
+}
+
+.radio-control::after {
+  content: "";
+  width: 0.46rem;
+  height: 0.46rem;
+  border-radius: 9999px;
+  transform: scale(0);
+  transition: transform 0.14s ease;
+  background: #fff;
+}
+
+.check-control:checked,
+.radio-control:checked {
+  border-color: var(--accent-strong);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+}
+
+.check-control:checked::after,
+.radio-control:checked::after {
+  transform: scale(1);
+}
+
+.check-control:focus-visible,
+.radio-control:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(90, 129, 152, 0.16);
 }
 
 .section-label {

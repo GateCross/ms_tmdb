@@ -61,7 +61,7 @@ onMounted(loadSettings);
 
     <template v-else>
       <label class="mt-4 inline-flex items-center gap-2 text-sm">
-        <input v-model="enabled" type="checkbox" />
+        <input v-model="enabled" type="checkbox" class="check-control" />
         <span>启用代理访问 TMDB</span>
       </label>
 

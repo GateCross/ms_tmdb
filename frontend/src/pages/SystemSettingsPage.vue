@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import GlassSelect from "@/components/GlassSelect.vue";
 import {
   clearAutoSyncLogs,
   getAutoSyncLogDetail,
@@ -384,7 +385,7 @@ onMounted(reloadAll);
       <p class="mt-1 text-sm text-black/60">配置后端访问 TMDB 时使用的网络代理。</p>
 
       <label class="mt-4 inline-flex items-center gap-2 text-sm">
-        <input v-model="proxyEnabled" type="checkbox" />
+        <input v-model="proxyEnabled" type="checkbox" class="check-control" />
         <span>启用代理访问 TMDB</span>
       </label>
 
@@ -418,7 +419,7 @@ onMounted(reloadAll);
       <p class="mt-1 text-sm text-black/60">仅支持 cron 表达式调度，保存后即时生效。</p>
 
       <label class="mt-4 inline-flex items-center gap-2 text-sm">
-        <input v-model="syncEnabled" type="checkbox" />
+        <input v-model="syncEnabled" type="checkbox" class="check-control" />
         <span>启用自动同步任务</span>
       </label>
       <p class="mt-2 text-xs text-black/50">当前运行状态：{{ syncRunning ? "执行中" : "空闲" }}</p>
@@ -437,19 +438,7 @@ onMounted(reloadAll);
 
       <label class="mt-3 block text-xs text-black/60">
         同步策略
-        <select
-          v-model="syncMode"
-          class="field-control mt-1 w-full text-sm"
-          :disabled="syncSaving"
-        >
-          <option
-            v-for="item in modeOptions"
-            :key="item.value"
-            :value="item.value"
-          >
-            {{ item.label }}
-          </option>
-        </select>
+        <GlassSelect v-model="syncMode" :options="modeOptions" :disabled="syncSaving" class="mt-1 w-full" />
       </label>
       <p class="mt-1 text-xs text-black/50">{{ modeOptions.find((item) => item.value === syncMode)?.hint }}</p>
 
@@ -507,20 +496,13 @@ onMounted(reloadAll);
         <div class="flex flex-wrap items-center gap-2">
           <label class="text-xs text-black/60">
             状态
-            <select
+            <GlassSelect
               v-model="logsStatus"
-              class="field-control ml-2 text-sm"
+              :options="logStatusOptions"
               :disabled="logsLoading || logsClearing"
+              class="ml-2 inline-block min-w-[136px] align-middle"
               @change="applyLogStatusFilter"
-            >
-              <option
-                v-for="item in logStatusOptions"
-                :key="item.value"
-                :value="item.value"
-              >
-                {{ item.label }}
-              </option>
-            </select>
+            />
           </label>
 
           <button

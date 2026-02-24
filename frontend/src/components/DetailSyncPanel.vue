@@ -205,7 +205,7 @@ watch(
         class="rounded-lg border border-black/10 bg-white px-3 py-2 text-sm"
       >
         <div class="flex items-center gap-2">
-          <input v-model="syncMode" type="radio" :value="option.value" />
+          <input v-model="syncMode" type="radio" class="radio-control" :value="option.value" />
           <span class="font-medium">{{ option.label }}</span>
         </div>
         <p class="mt-1 pl-5 text-xs text-black/55">{{ option.hint }}</p>
@@ -234,7 +234,7 @@ watch(
           :key="field"
           class="inline-flex items-center gap-1.5 rounded-md border border-black/10 px-2 py-1 text-xs"
         >
-          <input v-model="selectedOverwriteFields" type="checkbox" :value="field" />
+          <input v-model="selectedOverwriteFields" type="checkbox" class="check-control" :value="field" />
           <span>{{ resolveFieldLabel(field) }}</span>
         </label>
         <span v-if="!changedFields.length" class="text-xs text-black/50">

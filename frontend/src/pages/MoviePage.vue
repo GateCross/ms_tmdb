@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { compareMovieRemote, deleteMovie, updateMovie } from "@/api/admin";
 import type { AdminCompareFieldDetail, AdminSyncMode } from "@/api/admin";
 import DetailSyncPanel from "@/components/DetailSyncPanel.vue";
+import GlassSelect from "@/components/GlassSelect.vue";
 import { getMovieDetail, getMovieGenreList } from "@/api/movie";
 import { tmdbImg } from "@/api/tmdb";
 import { formatStatusLabel, movieStatusOptions } from "@/constants/mediaStatus";
@@ -656,6 +657,7 @@ watch(movieId, () => {
                       <input
                         v-model="editForm.genre_names"
                         type="checkbox"
+                        class="check-control"
                         :value="genre.name"
                       />
                       <span>{{ genre.name }}</span>
@@ -678,12 +680,7 @@ watch(movieId, () => {
                 </label>
                 <label class="text-xs text-black/60">
                   状态
-                  <select
-                    v-model="editForm.status"
-                    class="field-control mt-1 w-full text-sm"
-                  >
-                    <option v-for="status in movieStatusOptions" :key="status.value" :value="status.value">{{ status.label }}</option>
-                  </select>
+                  <GlassSelect v-model="editForm.status" :options="movieStatusOptions" class="mt-1 w-full" />
                 </label>
                 <label class="text-xs text-black/60">
                   标语

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import GlassSelect from "@/components/GlassSelect.vue";
 import {
   createMovie,
   createTV,
@@ -89,6 +90,11 @@ const languageOptions = [
   { label: "英语 (en-US)", value: "en-US" },
   { label: "日语 (ja-JP)", value: "ja-JP" },
   { label: "韩语 (ko-KR)", value: "ko-KR" },
+] as const;
+
+const searchModeOptions = [
+  { label: "模糊包含", value: "contains" },
+  { label: "前缀匹配", value: "prefix" },
 ] as const;
 
 const createTitle = computed(() => (activeTab.value === "movie" ? "新建本地电影" : "新建本地剧集"));
@@ -538,13 +544,7 @@ onMounted(loadData);
         placeholder="输入片名/剧名关键词"
         @keyup.enter="applySearch"
       />
-      <select
-        v-model="searchMode"
-        class="field-control text-sm"
-      >
-        <option value="contains">模糊包含</option>
-        <option value="prefix">前缀匹配</option>
-      </select>
+      <GlassSelect v-model="searchMode" :options="searchModeOptions" />
       <button class="btn-primary" @click="applySearch">
         搜索
       </button>
@@ -580,15 +580,11 @@ onMounted(loadData);
       </label>
       <label class="text-xs text-black/60">
         状态
-        <select v-model="movieCreateForm.status" class="field-control mt-1 w-full text-sm">
-          <option v-for="status in movieStatusOptions" :key="status.value" :value="status.value">{{ status.label }}</option>
-        </select>
+        <GlassSelect v-model="movieCreateForm.status" :options="movieStatusOptions" class="mt-1 w-full" />
       </label>
       <label class="text-xs text-black/60">
         原始语言
-        <select v-model="movieCreateForm.original_language" class="field-control mt-1 w-full text-sm">
-          <option v-for="lang in languageOptions" :key="lang.value" :value="lang.value">{{ lang.label }}</option>
-        </select>
+        <GlassSelect v-model="movieCreateForm.original_language" :options="languageOptions" class="mt-1 w-full" />
       </label>
       <label class="text-xs text-black/60">
         时长（分钟）
@@ -598,7 +594,7 @@ onMounted(loadData);
         类型（多选）
         <div class="mt-1 max-h-32 overflow-y-auto rounded-lg border border-white/70 bg-white/55 p-2 backdrop-blur">
           <label v-for="genre in movieGenreOptions" :key="genre.id" class="mr-3 inline-flex items-center gap-1.5 py-1 text-xs">
-            <input v-model="movieCreateForm.genre_names" type="checkbox" :value="genre.name" />
+            <input v-model="movieCreateForm.genre_names" type="checkbox" class="check-control" :value="genre.name" />
             <span>{{ genre.name }}</span>
           </label>
           <span v-if="!movieGenreOptions.length" class="text-xs text-black/50">暂无可选类型</span>
@@ -645,21 +641,15 @@ onMounted(loadData);
       </label>
       <label class="text-xs text-black/60">
         状态
-        <select v-model="tvCreateForm.status" class="field-control mt-1 w-full text-sm">
-          <option v-for="status in tvStatusOptions" :key="status.value" :value="status.value">{{ status.label }}</option>
-        </select>
+        <GlassSelect v-model="tvCreateForm.status" :options="tvStatusOptions" class="mt-1 w-full" />
       </label>
       <label class="text-xs text-black/60">
         原始语言
-        <select v-model="tvCreateForm.original_language" class="field-control mt-1 w-full text-sm">
-          <option v-for="lang in languageOptions" :key="lang.value" :value="lang.value">{{ lang.label }}</option>
-        </select>
+        <GlassSelect v-model="tvCreateForm.original_language" :options="languageOptions" class="mt-1 w-full" />
       </label>
       <label class="text-xs text-black/60">
         剧集类型
-        <select v-model="tvCreateForm.type" class="field-control mt-1 w-full text-sm">
-          <option v-for="item in tvTypeOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
-        </select>
+        <GlassSelect v-model="tvCreateForm.type" :options="tvTypeOptions" class="mt-1 w-full" />
       </label>
       <label class="text-xs text-black/60">
         季数
@@ -673,7 +663,7 @@ onMounted(loadData);
         类型（多选）
         <div class="mt-1 max-h-32 overflow-y-auto rounded-lg border border-white/70 bg-white/55 p-2 backdrop-blur">
           <label v-for="genre in tvGenreOptions" :key="genre.id" class="mr-3 inline-flex items-center gap-1.5 py-1 text-xs">
-            <input v-model="tvCreateForm.genre_names" type="checkbox" :value="genre.name" />
+            <input v-model="tvCreateForm.genre_names" type="checkbox" class="check-control" :value="genre.name" />
             <span>{{ genre.name }}</span>
           </label>
           <span v-if="!tvGenreOptions.length" class="text-xs text-black/50">暂无可选类型</span>

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { compareTVRemote, deleteTV, getTVSeasonLocal, saveTVSeasonLocal, updateTV, updateTVSeasonLocal } from "@/api/admin";
 import type { AdminCompareFieldDetail, AdminSyncMode } from "@/api/admin";
 import DetailSyncPanel from "@/components/DetailSyncPanel.vue";
+import GlassSelect from "@/components/GlassSelect.vue";
 import { getTVDetail, getTVGenreList, getTVSeasonDetail } from "@/api/tv";
 import { tmdbImg } from "@/api/tmdb";
 import { formatStatusLabel, formatTvTypeLabel, tvStatusOptions, tvTypeOptions } from "@/constants/mediaStatus";
@@ -961,6 +962,7 @@ watch(tvId, () => {
                       <input
                         v-model="editForm.genre_names"
                         type="checkbox"
+                        class="check-control"
                         :value="genre.name"
                       />
                       <span>{{ genre.name }}</span>
@@ -983,21 +985,11 @@ watch(tvId, () => {
                 </label>
                 <label class="text-xs text-black/60">
                   状态
-                  <select
-                    v-model="editForm.status"
-                    class="field-control mt-1 w-full text-sm"
-                  >
-                    <option v-for="status in tvStatusOptions" :key="status.value" :value="status.value">{{ status.label }}</option>
-                  </select>
+                  <GlassSelect v-model="editForm.status" :options="tvStatusOptions" class="mt-1 w-full" />
                 </label>
                 <label class="text-xs text-black/60">
                   剧集类型
-                  <select
-                    v-model="editForm.type"
-                    class="field-control mt-1 w-full text-sm"
-                  >
-                    <option v-for="item in tvTypeOptions" :key="item.value" :value="item.value">{{ item.label }}</option>
-                  </select>
+                  <GlassSelect v-model="editForm.type" :options="tvTypeOptions" class="mt-1 w-full" />
                 </label>
                 <label class="text-xs text-black/60">
                   季数

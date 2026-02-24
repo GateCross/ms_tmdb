@@ -1,0 +1,141 @@
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+
+type SelectOption = {
+  label: string;
+  value: string;
+};
+
+const props = withDefaults(
+  defineProps<{
+    modelValue: string;
+    options: ReadonlyArray<SelectOption>;
+    disabled?: boolean;
+  }>(),
+  {
+    disabled: false,
+  },
+);
+
+const emit = defineEmits<{
+  "update:modelValue": [value: string];
+  change: [value: string];
+}>();
+
+const rootRef = ref<HTMLElement | null>(null);
+const open = ref(false);
+
+const selectedOption = computed(() => {
+  return props.options.find((item) => item.value === props.modelValue) ?? props.options[0];
+});
+
+function closeMenu() {
+  open.value = false;
+}
+
+function toggleMenu() {
+  if (props.disabled) return;
+  open.value = !open.value;
+}
+
+function selectOption(value: string) {
+  if (props.disabled) return;
+  if (props.modelValue !== value) {
+    emit("update:modelValue", value);
+    emit("change", value);
+  }
+  closeMenu();
+}
+
+function handleClickOutside(event: MouseEvent) {
+  if (!open.value) return;
+  const target = event.target;
+  if (!(target instanceof Node)) return;
+  if (rootRef.value?.contains(target)) return;
+  closeMenu();
+}
+
+function handleWindowBlur() {
+  closeMenu();
+}
+
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+  window.addEventListener("blur", handleWindowBlur);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", handleClickOutside);
+  window.removeEventListener("blur", handleWindowBlur);
+});
+</script>
+
+<template>
+  <div ref="rootRef" class="glass-select relative">
+    <button
+      type="button"
+      class="field-control glass-select-trigger flex w-full items-center justify-between gap-2 text-left text-sm"
+      :class="disabled ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'"
+      :disabled="disabled"
+      @click="toggleMenu"
+    >
+      <span class="truncate">{{ selectedOption?.label ?? "-" }}</span>
+      <svg
+        viewBox="0 0 20 20"
+        class="h-4 w-4 flex-none text-slate-600 transition"
+        :class="open ? 'rotate-180' : ''"
+        aria-hidden="true"
+      >
+        <path
+          d="M5 7.5L10 12.5L15 7.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.8"
+        />
+      </svg>
+    </button>
+
+    <Transition name="glass-select-fade">
+      <div
+        v-if="open"
+        class="glass-select-menu absolute left-0 right-0 top-[calc(100%+0.35rem)] z-[1200] max-h-56 overflow-y-auto rounded-xl border p-1 shadow-[0_14px_30px_rgba(19,38,52,0.18)]"
+      >
+        <button
+          v-for="option in options"
+          :key="option.value"
+          type="button"
+          class="glass-select-option block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition"
+          :class="option.value === modelValue ? 'bg-slate-200 text-slate-900' : 'hover:bg-slate-100'"
+          @click="selectOption(option.value)"
+        >
+          {{ option.label }}
+        </button>
+      </div>
+    </Transition>
+  </div>
+</template>
+
+<style scoped>
+.glass-select-trigger {
+  background: #ffffff !important;
+  border-color: var(--field-border) !important;
+}
+
+.glass-select-menu {
+  background: #ffffff;
+  border-color: var(--field-border);
+}
+
+.glass-select-fade-enter-active,
+.glass-select-fade-leave-active {
+  transition: all 0.14s ease;
+}
+
+.glass-select-fade-enter-from,
+.glass-select-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-3px);
+}
+</style>
