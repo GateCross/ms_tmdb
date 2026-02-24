@@ -22,6 +22,7 @@ func main() {
 
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
+	c.ConfigFile = *configFile
 
 	server := rest.MustNewServer(c.RestConf)
 	defer server.Stop()

@@ -9,6 +9,7 @@ import (
 // Config 服务配置
 type Config struct {
 	rest.RestConf
+	ConfigFile string `json:"-"`
 
 	// PostgreSQL 配置
 	Postgres PostgresConf
