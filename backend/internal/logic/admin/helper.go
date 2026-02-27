@@ -317,6 +317,10 @@ func shouldIgnoreLocalOverrideDiff(field string, patchValue interface{}, remoteV
 }
 
 func valuesEquivalent(field string, left interface{}, right interface{}) bool {
+	if reflect.DeepEqual(left, right) {
+		return true
+	}
+
 	switch field {
 	case "genres":
 		return equalGenresByName(left, right)
@@ -337,7 +341,54 @@ func valuesEquivalent(field string, left interface{}, right interface{}) bool {
 	case "origin_country", "languages", "episode_run_time":
 		return equalPrimitiveSlice(left, right)
 	default:
-		return false
+		return equalLooseValue(left, right)
+	}
+}
+
+func equalLooseValue(left interface{}, right interface{}) bool {
+	leftFloat, leftOK := toFloat64(left)
+	rightFloat, rightOK := toFloat64(right)
+	if leftOK && rightOK {
+		return math.Abs(leftFloat-rightFloat) < 1e-9
+	}
+
+	leftRaw, leftErr := json.Marshal(left)
+	rightRaw, rightErr := json.Marshal(right)
+	if leftErr == nil && rightErr == nil {
+		return string(leftRaw) == string(rightRaw)
+	}
+
+	return false
+}
+
+func toFloat64(value interface{}) (float64, bool) {
+	switch v := value.(type) {
+	case float64:
+		return v, true
+	case float32:
+		return float64(v), true
+	case int:
+		return float64(v), true
+	case int8:
+		return float64(v), true
+	case int16:
+		return float64(v), true
+	case int32:
+		return float64(v), true
+	case int64:
+		return float64(v), true
+	case uint:
+		return float64(v), true
+	case uint8:
+		return float64(v), true
+	case uint16:
+		return float64(v), true
+	case uint32:
+		return float64(v), true
+	case uint64:
+		return float64(v), true
+	default:
+		return 0, false
 	}
 }
 
