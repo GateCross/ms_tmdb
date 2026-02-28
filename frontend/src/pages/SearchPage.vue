@@ -3,12 +3,21 @@ import { ref } from "vue";
 import GlassSelect from "@/components/GlassSelect.vue";
 import { searchByType, type SearchType } from "@/api/search";
 import { tmdbImg, profileImg } from "@/api/tmdb";
+import type { ApiErrorLike, SearchResultItem } from "@/types/media";
 
 const query = ref("");
 const type = ref<SearchType>("multi");
 const loading = ref(false);
 const error = ref("");
-const results = ref<any[]>([]);
+const results = ref<SearchResultItem[]>([]);
+
+function resolveErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === "object" && "message" in err) {
+    const message = (err as ApiErrorLike).message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+  return fallback;
+}
 
 const typeOptions = [
   { label: "综合", value: "multi" },
@@ -27,14 +36,14 @@ async function handleSearch() {
   try {
     const resp = await searchByType(type.value, query.value.trim(), 1);
     results.value = resp.data?.results ?? [];
-  } catch (err: any) {
-    error.value = err.message ?? "搜索失败";
+  } catch (err: unknown) {
+    error.value = resolveErrorMessage(err, "搜索失败");
   } finally {
     loading.value = false;
   }
 }
 
-function routeByItem(item: any) {
+function routeByItem(item: SearchResultItem) {
   const mt = item.media_type ?? type.value;
   if (mt === "movie") return `/movie/${item.id}`;
   if (mt === "tv") return `/tv/${item.id}`;
@@ -42,17 +51,17 @@ function routeByItem(item: any) {
   return "";
 }
 
-function thumbByItem(item: any) {
+function thumbByItem(item: SearchResultItem) {
   const mt = item.media_type ?? type.value;
   if (mt === "person") return profileImg(item.profile_path, "w92");
   return tmdbImg(item.poster_path, "w92");
 }
 
-function titleByItem(item: any) {
+function titleByItem(item: SearchResultItem) {
   return item.title || item.name || item.original_title || `ID ${item.id}`;
 }
 
-function subtitleByItem(item: any) {
+function subtitleByItem(item: SearchResultItem) {
   const mt = item.media_type ?? type.value;
   const labels: Record<string, string> = { movie: "电影", tv: "剧集", person: "人物" };
   const tag = labels[mt] ?? mt;

@@ -1,4 +1,5 @@
 import http from "./http";
+import type { MediaSummary } from "@/types/media";
 
 export type AdminSyncMode = "overwrite_all" | "update_unmodified" | "selective" | "preview";
 
@@ -190,9 +191,38 @@ export type AdminUploadResp = {
   path: string;
 };
 
-export function getStats() {
-  return http.get("/api/admin/stats");
-}
+export type AdminMovieListItem = MediaSummary & {
+  tmdb_id: number;
+  title: string;
+  original_title: string;
+  poster_path: string;
+  vote_average: number;
+  release_date: string;
+  popularity: number;
+  is_modified: boolean;
+  genre_names: string[];
+};
+
+export type AdminTVListItem = MediaSummary & {
+  tmdb_id: number;
+  name: string;
+  original_name: string;
+  poster_path: string;
+  vote_average: number;
+  first_air_date: string;
+  number_of_seasons: number;
+  number_of_episodes: number;
+  popularity: number;
+  is_modified: boolean;
+  genre_names: string[];
+};
+
+export type AdminListResp<T> = {
+  total: number;
+  page: number;
+  page_size: number;
+  results: T[];
+};
 
 export function syncMovie(id: number, payload: AdminSyncPayload = {}) {
   return http.post<AdminSyncResp>(`/api/admin/sync/movie/${id}`, payload);
@@ -235,11 +265,15 @@ export function updateTV(id: number, payload: Record<string, unknown>) {
 }
 
 export function listMovies(page = 1, pageSize = 20, keyword = "", searchMode = "contains") {
-  return http.get("/api/admin/movies", { params: { page, page_size: pageSize, keyword, search_mode: searchMode } });
+  return http.get<AdminListResp<AdminMovieListItem>>("/api/admin/movies", {
+    params: { page, page_size: pageSize, keyword, search_mode: searchMode },
+  });
 }
 
 export function listTV(page = 1, pageSize = 20, keyword = "", searchMode = "contains") {
-	return http.get("/api/admin/tv-series", { params: { page, page_size: pageSize, keyword, search_mode: searchMode } });
+	return http.get<AdminListResp<AdminTVListItem>>("/api/admin/tv-series", {
+		params: { page, page_size: pageSize, keyword, search_mode: searchMode },
+	});
 }
 
 export function createTV(payload: AdminCreateTVPayload) {

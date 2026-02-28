@@ -10,6 +10,9 @@ import {
   listMovies,
   listTV,
   uploadAdminImage,
+  type AdminListResp,
+  type AdminMovieListItem,
+  type AdminTVListItem,
   type AdminCreateMoviePayload,
   type AdminCreateTVPayload,
 } from "@/api/admin";
@@ -17,6 +20,7 @@ import { tmdbImg } from "@/api/tmdb";
 import { getMovieGenreList } from "@/api/movie";
 import { getTVGenreList } from "@/api/tv";
 import { movieStatusOptions, tvStatusOptions, tvTypeOptions } from "@/constants/mediaStatus";
+import type { ApiErrorLike } from "@/types/media";
 
 type MediaTab = "movie" | "tv";
 type ViewMode = "grid" | "table";
@@ -26,6 +30,8 @@ type GenreOption = {
   id: number;
   name: string;
 };
+
+type LibraryListItem = AdminMovieListItem | AdminTVListItem;
 
 type LocalMovieCreateForm = {
   title: string;
@@ -68,7 +74,7 @@ const keywordInput = ref("");
 const keyword = ref("");
 const loading = ref(false);
 const error = ref("");
-const items = ref<any[]>([]);
+const items = ref<LibraryListItem[]>([]);
 const total = ref(0);
 const page = ref(1);
 const pageSize = 20;
@@ -79,7 +85,7 @@ const createError = ref("");
 const uploadingKey = ref<UploadingKey>("");
 const deletingId = ref<number | null>(null);
 const deleteModalVisible = ref(false);
-const pendingDeleteItem = ref<any | null>(null);
+const pendingDeleteItem = ref<LibraryListItem | null>(null);
 const movieCreateForm = ref<LocalMovieCreateForm>(emptyMovieForm());
 const tvCreateForm = ref<LocalTVCreateForm>(emptyTVForm());
 const movieGenreOptions = ref<GenreOption[]>([]);
@@ -99,6 +105,74 @@ const searchModeOptions = [
 
 const createTitle = computed(() => (activeTab.value === "movie" ? "新建本地电影" : "新建本地剧集"));
 let previousBodyOverflow = "";
+
+function resolveErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === "object" && "message" in err) {
+    const message = (err as ApiErrorLike).message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+  return fallback;
+}
+
+function normalizeListItem(item: unknown): LibraryListItem | null {
+  if (!item || typeof item !== "object") return null;
+  const raw = item as Record<string, unknown>;
+  const tmdbId = Number(raw.tmdb_id);
+  if (!Number.isFinite(tmdbId)) return null;
+
+  const genres = Array.isArray(raw.genre_names)
+    ? raw.genre_names.map((v) => String(v ?? "").trim()).filter(Boolean)
+    : [];
+
+  if (typeof raw.name === "string") {
+    return {
+      tmdb_id: tmdbId,
+      name: String(raw.name ?? ""),
+      original_name: String(raw.original_name ?? ""),
+      poster_path: String(raw.poster_path ?? ""),
+      vote_average: Number(raw.vote_average ?? 0),
+      first_air_date: String(raw.first_air_date ?? ""),
+      number_of_seasons: Number(raw.number_of_seasons ?? 0),
+      number_of_episodes: Number(raw.number_of_episodes ?? 0),
+      popularity: Number(raw.popularity ?? 0),
+      is_modified: Boolean(raw.is_modified),
+      genre_names: genres,
+      id: Number.isFinite(Number(raw.id)) ? Number(raw.id) : tmdbId,
+      media_type: "tv",
+    };
+  }
+
+  return {
+    tmdb_id: tmdbId,
+    title: String(raw.title ?? ""),
+    original_title: String(raw.original_title ?? ""),
+    poster_path: String(raw.poster_path ?? ""),
+    vote_average: Number(raw.vote_average ?? 0),
+    release_date: String(raw.release_date ?? ""),
+    popularity: Number(raw.popularity ?? 0),
+    is_modified: Boolean(raw.is_modified),
+    genre_names: genres,
+    id: Number.isFinite(Number(raw.id)) ? Number(raw.id) : tmdbId,
+    media_type: "movie",
+  };
+}
+
+function normalizeListResults(raw: unknown): LibraryListItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => normalizeListItem(item))
+    .filter((item): item is LibraryListItem => item !== null);
+}
+
+function normalizeListResponse(raw: unknown): AdminListResp<LibraryListItem> {
+  const payload = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  return {
+    total: Number(payload.total ?? 0),
+    page: Number(payload.page ?? 1),
+    page_size: Number(payload.page_size ?? pageSize),
+    results: normalizeListResults(payload.results),
+  };
+}
 
 function emptyMovieForm(): LocalMovieCreateForm {
   return {
@@ -140,13 +214,14 @@ async function loadData() {
   loading.value = true;
   error.value = "";
   try {
-    let resp: any;
-    if (activeTab.value === "movie") resp = await listMovies(page.value, pageSize, keyword.value, searchMode.value);
-    else resp = await listTV(page.value, pageSize, keyword.value, searchMode.value);
-    items.value = resp.data?.results ?? [];
-    total.value = resp.data?.total ?? 0;
-  } catch (err: any) {
-    error.value = err.message ?? "加载失败";
+    const resp = activeTab.value === "movie"
+      ? await listMovies(page.value, pageSize, keyword.value, searchMode.value)
+      : await listTV(page.value, pageSize, keyword.value, searchMode.value);
+    const normalized = normalizeListResponse(resp.data);
+    items.value = normalized.results;
+    total.value = normalized.total;
+  } catch (err: unknown) {
+    error.value = resolveErrorMessage(err, "加载失败");
   } finally {
     loading.value = false;
   }
@@ -175,13 +250,16 @@ function resetCreateForm() {
   uploadingKey.value = "";
 }
 
-function normalizeGenreOptions(raw: any): GenreOption[] {
+function normalizeGenreOptions(raw: unknown): GenreOption[] {
   if (!Array.isArray(raw)) return [];
   return raw
-    .map((item: any, idx: number) => ({
-      id: Number(item?.id) || idx + 1,
-      name: String(item?.name ?? "").trim(),
-    }))
+    .map((item: unknown, idx: number) => {
+      const value = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+      return {
+        id: Number(value.id) || idx + 1,
+        name: String(value.name ?? "").trim(),
+      };
+    })
     .filter((item: GenreOption) => !!item.name);
 }
 
@@ -238,16 +316,16 @@ function gotoPage(p: number) {
   page.value = p;
 }
 
-function routeByItem(item: any) {
+function routeByItem(item: LibraryListItem) {
   if (activeTab.value === "movie") return `/movie/${item.tmdb_id}`;
   return `/tv/${item.tmdb_id}`;
 }
 
-function openItemDetail(item: any) {
+function openItemDetail(item: LibraryListItem) {
   void router.push(routeByItem(item));
 }
 
-function canDeleteItem(item: any): boolean {
+function canDeleteItem(item: LibraryListItem): boolean {
   const id = Number(item?.tmdb_id);
   return Number.isInteger(id) && id !== 0;
 }
@@ -287,8 +365,8 @@ async function uploadCreateImage(mediaType: MediaTab, field: "poster_path" | "ba
     } else {
       tvCreateForm.value[field] = path;
     }
-  } catch (err: any) {
-    createError.value = err.message ?? "图片上传失败";
+  } catch (err: unknown) {
+    createError.value = resolveErrorMessage(err, "图片上传失败");
   } finally {
     uploadingKey.value = "";
     input.value = "";
@@ -346,8 +424,8 @@ async function submitCreate() {
       closeCreatePanel();
       await loadData();
       await router.push(`/movie/${createdID}`);
-    } catch (err: any) {
-      createError.value = err.message ?? "创建失败";
+    } catch (err: unknown) {
+      createError.value = resolveErrorMessage(err, "创建失败");
     } finally {
       creating.value = false;
     }
@@ -408,14 +486,14 @@ async function submitCreate() {
     closeCreatePanel();
     await loadData();
     await router.push(`/tv/${createdID}`);
-  } catch (err: any) {
-    createError.value = err.message ?? "创建失败";
+  } catch (err: unknown) {
+    createError.value = resolveErrorMessage(err, "创建失败");
   } finally {
     creating.value = false;
   }
 }
 
-function requestDeleteItem(item: any) {
+function requestDeleteItem(item: LibraryListItem) {
   const id = Number(item?.tmdb_id);
   if (!Number.isInteger(id) || id === 0) {
     return;
@@ -451,8 +529,8 @@ async function confirmDeleteItem() {
     }
     await loadData();
     closeDeleteModal();
-  } catch (err: any) {
-    error.value = err.message ?? "删除失败";
+  } catch (err: unknown) {
+    error.value = resolveErrorMessage(err, "删除失败");
   } finally {
     deletingId.value = null;
   }

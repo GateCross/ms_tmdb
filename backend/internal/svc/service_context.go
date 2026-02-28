@@ -29,6 +29,9 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	if err := model.AutoMigrate(db); err != nil {
 		logx.Must(err)
 	}
+	if err := model.EnsureQueryIndexes(db); err != nil {
+		logx.Must(err)
+	}
 
 	// 初始化 TMDB 客户端
 	client := tmdbclient.NewClient(

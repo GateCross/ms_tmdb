@@ -156,3 +156,21 @@ func AutoMigrate(db *gorm.DB) error {
 		&AutoSyncExecutionLog{},
 	)
 }
+
+// EnsureQueryIndexes 为常见列表查询补充索引
+func EnsureQueryIndexes(db *gorm.DB) error {
+	statements := []string{
+		"CREATE INDEX IF NOT EXISTS idx_movies_popularity_desc ON movies (popularity DESC)",
+		"CREATE INDEX IF NOT EXISTS idx_tv_series_popularity_desc ON tv_series (popularity DESC)",
+		"CREATE INDEX IF NOT EXISTS idx_movies_original_title ON movies (original_title)",
+		"CREATE INDEX IF NOT EXISTS idx_tv_series_original_name ON tv_series (original_name)",
+	}
+
+	for _, stmt := range statements {
+		if err := db.Exec(stmt).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

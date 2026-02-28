@@ -3,11 +3,20 @@ import { onMounted, ref } from "vue";
 import { getPopularMovies } from "@/api/movie";
 import { getPopularTV } from "@/api/tv";
 import { tmdbImg } from "@/api/tmdb";
+import type { ApiErrorLike, MediaSummary } from "@/types/media";
 
 const loading = ref(false);
 const error = ref("");
-const movies = ref<any[]>([]);
-const tvSeries = ref<any[]>([]);
+const movies = ref<MediaSummary[]>([]);
+const tvSeries = ref<MediaSummary[]>([]);
+
+function resolveErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === "object" && "message" in err) {
+    const message = (err as ApiErrorLike).message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+  return fallback;
+}
 
 async function loadData() {
   loading.value = true;
@@ -19,8 +28,8 @@ async function loadData() {
     ]);
     movies.value = movieResp.data?.results ?? [];
     tvSeries.value = tvResp.data?.results ?? [];
-  } catch (err: any) {
-    error.value = err.message ?? "加载失败";
+  } catch (err: unknown) {
+    error.value = resolveErrorMessage(err, "加载失败");
   } finally {
     loading.value = false;
   }
