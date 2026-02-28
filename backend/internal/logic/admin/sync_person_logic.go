@@ -39,6 +39,7 @@ func (l *SyncPersonLogic) SyncPerson(req *types.AdminSyncReq) (*types.AdminSyncR
 	mode := normalizeSyncMode(req.Mode)
 
 	remoteRaw, err := l.svcCtx.TmdbClient.GetPerson(req.Id, &tmdbclient.RequestOption{
+		Context:          l.ctx,
 		AppendToResponse: "combined_credits,images",
 	})
 	if err != nil {

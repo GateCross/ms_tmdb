@@ -44,6 +44,7 @@ func (l *TvSeasonLocalLogic) SaveSeasonFromTMDB(seriesID, seasonNumber int, lang
 	}
 
 	opts := &tmdbclient.RequestOption{
+		Context:  l.ctx,
 		Language: strings.TrimSpace(language),
 	}
 	if text := strings.TrimSpace(appendToResponse); text != "" {

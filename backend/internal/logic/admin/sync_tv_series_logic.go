@@ -51,6 +51,7 @@ func (l *SyncTvSeriesLogic) SyncTvSeries(req *types.AdminSyncReq) (*types.AdminS
 	remoteTmdbID := l.svcCtx.ProxyService.ResolveTVSyncID(req.Id)
 
 	remoteRaw, err := l.svcCtx.TmdbClient.GetTVSeries(remoteTmdbID, &tmdbclient.RequestOption{
+		Context:          l.ctx,
 		AppendToResponse: "credits,videos,images",
 	})
 	if err != nil {

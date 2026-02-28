@@ -37,6 +37,7 @@ func (l *CompareMovieRemoteLogic) CompareMovieRemote(req *types.AdminSyncReq) (r
 	if err := l.svcCtx.DB.Where("tmdb_id = ?", req.Id).First(&movie).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			remoteRaw, remoteErr := l.svcCtx.TmdbClient.GetMovie(req.Id, &tmdbclient.RequestOption{
+				Context:          l.ctx,
 				AppendToResponse: "credits,videos,images",
 			})
 			if remoteErr != nil {
@@ -69,6 +70,7 @@ func (l *CompareMovieRemoteLogic) CompareMovieRemote(req *types.AdminSyncReq) (r
 	}
 
 	remoteRaw, err := l.svcCtx.TmdbClient.GetMovie(remoteTmdbID, &tmdbclient.RequestOption{
+		Context:          l.ctx,
 		AppendToResponse: "credits,videos,images",
 	})
 	if err != nil {

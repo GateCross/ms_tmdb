@@ -51,6 +51,7 @@ func (l *SyncMovieLogic) SyncMovie(req *types.AdminSyncReq) (*types.AdminSyncRes
 	remoteTmdbID := l.svcCtx.ProxyService.ResolveMovieSyncID(req.Id)
 
 	remoteRaw, err := l.svcCtx.TmdbClient.GetMovie(remoteTmdbID, &tmdbclient.RequestOption{
+		Context:          l.ctx,
 		AppendToResponse: "credits,videos,images",
 	})
 	if err != nil {

@@ -14,6 +14,7 @@ func parseRequestOptions(r *http.Request) *tmdbclient.RequestOption {
 	page, _ := strconv.Atoi(q.Get("page"))
 
 	opts := &tmdbclient.RequestOption{
+		Context:          r.Context(),
 		Language:         q.Get("language"),
 		Page:             page,
 		Region:           q.Get("region"),

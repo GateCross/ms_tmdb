@@ -81,7 +81,9 @@ func (s *ProxyService) GetMovieDetail(tmdbID int, opts *tmdbclient.RequestOption
 		return nil, normalizeErr
 	}
 
-	s.upsertMovie(tmdbID, syncTmdbID, normalizedData)
+	if err := s.upsertMovie(tmdbID, syncTmdbID, normalizedData); err != nil {
+		return nil, err
+	}
 	return normalizedData, nil
 }
 
@@ -114,7 +116,9 @@ func (s *ProxyService) GetTvSeriesDetail(tmdbID int, opts *tmdbclient.RequestOpt
 		return nil, normalizeErr
 	}
 
-	s.upsertTVSeries(tmdbID, syncTmdbID, normalizedData)
+	if err := s.upsertTVSeries(tmdbID, syncTmdbID, normalizedData); err != nil {
+		return nil, err
+	}
 	return normalizedData, nil
 }
 
@@ -239,11 +243,13 @@ func (s *ProxyService) GetPersonDetail(tmdbID int, opts *tmdbclient.RequestOptio
 		return nil, fetchErr
 	}
 
-	s.upsertPerson(tmdbID, data)
+	if err := s.upsertPerson(tmdbID, data); err != nil {
+		return nil, err
+	}
 	return data, nil
 }
 
-func (s *ProxyService) upsertMovie(tmdbID int, syncTmdbID int, data json.RawMessage) {
+func (s *ProxyService) upsertMovie(tmdbID int, syncTmdbID int, data json.RawMessage) error {
 	var parsed struct {
 		Title            string  `json:"title"`
 		OriginalTitle    string  `json:"original_title"`
@@ -264,12 +270,15 @@ func (s *ProxyService) upsertMovie(tmdbID int, syncTmdbID int, data json.RawMess
 		Homepage         string  `json:"homepage"`
 		ImdbID           string  `json:"imdb_id"`
 	}
-	json.Unmarshal(data, &parsed)
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		logx.Errorf("解析电影 TMDB 数据失败: tmdb_id=%d err=%v", tmdbID, err)
+		return err
+	}
 
 	now := time.Now()
 	result := s.DB.Where("tmdb_id = ?", tmdbID).First(&model.Movie{})
 	if result.Error == gorm.ErrRecordNotFound {
-		s.DB.Create(&model.Movie{
+		if err := s.DB.Create(&model.Movie{
 			TmdbID: tmdbID, SyncTmdbID: resolveSyncTmdbID(syncTmdbID, tmdbID), Title: parsed.Title, OriginalTitle: parsed.OriginalTitle,
 			Overview: parsed.Overview, ReleaseDate: parsed.ReleaseDate,
 			Popularity: parsed.Popularity, VoteAverage: parsed.VoteAverage, VoteCount: parsed.VoteCount,
@@ -278,18 +287,28 @@ func (s *ProxyService) upsertMovie(tmdbID int, syncTmdbID int, data json.RawMess
 			Runtime: parsed.Runtime, Budget: parsed.Budget, Revenue: parsed.Revenue,
 			Tagline: parsed.Tagline, Homepage: parsed.Homepage, ImdbID: parsed.ImdbID,
 			TmdbData: model.RawJSON(data), LastSyncedAt: &now,
-		})
-	} else {
-		s.DB.Model(&model.Movie{}).Where("tmdb_id = ?", tmdbID).Updates(map[string]interface{}{
-			"title": parsed.Title, "original_title": parsed.OriginalTitle,
-			"overview": parsed.Overview, "popularity": parsed.Popularity,
-			"vote_average": parsed.VoteAverage, "poster_path": parsed.PosterPath,
-			"tmdb_data": model.RawJSON(data), "last_synced_at": &now, "sync_tmdb_id": resolveSyncTmdbID(syncTmdbID, tmdbID),
-		})
+		}).Error; err != nil {
+			return err
+		}
+		return nil
 	}
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if err := s.DB.Model(&model.Movie{}).Where("tmdb_id = ?", tmdbID).Updates(map[string]interface{}{
+		"title": parsed.Title, "original_title": parsed.OriginalTitle,
+		"overview": parsed.Overview, "popularity": parsed.Popularity,
+		"vote_average": parsed.VoteAverage, "poster_path": parsed.PosterPath,
+		"tmdb_data": model.RawJSON(data), "last_synced_at": &now, "sync_tmdb_id": resolveSyncTmdbID(syncTmdbID, tmdbID),
+	}).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (s *ProxyService) upsertTVSeries(tmdbID int, syncTmdbID int, data json.RawMessage) {
+func (s *ProxyService) upsertTVSeries(tmdbID int, syncTmdbID int, data json.RawMessage) error {
 	var parsed struct {
 		Name         string  `json:"name"`
 		OriginalName string  `json:"original_name"`
@@ -300,50 +319,76 @@ func (s *ProxyService) upsertTVSeries(tmdbID int, syncTmdbID int, data json.RawM
 		PosterPath   string  `json:"poster_path"`
 		Status       string  `json:"status"`
 	}
-	json.Unmarshal(data, &parsed)
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		logx.Errorf("解析剧集 TMDB 数据失败: tmdb_id=%d err=%v", tmdbID, err)
+		return err
+	}
 
 	now := time.Now()
 	result := s.DB.Where("tmdb_id = ?", tmdbID).First(&model.TVSeries{})
 	if result.Error == gorm.ErrRecordNotFound {
-		s.DB.Create(&model.TVSeries{
+		if err := s.DB.Create(&model.TVSeries{
 			TmdbID: tmdbID, SyncTmdbID: resolveSyncTmdbID(syncTmdbID, tmdbID), Name: parsed.Name, OriginalName: parsed.OriginalName,
 			Overview: parsed.Overview, FirstAirDate: parsed.FirstAirDate,
 			Popularity: parsed.Popularity, VoteAverage: parsed.VoteAverage,
 			PosterPath: parsed.PosterPath, Status: parsed.Status,
 			TmdbData: model.RawJSON(data), LastSyncedAt: &now,
-		})
-	} else {
-		s.DB.Model(&model.TVSeries{}).Where("tmdb_id = ?", tmdbID).Updates(map[string]interface{}{
-			"name": parsed.Name, "overview": parsed.Overview,
-			"popularity": parsed.Popularity, "vote_average": parsed.VoteAverage,
-			"poster_path": parsed.PosterPath, "tmdb_data": model.RawJSON(data), "last_synced_at": &now, "sync_tmdb_id": resolveSyncTmdbID(syncTmdbID, tmdbID),
-		})
+		}).Error; err != nil {
+			return err
+		}
+		return nil
 	}
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if err := s.DB.Model(&model.TVSeries{}).Where("tmdb_id = ?", tmdbID).Updates(map[string]interface{}{
+		"name": parsed.Name, "overview": parsed.Overview,
+		"popularity": parsed.Popularity, "vote_average": parsed.VoteAverage,
+		"poster_path": parsed.PosterPath, "tmdb_data": model.RawJSON(data), "last_synced_at": &now, "sync_tmdb_id": resolveSyncTmdbID(syncTmdbID, tmdbID),
+	}).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (s *ProxyService) upsertPerson(tmdbID int, data json.RawMessage) {
+func (s *ProxyService) upsertPerson(tmdbID int, data json.RawMessage) error {
 	var parsed struct {
 		Name        string  `json:"name"`
 		Biography   string  `json:"biography"`
 		Popularity  float64 `json:"popularity"`
 		ProfilePath string  `json:"profile_path"`
 	}
-	json.Unmarshal(data, &parsed)
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		logx.Errorf("解析人物 TMDB 数据失败: tmdb_id=%d err=%v", tmdbID, err)
+		return err
+	}
 
 	now := time.Now()
 	result := s.DB.Where("tmdb_id = ?", tmdbID).First(&model.Person{})
 	if result.Error == gorm.ErrRecordNotFound {
-		s.DB.Create(&model.Person{
+		if err := s.DB.Create(&model.Person{
 			TmdbID: tmdbID, Name: parsed.Name, Biography: parsed.Biography,
 			Popularity: parsed.Popularity, ProfilePath: parsed.ProfilePath,
 			TmdbData: model.RawJSON(data), LastSyncedAt: &now,
-		})
-	} else {
-		s.DB.Model(&model.Person{}).Where("tmdb_id = ?", tmdbID).Updates(map[string]interface{}{
-			"name": parsed.Name, "popularity": parsed.Popularity,
-			"profile_path": parsed.ProfilePath, "tmdb_data": model.RawJSON(data), "last_synced_at": &now,
-		})
+		}).Error; err != nil {
+			return err
+		}
+		return nil
 	}
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if err := s.DB.Model(&model.Person{}).Where("tmdb_id = ?", tmdbID).Updates(map[string]interface{}{
+		"name": parsed.Name, "popularity": parsed.Popularity,
+		"profile_path": parsed.ProfilePath, "tmdb_data": model.RawJSON(data), "last_synced_at": &now,
+	}).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func isExpired(syncedAt *time.Time, ttl time.Duration) bool {

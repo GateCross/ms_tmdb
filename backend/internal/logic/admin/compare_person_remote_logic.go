@@ -34,6 +34,7 @@ func (l *ComparePersonRemoteLogic) ComparePersonRemote(req *types.AdminSyncReq) 
 	}
 
 	remoteRaw, err := l.svcCtx.TmdbClient.GetPerson(req.Id, &tmdbclient.RequestOption{
+		Context:          l.ctx,
 		AppendToResponse: "combined_credits,images",
 	})
 	if err != nil {

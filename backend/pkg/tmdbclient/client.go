@@ -1,6 +1,7 @@
 package tmdbclient
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,6 +30,11 @@ type Client struct {
 
 // NewClient 创建 TMDB 客户端
 func NewClient(apiKey, baseURL, defaultLanguage string, rateLimit int, proxyURL string) *Client {
+	if rateLimit <= 0 {
+		logx.Errorf("TMDB RateLimit 配置无效(%d)，已回退为 40", rateLimit)
+		rateLimit = 40
+	}
+
 	c := &Client{
 		apiKey:   apiKey,
 		baseURL:  baseURL,
@@ -97,6 +103,7 @@ func (c *Client) SetProxy(proxyURL string) error {
 
 // RequestOption 请求选项
 type RequestOption struct {
+	Context          context.Context
 	Language         string
 	Page             int
 	Region           string
@@ -116,7 +123,12 @@ func (c *Client) Get(path string, opts *RequestOption) (json.RawMessage, error) 
 
 	logx.Debugf("TMDB 请求: %s", reqURL)
 
-	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
+	ctx := context.Background()
+	if opts != nil && opts.Context != nil {
+		ctx = opts.Context
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("创建请求失败: %w", err)
 	}
