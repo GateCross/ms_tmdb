@@ -10,4 +10,5 @@ services:
       - "8080:80"
     volumes:
       - ./tmdb.yaml:/app/etc/tmdb.yaml:ro
+      #- ./uploads:/app/uploads:rw # 需要上传封面的可以打开
     restart: unless-stopped
