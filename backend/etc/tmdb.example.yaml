@@ -14,7 +14,7 @@ Postgres:
 # TMDB 配置
 Tmdb:
   ApiKey: "your_tmdb_api_key"
-  BaseURL: "https://api.themoviedb.org/3"
+  BaseURL: "https://api.tmdb.org/3"
   DefaultLanguage: "zh-CN"
   RateLimit: 40
   ProxyURL: ""
