@@ -1270,7 +1270,7 @@ watch(tvId, () => {
                 <img
                   :src="tmdbImg(ep.still_path, 'w342')"
                   :alt="ep.name || `第${ep.episode_number}集`"
-                  class="aspect-video w-full rounded-lg object-cover md:w-48"
+                  class="aspect-video w-full rounded-lg object-contain md:w-48"
                   loading="lazy"
                 />
                 <div class="mt-2 min-w-0 md:mt-0 md:flex-1">
