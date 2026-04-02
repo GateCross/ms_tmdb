@@ -30,6 +30,10 @@ func (l *DeleteMovieLogic) DeleteMovie(req *types.PathIdReq) error {
 		return errors.New("无效电影 ID")
 	}
 
+	if err := l.svcCtx.DB.Where("tmdb_id = ?", req.Id).Delete(&model.MovieLangSnapshot{}).Error; err != nil {
+		return err
+	}
+
 	result := l.svcCtx.DB.Where("tmdb_id = ?", req.Id).Delete(&model.Movie{})
 	if result.Error != nil {
 		return result.Error

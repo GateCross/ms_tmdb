@@ -46,6 +46,6 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		Config:       c,
 		DB:           db,
 		TmdbClient:   client,
-		ProxyService: proxy.NewProxyService(db, client),
+		ProxyService: proxy.NewProxyService(db, client, c.Tmdb.DefaultLanguage),
 	}
 }

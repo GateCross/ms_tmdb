@@ -76,6 +76,16 @@ type Movie struct {
 	LastSyncedAt     *time.Time `json:"last_synced_at"`
 }
 
+// MovieLangSnapshot 非默认语言电影详情快照
+type MovieLangSnapshot struct {
+	gorm.Model
+	TmdbID       int        `gorm:"not null;index:idx_movie_lang_snapshot_tmdb_language,unique" json:"tmdb_id"`
+	Language     string     `gorm:"size:16;not null;index:idx_movie_lang_snapshot_tmdb_language,unique" json:"language"`
+	SyncTmdbID   int        `gorm:"index;default:0" json:"sync_tmdb_id"`
+	TmdbData     RawJSON    `gorm:"type:jsonb" json:"tmdb_data"`
+	LastSyncedAt *time.Time `json:"last_synced_at"`
+}
+
 // TVSeries 电视剧模型
 type TVSeries struct {
 	gorm.Model
@@ -105,6 +115,16 @@ type TVSeries struct {
 	LastSyncedAt     *time.Time `json:"last_synced_at"`
 }
 
+// TVLangSnapshot 非默认语言剧集详情快照
+type TVLangSnapshot struct {
+	gorm.Model
+	TmdbID       int        `gorm:"not null;index:idx_tv_lang_snapshot_tmdb_language,unique" json:"tmdb_id"`
+	Language     string     `gorm:"size:16;not null;index:idx_tv_lang_snapshot_tmdb_language,unique" json:"language"`
+	SyncTmdbID   int        `gorm:"index;default:0" json:"sync_tmdb_id"`
+	TmdbData     RawJSON    `gorm:"type:jsonb" json:"tmdb_data"`
+	LastSyncedAt *time.Time `json:"last_synced_at"`
+}
+
 // Person 人物模型
 type Person struct {
 	gorm.Model
@@ -125,6 +145,15 @@ type Person struct {
 	LocalData          RawJSON    `gorm:"type:jsonb" json:"local_data"`
 	IsModified         bool       `gorm:"default:false" json:"is_modified"`
 	LastSyncedAt       *time.Time `json:"last_synced_at"`
+}
+
+// PersonLangSnapshot 非默认语言人物详情快照
+type PersonLangSnapshot struct {
+	gorm.Model
+	TmdbID       int        `gorm:"not null;index:idx_person_lang_snapshot_tmdb_language,unique" json:"tmdb_id"`
+	Language     string     `gorm:"size:16;not null;index:idx_person_lang_snapshot_tmdb_language,unique" json:"language"`
+	TmdbData     RawJSON    `gorm:"type:jsonb" json:"tmdb_data"`
+	LastSyncedAt *time.Time `json:"last_synced_at"`
 }
 
 // AutoSyncExecutionLog 自动同步执行日志
@@ -151,8 +180,11 @@ type AutoSyncExecutionLog struct {
 func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&Movie{},
+		&MovieLangSnapshot{},
 		&TVSeries{},
+		&TVLangSnapshot{},
 		&Person{},
+		&PersonLangSnapshot{},
 		&AutoSyncExecutionLog{},
 	)
 }
