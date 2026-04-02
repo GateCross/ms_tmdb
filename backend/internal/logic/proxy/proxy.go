@@ -57,15 +57,46 @@ func (s *ProxyService) GetMovieDetail(tmdbID int, opts *tmdbclient.RequestOption
 	err := s.DB.Where("tmdb_id = ?", tmdbID).First(&movie).Error
 	syncTmdbID := tmdbID
 
+	// 1. 判断是否带有 append_to_response 等复杂参数
+	bypassCache := shouldBypassCache(opts)
+
 	if err == nil {
 		syncTmdbID = resolveSyncTmdbID(movie.SyncTmdbID, movie.TmdbID)
 		if syncTmdbID == 0 {
 			syncTmdbID = tmdbID
 		}
-		if movie.IsModified || !isExpired(movie.LastSyncedAt, 24*time.Hour) {
-			return rewriteTMDBID(json.RawMessage(movie.TmdbData), tmdbID, syncTmdbID)
+		// 2. 只有在没有复杂请求参数时，才允许返回本地基础缓存
+		if !bypassCache {
+			if movie.IsModified || !isExpired(movie.LastSyncedAt, 24*time.Hour) {
+				return rewriteTMDBID(json.RawMessage(movie.TmdbData), tmdbID, syncTmdbID)
+			}
 		}
 	}
+
+	data, fetchErr := s.TmdbClient.GetMovie(syncTmdbID, opts)
+	if fetchErr != nil {
+		// 3. 降级处理：即使有复杂参数，如果 TMDB 挂了，仍尽力返回本地缓存
+		if err == nil {
+			logx.Infof("TMDB 不可用，返回本地缓存: movie/%d", tmdbID)
+			return rewriteTMDBID(json.RawMessage(movie.TmdbData), tmdbID, syncTmdbID)
+		}
+		return nil, fetchErr
+	}
+
+	normalizedData, normalizeErr := rewriteTMDBID(data, tmdbID, syncTmdbID)
+	if normalizeErr != nil {
+		return nil, normalizeErr
+	}
+
+	// 4. 不要把带 append_to_response 的大 JSON 写入到基础缓存库中
+	if !bypassCache {
+		if err := s.upsertMovie(tmdbID, syncTmdbID, normalizedData); err != nil {
+			return nil, err
+		}
+	}
+	
+	return normalizedData, nil
+}
 
 	data, fetchErr := s.TmdbClient.GetMovie(syncTmdbID, opts)
 	if fetchErr != nil {
@@ -93,15 +124,42 @@ func (s *ProxyService) GetTvSeriesDetail(tmdbID int, opts *tmdbclient.RequestOpt
 	err := s.DB.Where("tmdb_id = ?", tmdbID).First(&tv).Error
 	syncTmdbID := tmdbID
 
+	bypassCache := shouldBypassCache(opts)
+
 	if err == nil {
 		syncTmdbID = resolveSyncTmdbID(tv.SyncTmdbID, tv.TmdbID)
 		if syncTmdbID == 0 {
 			syncTmdbID = tmdbID
 		}
-		if tv.IsModified || !isExpired(tv.LastSyncedAt, 24*time.Hour) {
-			return rewriteTMDBID(json.RawMessage(tv.TmdbData), tmdbID, syncTmdbID)
+		if !bypassCache {
+			if tv.IsModified || !isExpired(tv.LastSyncedAt, 24*time.Hour) {
+				return rewriteTMDBID(json.RawMessage(tv.TmdbData), tmdbID, syncTmdbID)
+			}
 		}
 	}
+
+	data, fetchErr := s.TmdbClient.GetTVSeries(syncTmdbID, opts)
+	if fetchErr != nil {
+		if err == nil {
+			logx.Infof("TMDB 不可用，返回本地缓存: tv/%d", tmdbID)
+			return rewriteTMDBID(json.RawMessage(tv.TmdbData), tmdbID, syncTmdbID)
+		}
+		return nil, fetchErr
+	}
+
+	normalizedData, normalizeErr := rewriteTMDBID(data, tmdbID, syncTmdbID)
+	if normalizeErr != nil {
+		return nil, normalizeErr
+	}
+
+	if !bypassCache {
+		if err := s.upsertTVSeries(tmdbID, syncTmdbID, normalizedData); err != nil {
+			return nil, err
+		}
+	}
+	
+	return normalizedData, nil
+}
 
 	data, fetchErr := s.TmdbClient.GetTVSeries(syncTmdbID, opts)
 	if fetchErr != nil {
@@ -122,19 +180,62 @@ func (s *ProxyService) GetTvSeriesDetail(tmdbID int, opts *tmdbclient.RequestOpt
 	return normalizedData, nil
 }
 
-// GetTvSeasonDetail 优先返回本地保存的季明细，未保存时透传 TMDB
+// GetTvSeasonDetail 优先返回本地保存的季明细，未保存时透传 TMDB，带本地修改时进行数据合并
 func (s *ProxyService) GetTvSeasonDetail(seriesID, seasonNumber int, opts *tmdbclient.RequestOption) (json.RawMessage, error) {
+	syncSeriesID := seriesID
+	var tv model.TVSeries
+	if err := s.DB.Where("tmdb_id = ?", seriesID).First(&tv).Error; err == nil {
+		syncSeriesID = resolveSyncTmdbID(tv.SyncTmdbID, tv.TmdbID)
+	}
+
+	// 先尝试获取本地覆盖的数据
 	localData, hasLocal, localErr := s.GetLocalTvSeason(seriesID, seasonNumber)
 	if localErr != nil {
 		return nil, localErr
 	}
-	if hasLocal {
+
+	bypassCache := shouldBypassCache(opts)
+
+	// 情况1：本地有数据，且没有请求 credits/videos 等附加信息，直接返回本地
+	if hasLocal && !bypassCache {
 		raw, err := json.Marshal(localData)
 		if err != nil {
 			return nil, err
 		}
 		return raw, nil
 	}
+
+	// 情况2：去 TMDB 拉取最新（或带 append）的数据
+	tmdbData, err := s.TmdbClient.GetTVSeason(syncSeriesID, seasonNumber, opts)
+	if err != nil {
+		// 降级：拉取失败但本地有数据，返回本地
+		if hasLocal {
+			raw, _ := json.Marshal(localData)
+			return raw, nil
+		}
+		return nil, err
+	}
+
+	// 情况3：既有 TMDB 远端返回的最新数据，本地又有修改，执行数据合并 (Merge)
+	if hasLocal {
+		tmdbMap, err := unmarshalRawToMap(tmdbData)
+		if err == nil {
+			// 将本地自定义的字段(如集名称、简介)覆盖到 TMDB 官方结果上
+			for k, v := range localData {
+				tmdbMap[k] = v
+			}
+			mergedRaw, err := json.Marshal(tmdbMap)
+			if err == nil {
+				return mergedRaw, nil
+			}
+		} else {
+			logx.Errorf("合并季明细失败，反序列化 TMDB 数据错误: %v", err)
+		}
+	}
+
+	// 如果没有本地数据，或者合并失败，直接返回原汁原味的 TMDB 数据
+	return tmdbData, nil
+}
 
 	syncSeriesID := seriesID
 	var tv model.TVSeries
@@ -512,4 +613,17 @@ func rewriteTMDBID(raw json.RawMessage, tmdbID int, syncTmdbID int) (json.RawMes
 		return nil, err
 	}
 	return normalized, nil
+}
+// --- 新增辅助函数 ---
+
+// shouldBypassCache 判断是否需要跳过本地基础缓存
+// 如果请求要求附加响应内容(如 credits, videos)，本地数据库通常没有这些完整字段，必须强制透传 TMDB
+func shouldBypassCache(opts *tmdbclient.RequestOption) bool {
+	if opts == nil {
+		return false
+	}
+	if opts.AppendToResponse != "" {
+		return true
+	}
+	return false
 }
