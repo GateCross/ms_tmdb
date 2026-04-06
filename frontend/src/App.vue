@@ -3,7 +3,6 @@ import { onBeforeUnmount, onMounted, ref } from "vue";
 
 const navItems = [
   { to: "/", label: "首页" },
-  { to: "/search", label: "搜索" },
   { to: "/library", label: "库" },
   { to: "/system-settings", label: "系统设置" },
 ];
@@ -33,8 +32,7 @@ onBeforeUnmount(() => {
     <header class="app-header">
       <div class="page-shell app-header-inner">
         <div>
-          <p class="app-brand-tag">MS-TMDB</p>
-          <h1 class="app-brand-title">媒体代理控制台</h1>
+          <h1 class="app-brand-title">TMDB管理台</h1>
         </div>
         <nav class="app-nav">
           <RouterLink
