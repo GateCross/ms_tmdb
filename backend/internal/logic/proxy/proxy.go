@@ -3,6 +3,7 @@ package proxy
 import (
 	"encoding/json"
 	"errors"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -108,21 +109,31 @@ func (s *ProxyService) GetTvSeriesDetail(tmdbID int, opts *tmdbclient.RequestOpt
 	var tv model.TVSeries
 	err := s.DB.Where("tmdb_id = ?", tmdbID).First(&tv).Error
 	syncTmdbID := tmdbID
+	var localData model.RawJSON
 
 	if err == nil {
 		syncTmdbID = resolveSyncTmdbID(tv.SyncTmdbID, tv.TmdbID)
 		if syncTmdbID == 0 {
 			syncTmdbID = tmdbID
 		}
+		localData = tv.LocalData
 		if tv.IsModified || !isExpired(tv.LastSyncedAt, 24*time.Hour) {
-			return rewriteTMDBID(json.RawMessage(tv.TmdbData), tmdbID, syncTmdbID)
+			normalizedData, rewriteErr := rewriteTMDBID(json.RawMessage(tv.TmdbData), tmdbID, syncTmdbID)
+			if rewriteErr != nil {
+				return nil, rewriteErr
+			}
+			return mergeTVSeriesWithLocalData(normalizedData, localData)
 		}
 	}
 
 	data, fetchErr := s.TmdbClient.GetTVSeries(syncTmdbID, opts)
 	if fetchErr != nil {
 		if err == nil {
-			return rewriteTMDBID(json.RawMessage(tv.TmdbData), tmdbID, syncTmdbID)
+			normalizedData, rewriteErr := rewriteTMDBID(json.RawMessage(tv.TmdbData), tmdbID, syncTmdbID)
+			if rewriteErr != nil {
+				return nil, rewriteErr
+			}
+			return mergeTVSeriesWithLocalData(normalizedData, localData)
 		}
 		return nil, fetchErr
 	}
@@ -135,7 +146,7 @@ func (s *ProxyService) GetTvSeriesDetail(tmdbID int, opts *tmdbclient.RequestOpt
 	if err := s.upsertTVSeries(tmdbID, syncTmdbID, normalizedData); err != nil {
 		return nil, err
 	}
-	return normalizedData, nil
+	return mergeTVSeriesWithLocalData(normalizedData, localData)
 }
 
 // GetTvSeasonDetail 优先返回本地保存的季明细，未保存时透传 TMDB
@@ -238,6 +249,49 @@ func (s *ProxyService) UpdateLocalTvSeason(seriesID, seasonNumber int, payload m
 		return nil, err
 	}
 	return normalized, nil
+}
+
+// DeleteLocalTvSeason 删除本地季明细覆盖；TMDB 原始季数据不会被删除
+func (s *ProxyService) DeleteLocalTvSeason(seriesID, seasonNumber int) error {
+	var tv model.TVSeries
+	if err := s.DB.Where("tmdb_id = ?", seriesID).First(&tv).Error; err != nil {
+		return err
+	}
+
+	localPatch, err := rawJSONToMap(tv.LocalData)
+	if err != nil {
+		return err
+	}
+
+	seasons, ok := localPatch[tvSeasonLocalDataKey].(map[string]interface{})
+	if !ok || len(seasons) == 0 {
+		return errors.New("当前季未保存到本地数据库")
+	}
+
+	seasonKey := strconv.Itoa(seasonNumber)
+	if _, exists := seasons[seasonKey]; !exists {
+		return errors.New("当前季未保存到本地数据库")
+	}
+	delete(seasons, seasonKey)
+
+	if len(seasons) == 0 {
+		delete(localPatch, tvSeasonLocalDataKey)
+	} else {
+		localPatch[tvSeasonLocalDataKey] = seasons
+	}
+
+	var rawPatch model.RawJSON
+	if len(localPatch) > 0 {
+		rawPatch, err = marshalMapToRawJSON(localPatch)
+		if err != nil {
+			return err
+		}
+	}
+
+	return s.DB.Model(&model.TVSeries{}).Where("tmdb_id = ?", seriesID).Updates(map[string]interface{}{
+		"local_data":  rawPatch,
+		"is_modified": len(localPatch) > 0,
+	}).Error
 }
 
 // GetPersonDetail Read-Through 获取人物详情
@@ -524,7 +578,7 @@ func (s *ProxyService) getTVSeriesDetailByLanguage(tmdbID int, opts *tmdbclient.
 			return nil, err
 		}
 		if !isExpired(snapshot.LastSyncedAt, 24*time.Hour) {
-			return mergeTMDBWithLocalData(cachedData, localData)
+			return mergeTVSeriesWithLocalData(cachedData, localData)
 		}
 	} else if !errors.Is(snapshotErr, gorm.ErrRecordNotFound) {
 		return nil, snapshotErr
@@ -537,11 +591,15 @@ func (s *ProxyService) getTVSeriesDetailByLanguage(tmdbID int, opts *tmdbclient.
 			if err != nil {
 				return nil, err
 			}
-			return mergeTMDBWithLocalData(cachedData, localData)
+			return mergeTVSeriesWithLocalData(cachedData, localData)
 		}
 		if tvErr == nil {
 			logx.Infof("TMDB 不可用，返回本地默认语言缓存: tv/%d language=%s", tmdbID, normalizedLanguage)
-			return rewriteTMDBID(json.RawMessage(tv.TmdbData), tmdbID, syncTmdbID)
+			cachedData, err := rewriteTMDBID(json.RawMessage(tv.TmdbData), tmdbID, syncTmdbID)
+			if err != nil {
+				return nil, err
+			}
+			return mergeTVSeriesWithLocalData(cachedData, localData)
 		}
 		return nil, fetchErr
 	}
@@ -556,7 +614,7 @@ func (s *ProxyService) getTVSeriesDetailByLanguage(tmdbID int, opts *tmdbclient.
 	if errors.Is(tvErr, gorm.ErrRecordNotFound) {
 		s.warmDefaultTVSeriesRecord(tmdbID, opts)
 	}
-	return mergeTMDBWithLocalData(normalizedData, localData)
+	return mergeTVSeriesWithLocalData(normalizedData, localData)
 }
 
 func (s *ProxyService) getPersonDetailByLanguage(tmdbID int, opts *tmdbclient.RequestOption, language string) (json.RawMessage, error) {
@@ -703,6 +761,34 @@ func mergeTMDBWithLocalData(tmdbData json.RawMessage, localData model.RawJSON) (
 	return merged, nil
 }
 
+func mergeTVSeriesWithLocalData(tmdbData json.RawMessage, localData model.RawJSON) (json.RawMessage, error) {
+	merged, err := mergeTMDBWithLocalData(tmdbData, localData)
+	if err != nil {
+		return nil, err
+	}
+	if len(localData) == 0 {
+		return merged, nil
+	}
+
+	payload := map[string]interface{}{}
+	if err := json.Unmarshal(merged, &payload); err != nil {
+		return nil, err
+	}
+
+	localPatch := map[string]interface{}{}
+	if err := json.Unmarshal(localData, &localPatch); err != nil {
+		return nil, err
+	}
+
+	applyLocalTVSeasonSummaries(payload, localPatch)
+
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	return raw, nil
+}
+
 func (s *ProxyService) warmDefaultMovieRecord(tmdbID int, opts *tmdbclient.RequestOption) {
 	defaultOpts := cloneRequestOption(opts)
 	defaultOpts.Language = s.DefaultLang
@@ -842,6 +928,160 @@ func normalizeSeasonDetailPayload(input map[string]interface{}, seasonNumber int
 		result["episodes"] = []interface{}{}
 	}
 	return result, nil
+}
+
+func applyLocalTVSeasonSummaries(payload map[string]interface{}, localPatch map[string]interface{}) {
+	rawLocalSeasons, ok := localPatch[tvSeasonLocalDataKey].(map[string]interface{})
+	if !ok || len(rawLocalSeasons) == 0 {
+		return
+	}
+
+	seasons := make([]map[string]interface{}, 0)
+	seasonIndexes := make(map[int]int)
+	if rawSeasons, ok := payload["seasons"].([]interface{}); ok {
+		for _, item := range rawSeasons {
+			entry, ok := item.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			cloned := cloneMap(entry)
+			seasonNumber := mapNumberValue(cloned["season_number"])
+			seasonIndexes[seasonNumber] = len(seasons)
+			seasons = append(seasons, cloned)
+		}
+	}
+
+	keys := make([]int, 0, len(rawLocalSeasons))
+	for key := range rawLocalSeasons {
+		seasonNumber, err := strconv.Atoi(key)
+		if err != nil {
+			continue
+		}
+		keys = append(keys, seasonNumber)
+	}
+	sort.Ints(keys)
+
+	for _, seasonNumber := range keys {
+		seasonData, ok := rawLocalSeasons[strconv.Itoa(seasonNumber)].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		summary := buildSeasonSummaryFromDetail(seasonData, seasonNumber)
+		if idx, exists := seasonIndexes[seasonNumber]; exists {
+			seasons[idx] = summary
+			continue
+		}
+		seasonIndexes[seasonNumber] = len(seasons)
+		seasons = append(seasons, summary)
+	}
+
+	sort.Slice(seasons, func(i, j int) bool {
+		return mapNumberValue(seasons[i]["season_number"]) < mapNumberValue(seasons[j]["season_number"])
+	})
+
+	seasonItems := make([]interface{}, 0, len(seasons))
+	regularSeasonCount := 0
+	totalEpisodeCount := 0
+	for _, season := range seasons {
+		seasonNumber := mapNumberValue(season["season_number"])
+		if seasonNumber > 0 {
+			regularSeasonCount++
+		}
+		totalEpisodeCount += mapNumberValue(season["episode_count"])
+		seasonItems = append(seasonItems, season)
+	}
+
+	payload["seasons"] = seasonItems
+	payload["number_of_seasons"] = regularSeasonCount
+	payload["number_of_episodes"] = totalEpisodeCount
+}
+
+func buildSeasonSummaryFromDetail(seasonData map[string]interface{}, seasonNumber int) map[string]interface{} {
+	episodeCount := mapNumberValue(seasonData["episode_count"])
+	if episodeCount == 0 {
+		switch episodes := seasonData["episodes"].(type) {
+		case []interface{}:
+			episodeCount = len(episodes)
+		}
+	}
+
+	name := strings.TrimSpace(mapStringValue(seasonData["name"]))
+	if name == "" {
+		name = "第 " + strconv.Itoa(seasonNumber) + " 季"
+	}
+
+	summary := map[string]interface{}{
+		"id":            mapNumberValue(seasonData["id"]),
+		"season_number": seasonNumber,
+		"name":          name,
+		"air_date":      strings.TrimSpace(mapStringValue(seasonData["air_date"])),
+		"overview":      strings.TrimSpace(mapStringValue(seasonData["overview"])),
+		"poster_path":   strings.TrimSpace(mapStringValue(seasonData["poster_path"])),
+		"episode_count": episodeCount,
+	}
+	return summary
+}
+
+func cloneMap(input map[string]interface{}) map[string]interface{} {
+	if len(input) == 0 {
+		return map[string]interface{}{}
+	}
+	result := make(map[string]interface{}, len(input))
+	for key, value := range input {
+		result[key] = value
+	}
+	return result
+}
+
+func mapNumberValue(raw interface{}) int {
+	switch value := raw.(type) {
+	case int:
+		return value
+	case int8:
+		return int(value)
+	case int16:
+		return int(value)
+	case int32:
+		return int(value)
+	case int64:
+		return int(value)
+	case uint:
+		return int(value)
+	case uint8:
+		return int(value)
+	case uint16:
+		return int(value)
+	case uint32:
+		return int(value)
+	case uint64:
+		return int(value)
+	case float32:
+		return int(value)
+	case float64:
+		return int(value)
+	case json.Number:
+		number, _ := value.Int64()
+		return int(number)
+	case string:
+		number, err := strconv.Atoi(strings.TrimSpace(value))
+		if err != nil {
+			return 0
+		}
+		return number
+	default:
+		return 0
+	}
+}
+
+func mapStringValue(raw interface{}) string {
+	switch value := raw.(type) {
+	case string:
+		return value
+	case json.Number:
+		return value.String()
+	default:
+		return ""
+	}
 }
 
 func resolveSyncTmdbID(syncTmdbID int, currentTmdbID int) int {

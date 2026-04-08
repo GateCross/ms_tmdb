@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { compareTVRemote, deleteTV, getTVSeasonLocal, saveTVSeasonLocal, updateTV, updateTVSeasonLocal } from "@/api/admin";
+import { compareTVRemote, deleteTV, deleteTVSeasonLocal, getTVSeasonLocal, saveTVSeasonLocal, updateTV, updateTVSeasonLocal } from "@/api/admin";
 import type { AdminCompareFieldDetail, AdminSyncMode } from "@/api/admin";
 import DetailSyncPanel from "@/components/DetailSyncPanel.vue";
 import GlassSelect from "@/components/GlassSelect.vue";
@@ -70,7 +70,26 @@ type TVSeasonDetail = {
   name: string;
   air_date: string;
   overview: string;
+  poster_path: string;
   episodes: TVEpisodeItem[];
+};
+
+type TVSeasonForm = {
+  season_number: string;
+  name: string;
+  air_date: string;
+  poster_path: string;
+  overview: string;
+};
+
+type TVEpisodeForm = {
+  episode_number: string;
+  name: string;
+  air_date: string;
+  runtime: string;
+  vote_average: string;
+  still_path: string;
+  overview: string;
 };
 
 const route = useRoute();
@@ -105,6 +124,11 @@ const seasonDetailError = ref("");
 const seasonLocalSaved = ref(false);
 const seasonLocalSaving = ref(false);
 const seasonLocalMessage = ref("");
+const seasonEditorVisible = ref(false);
+const seasonEditorMode = ref<"create" | "edit">("create");
+const seasonFormError = ref("");
+const episodeCreatorVisible = ref(false);
+const episodeFormError = ref("");
 const editingEpisodeNumber = ref<number | null>(null);
 const editingEpisodeName = ref("");
 const editingEpisodeOverview = ref("");
@@ -136,6 +160,22 @@ const editForm = ref<TVEditForm>({
   popularity: "",
   overview: "",
 });
+const seasonForm = ref<TVSeasonForm>({
+  season_number: "",
+  name: "",
+  air_date: "",
+  poster_path: "",
+  overview: "",
+});
+const episodeForm = ref<TVEpisodeForm>({
+  episode_number: "",
+  name: "",
+  air_date: "",
+  runtime: "",
+  vote_average: "",
+  still_path: "",
+  overview: "",
+});
 
 const tvId = computed(() => Number(route.params.id));
 const currentTmdbId = computed(() => Number(detail.value?.id ?? tvId.value ?? 0));
@@ -144,6 +184,9 @@ const hasRewrittenTmdbId = computed(() => {
   return originalTmdbId.value > 0 && currentTmdbId.value > 0 && originalTmdbId.value !== currentTmdbId.value;
 });
 const seasonOptions = computed<TVSeasonSummary[]>(() => normalizeSeasonList(detail.value?.seasons));
+const seasonPanelVisible = computed(() => {
+  return seasonOptions.value.length > 0 || seasonEditorVisible.value || !!selectedSeasonDetail.value;
+});
 const selectedSeasonEpisodes = computed<TVEpisodeItem[]>(() => selectedSeasonDetail.value?.episodes ?? []);
 const hasRemoteOnlyDiff = computed(() => (remoteDiffNotice.value?.remoteFields.length ?? 0) > 0);
 const hasLocalOverrideDiff = computed(() => (remoteDiffNotice.value?.localOverrideFields.length ?? 0) > 0);
@@ -257,7 +300,83 @@ function normalizeSeasonDetail(raw: any, fallbackSeasonNumber: number): TVSeason
     name: String(raw?.name ?? "").trim() || `第 ${fallbackSeasonNumber} 季`,
     air_date: String(raw?.air_date ?? ""),
     overview: String(raw?.overview ?? "").trim(),
+    poster_path: String(raw?.poster_path ?? ""),
     episodes,
+  };
+}
+
+function resetSeasonForm(data?: Partial<TVSeasonForm>) {
+  seasonForm.value = {
+    season_number: data?.season_number ?? "",
+    name: data?.name ?? "",
+    air_date: data?.air_date ?? "",
+    poster_path: data?.poster_path ?? "",
+    overview: data?.overview ?? "",
+  };
+}
+
+function resetEpisodeForm(data?: Partial<TVEpisodeForm>) {
+  episodeForm.value = {
+    episode_number: data?.episode_number ?? "",
+    name: data?.name ?? "",
+    air_date: data?.air_date ?? "",
+    runtime: data?.runtime ?? "",
+    vote_average: data?.vote_average ?? "",
+    still_path: data?.still_path ?? "",
+    overview: data?.overview ?? "",
+  };
+}
+
+function nextSeasonNumberCandidate(): number {
+  const regularSeasonNumbers = seasonOptions.value
+    .map((item) => item.season_number)
+    .filter((seasonNumber) => seasonNumber > 0);
+  if (regularSeasonNumbers.length === 0) {
+    return 1;
+  }
+  return Math.max(...regularSeasonNumbers) + 1;
+}
+
+function nextEpisodeNumberCandidate(): number {
+  const episodeNumbers = selectedSeasonEpisodes.value
+    .map((item) => item.episode_number)
+    .filter((episodeNumber) => episodeNumber > 0);
+  if (episodeNumbers.length === 0) {
+    return 1;
+  }
+  return Math.max(...episodeNumbers) + 1;
+}
+
+function buildSeasonSummary(detailValue: TVSeasonDetail): TVSeasonSummary {
+  return {
+    id: detailValue.id || 0,
+    season_number: detailValue.season_number,
+    name: detailValue.name || `第 ${detailValue.season_number} 季`,
+    poster_path: detailValue.poster_path || "",
+    episode_count: detailValue.episodes.length,
+  };
+}
+
+function syncSeasonSummaryInDetail(detailValue: TVSeasonDetail) {
+  if (!detail.value) return;
+
+  const summary = buildSeasonSummary(detailValue);
+  const current = normalizeSeasonList(detail.value?.seasons);
+  const targetIndex = current.findIndex((item) => item.season_number === summary.season_number);
+  if (targetIndex >= 0) {
+    current[targetIndex] = summary;
+  } else {
+    current.push(summary);
+  }
+  current.sort((a, b) => a.season_number - b.season_number);
+
+  const regularSeasonCount = current.filter((item) => item.season_number > 0).length;
+  const totalEpisodeCount = current.reduce((sum, item) => sum + Math.max(0, item.episode_count || 0), 0);
+  detail.value = {
+    ...detail.value,
+    seasons: current,
+    number_of_seasons: regularSeasonCount,
+    number_of_episodes: totalEpisodeCount,
   };
 }
 
@@ -301,6 +420,13 @@ function resetSeasonLocalState() {
   seasonLocalSaved.value = false;
   seasonLocalSaving.value = false;
   seasonLocalMessage.value = "";
+  seasonEditorVisible.value = false;
+  seasonEditorMode.value = "create";
+  seasonFormError.value = "";
+  resetSeasonForm();
+  episodeCreatorVisible.value = false;
+  episodeFormError.value = "";
+  resetEpisodeForm();
   editingEpisodeNumber.value = null;
   editingEpisodeName.value = "";
   editingEpisodeOverview.value = "";
@@ -330,6 +456,10 @@ function startEpisodeEdit(ep: TVEpisodeItem) {
   editingEpisodeNumber.value = ep.episode_number;
   editingEpisodeName.value = ep.name ?? "";
   editingEpisodeOverview.value = ep.overview ?? "";
+  episodeCreatorVisible.value = false;
+  episodeFormError.value = "";
+  seasonEditorVisible.value = false;
+  seasonFormError.value = "";
   seasonLocalMessage.value = "";
   seasonDetailError.value = "";
 }
@@ -338,6 +468,242 @@ function cancelEpisodeEdit() {
   editingEpisodeNumber.value = null;
   editingEpisodeName.value = "";
   editingEpisodeOverview.value = "";
+}
+
+function openSeasonCreateEditor() {
+  seasonEditorMode.value = "create";
+  seasonEditorVisible.value = true;
+  seasonFormError.value = "";
+  seasonLocalMessage.value = "";
+  seasonDetailError.value = "";
+  episodeCreatorVisible.value = false;
+  episodeFormError.value = "";
+  cancelEpisodeEdit();
+  resetSeasonForm({
+    season_number: String(nextSeasonNumberCandidate()),
+    name: "",
+    air_date: "",
+    poster_path: "",
+    overview: "",
+  });
+}
+
+function openSeasonEditEditor() {
+  if (!selectedSeasonDetail.value) {
+    seasonDetailError.value = "请先选择要编辑的季";
+    return;
+  }
+
+  seasonEditorMode.value = "edit";
+  seasonEditorVisible.value = true;
+  seasonFormError.value = "";
+  seasonLocalMessage.value = "";
+  seasonDetailError.value = "";
+  episodeCreatorVisible.value = false;
+  episodeFormError.value = "";
+  cancelEpisodeEdit();
+  resetSeasonForm({
+    season_number: String(selectedSeasonDetail.value.season_number),
+    name: selectedSeasonDetail.value.name ?? "",
+    air_date: selectedSeasonDetail.value.air_date ?? "",
+    poster_path: selectedSeasonDetail.value.poster_path ?? "",
+    overview: selectedSeasonDetail.value.overview ?? "",
+  });
+}
+
+function closeSeasonEditor() {
+  seasonEditorVisible.value = false;
+  seasonFormError.value = "";
+}
+
+function openEpisodeCreateEditor() {
+  if (!selectedSeasonDetail.value || selectedSeasonNumber.value == null) {
+    seasonDetailError.value = "请先选择要编辑的季";
+    return;
+  }
+  if (!seasonLocalSaved.value) {
+    seasonDetailError.value = "请先将当前季保存到本地数据库";
+    return;
+  }
+
+  episodeCreatorVisible.value = true;
+  episodeFormError.value = "";
+  seasonLocalMessage.value = "";
+  seasonDetailError.value = "";
+  seasonEditorVisible.value = false;
+  seasonFormError.value = "";
+  cancelEpisodeEdit();
+  resetEpisodeForm({
+    episode_number: String(nextEpisodeNumberCandidate()),
+    name: "",
+    air_date: "",
+    runtime: "",
+    vote_average: "",
+    still_path: "",
+    overview: "",
+  });
+}
+
+function closeEpisodeCreator() {
+  episodeCreatorVisible.value = false;
+  episodeFormError.value = "";
+  resetEpisodeForm();
+}
+
+async function saveSeasonEditor() {
+  if (!tvId.value) {
+    seasonFormError.value = "无效剧集 ID";
+    return;
+  }
+
+  const seasonNumber = parseOptionalInt(seasonForm.value.season_number);
+  if (seasonNumber === undefined || seasonNumber < 0) {
+    seasonFormError.value = "季号必须是大于等于 0 的整数";
+    return;
+  }
+  if (seasonEditorMode.value === "create" && seasonOptions.value.some((item) => item.season_number === seasonNumber)) {
+    seasonFormError.value = "该季号已存在，请直接编辑";
+    return;
+  }
+
+  const basePayload = seasonEditorMode.value === "edit"
+    ? toPlainRecord(selectedSeasonPayload.value ?? selectedSeasonDetail.value)
+    : { season_number: seasonNumber, episodes: [] };
+  const payload: Record<string, unknown> = {
+    ...basePayload,
+    season_number: seasonNumber,
+    name: seasonForm.value.name.trim(),
+    air_date: seasonForm.value.air_date.trim(),
+    poster_path: seasonForm.value.poster_path.trim(),
+    overview: seasonForm.value.overview.trim(),
+  };
+  if (!Array.isArray(payload.episodes)) {
+    payload.episodes = [];
+  }
+
+  seasonLocalSaving.value = true;
+  seasonLocalMessage.value = "";
+  seasonDetailError.value = "";
+  seasonFormError.value = "";
+  try {
+    const resp = await updateTVSeasonLocal(tvId.value, seasonNumber, payload);
+    selectedSeasonNumber.value = seasonNumber;
+    selectedSeasonPayload.value = toPlainRecord(resp.data?.data);
+    selectedSeasonDetail.value = normalizeSeasonDetail(selectedSeasonPayload.value, seasonNumber);
+    seasonLocalSaved.value = true;
+    syncSeasonSummaryInDetail(selectedSeasonDetail.value);
+    seasonLocalMessage.value = seasonEditorMode.value === "create"
+      ? `第 ${seasonNumber} 季已新增并保存到本地数据库`
+      : `第 ${seasonNumber} 季修改已保存到本地数据库`;
+    closeSeasonEditor();
+    closeEpisodeCreator();
+  } catch (err: any) {
+    seasonFormError.value = err.message ?? "保存季信息失败";
+  } finally {
+    seasonLocalSaving.value = false;
+  }
+}
+
+async function deleteSeasonLocalData() {
+  if (!tvId.value || selectedSeasonNumber.value == null) return;
+  if (!seasonLocalSaved.value) {
+    seasonDetailError.value = "当前季还未保存到本地数据库";
+    return;
+  }
+  if (!window.confirm(`确认删除第 ${selectedSeasonNumber.value} 季的本地数据吗？`)) {
+    return;
+  }
+
+  const deletingSeasonNumber = selectedSeasonNumber.value;
+  seasonLocalSaving.value = true;
+  seasonLocalMessage.value = "";
+  seasonDetailError.value = "";
+  seasonFormError.value = "";
+  episodeFormError.value = "";
+  try {
+    await deleteTVSeasonLocal(tvId.value, deletingSeasonNumber);
+    closeSeasonEditor();
+    closeEpisodeCreator();
+    cancelEpisodeEdit();
+    await loadData({ checkRemoteDiff: false });
+    seasonLocalMessage.value = `第 ${deletingSeasonNumber} 季本地数据已删除`;
+  } catch (err: any) {
+    seasonDetailError.value = err.message ?? "删除本地季失败";
+  } finally {
+    seasonLocalSaving.value = false;
+  }
+}
+
+async function saveEpisodeCreate() {
+  if (!tvId.value || selectedSeasonNumber.value == null || !selectedSeasonDetail.value) return;
+  if (!seasonLocalSaved.value) {
+    episodeFormError.value = "请先将当前季保存到本地数据库";
+    return;
+  }
+
+  const episodeNumber = parseOptionalInt(episodeForm.value.episode_number);
+  if (episodeNumber === undefined || episodeNumber <= 0) {
+    episodeFormError.value = "集号必须是大于 0 的整数";
+    return;
+  }
+  if (selectedSeasonEpisodes.value.some((item) => item.episode_number === episodeNumber)) {
+    episodeFormError.value = "该集号已存在，请使用其他集号";
+    return;
+  }
+
+  const runtime = parseOptionalInt(episodeForm.value.runtime);
+  if (episodeForm.value.runtime.trim() && runtime === undefined) {
+    episodeFormError.value = "时长必须是数字";
+    return;
+  }
+  const voteAverage = parseOptionalFloat(episodeForm.value.vote_average);
+  if (episodeForm.value.vote_average.trim() && voteAverage === undefined) {
+    episodeFormError.value = "评分必须是数字";
+    return;
+  }
+
+  const basePayload = toPlainRecord(selectedSeasonPayload.value ?? selectedSeasonDetail.value);
+  const updatedEpisodes = [
+    ...selectedSeasonEpisodes.value.map((ep) => ({
+      ...ep,
+      id: ep.id || 0,
+      episode_number: ep.episode_number,
+    })),
+    {
+      id: 0,
+      episode_number: episodeNumber,
+      name: episodeForm.value.name.trim(),
+      air_date: episodeForm.value.air_date.trim(),
+      runtime: runtime ?? null,
+      vote_average: voteAverage ?? null,
+      overview: episodeForm.value.overview.trim(),
+      still_path: episodeForm.value.still_path.trim(),
+    },
+  ].sort((a, b) => a.episode_number - b.episode_number);
+
+  const payload: Record<string, unknown> = {
+    ...basePayload,
+    season_number: selectedSeasonNumber.value,
+    episodes: updatedEpisodes,
+  };
+
+  seasonLocalSaving.value = true;
+  seasonLocalMessage.value = "";
+  seasonDetailError.value = "";
+  episodeFormError.value = "";
+  try {
+    const resp = await updateTVSeasonLocal(tvId.value, selectedSeasonNumber.value, payload);
+    selectedSeasonPayload.value = toPlainRecord(resp.data?.data);
+    selectedSeasonDetail.value = normalizeSeasonDetail(selectedSeasonPayload.value, selectedSeasonNumber.value);
+    seasonLocalSaved.value = true;
+    syncSeasonSummaryInDetail(selectedSeasonDetail.value);
+    seasonLocalMessage.value = `第 ${episodeNumber} 集已新增到本地数据库`;
+    closeEpisodeCreator();
+  } catch (err: any) {
+    episodeFormError.value = err.message ?? "新增本集失败";
+  } finally {
+    seasonLocalSaving.value = false;
+  }
 }
 
 async function saveSeasonToLocalFromTMDB() {
@@ -350,7 +716,9 @@ async function saveSeasonToLocalFromTMDB() {
     selectedSeasonPayload.value = toPlainRecord(resp.data?.data);
     selectedSeasonDetail.value = normalizeSeasonDetail(selectedSeasonPayload.value, selectedSeasonNumber.value);
     seasonLocalSaved.value = true;
+    syncSeasonSummaryInDetail(selectedSeasonDetail.value);
     cancelEpisodeEdit();
+    closeEpisodeCreator();
     seasonLocalMessage.value = "当前季明细已保存到本地数据库";
   } catch (err: any) {
     seasonDetailError.value = err.message ?? "保存季明细失败";
@@ -405,10 +773,64 @@ async function saveEpisodeEdit() {
     selectedSeasonPayload.value = toPlainRecord(resp.data?.data);
     selectedSeasonDetail.value = normalizeSeasonDetail(selectedSeasonPayload.value, selectedSeasonNumber.value);
     seasonLocalSaved.value = true;
+    syncSeasonSummaryInDetail(selectedSeasonDetail.value);
     seasonLocalMessage.value = `第 ${targetEpisodeNumber} 集本地修改已保存`;
     cancelEpisodeEdit();
+    closeEpisodeCreator();
   } catch (err: any) {
     seasonDetailError.value = err.message ?? "保存本集修改失败";
+  } finally {
+    seasonLocalSaving.value = false;
+  }
+}
+
+async function deleteEpisode(targetEpisodeNumber: number) {
+  if (!tvId.value || selectedSeasonNumber.value == null || !selectedSeasonDetail.value) return;
+  if (!seasonLocalSaved.value) {
+    seasonDetailError.value = "请先将当前季保存到本地数据库";
+    return;
+  }
+  if (!window.confirm(`确认删除第 ${targetEpisodeNumber} 集吗？`)) {
+    return;
+  }
+
+  const basePayload = toPlainRecord(selectedSeasonPayload.value ?? selectedSeasonDetail.value);
+  const updatedEpisodes = selectedSeasonEpisodes.value
+    .filter((ep) => ep.episode_number !== targetEpisodeNumber)
+    .map((ep, idx) => ({
+      ...ep,
+      id: ep.id || idx + 1,
+      episode_number: ep.episode_number || idx + 1,
+    }));
+
+  if (updatedEpisodes.length === selectedSeasonEpisodes.value.length) {
+    seasonDetailError.value = "未找到要删除的目标集";
+    return;
+  }
+
+  const payload: Record<string, unknown> = {
+    ...basePayload,
+    season_number: selectedSeasonNumber.value,
+    episodes: updatedEpisodes,
+  };
+
+  seasonLocalSaving.value = true;
+  seasonLocalMessage.value = "";
+  seasonDetailError.value = "";
+  episodeFormError.value = "";
+  try {
+    const resp = await updateTVSeasonLocal(tvId.value, selectedSeasonNumber.value, payload);
+    selectedSeasonPayload.value = toPlainRecord(resp.data?.data);
+    selectedSeasonDetail.value = normalizeSeasonDetail(selectedSeasonPayload.value, selectedSeasonNumber.value);
+    seasonLocalSaved.value = true;
+    syncSeasonSummaryInDetail(selectedSeasonDetail.value);
+    closeEpisodeCreator();
+    if (editingEpisodeNumber.value === targetEpisodeNumber) {
+      cancelEpisodeEdit();
+    }
+    seasonLocalMessage.value = `第 ${targetEpisodeNumber} 集已从本地数据库删除`;
+  } catch (err: any) {
+    seasonDetailError.value = err.message ?? "删除本集失败";
   } finally {
     seasonLocalSaving.value = false;
   }
@@ -423,6 +845,10 @@ async function loadSeasonDetail(seasonNumber: number) {
   seasonDetailError.value = "";
   seasonLocalSaved.value = false;
   seasonLocalMessage.value = "";
+  seasonEditorVisible.value = false;
+  seasonFormError.value = "";
+  episodeCreatorVisible.value = false;
+  episodeFormError.value = "";
   cancelEpisodeEdit();
   const requestSeq = ++seasonDetailReqSeq;
   try {
@@ -1184,12 +1610,23 @@ watch(tvId, () => {
           </div>
 
           <!-- 季列表 -->
-          <div v-if="seasonOptions.length" class="mt-6">
-            <div class="mb-2 flex items-center justify-between gap-2">
-              <h3 class="text-sm font-semibold">季列表</h3>
-              <span class="text-xs text-black/50">点击季卡可切换分集明细</span>
+          <div class="mt-6">
+            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 class="text-sm font-semibold">季管理</h3>
+                <p class="mt-1 text-xs text-black/50">点击季卡切换分集明细，也可手动新增本地季</p>
+              </div>
+              <button
+                type="button"
+                class="btn-soft-xs px-3 py-1 disabled:opacity-60"
+                :disabled="seasonLocalSaving || seasonDetailLoading"
+                @click="openSeasonCreateEditor"
+              >
+                新增季
+              </button>
             </div>
-            <div class="cast-grid">
+
+            <div v-if="seasonOptions.length" class="cast-grid">
               <button
                 v-for="s in seasonOptions"
                 :key="s.id || s.season_number"
@@ -1208,19 +1645,43 @@ watch(tvId, () => {
                 <p class="truncate text-xs text-black/50">{{ s.episode_count }} 集</p>
               </button>
             </div>
+            <div
+              v-else
+              class="rounded-xl border border-white/70 bg-white/55 px-4 py-3 text-xs leading-relaxed text-black/55"
+            >
+              当前剧集还没有可展示的季数据，可以直接新增本地季。
+            </div>
           </div>
 
-          <div v-if="seasonOptions.length" class="panel-glass mt-4 rounded-xl p-4">
+          <div v-if="seasonPanelVisible" class="panel-glass mt-4 rounded-xl p-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <h3 class="text-sm font-semibold">
-                {{ selectedSeasonDetail?.name || "分集明细" }}
+                {{ seasonEditorVisible && seasonEditorMode === "create" ? "新增本地季" : (selectedSeasonDetail?.name || "季信息与分集") }}
               </h3>
               <div class="flex flex-wrap items-center gap-2">
-                <span class="text-xs text-black/55">
+                <span v-if="selectedSeasonDetail && !(seasonEditorVisible && seasonEditorMode === 'create')" class="text-xs text-black/55">
                   共 {{ selectedSeasonEpisodes.length }} 集
                 </span>
                 <button
-                  v-if="!seasonLocalSaved"
+                  v-if="selectedSeasonDetail && !(seasonEditorVisible && seasonEditorMode === 'create')"
+                  type="button"
+                  class="btn-soft-xs px-3 py-1 disabled:opacity-60"
+                  :disabled="seasonLocalSaving || seasonDetailLoading"
+                  @click="openSeasonEditEditor"
+                >
+                  编辑本季
+                </button>
+                <button
+                  v-if="selectedSeasonDetail && seasonLocalSaved && !(seasonEditorVisible && seasonEditorMode === 'create')"
+                  type="button"
+                  class="btn-soft-xs px-3 py-1 disabled:opacity-60"
+                  :disabled="seasonLocalSaving || seasonDetailLoading"
+                  @click="openEpisodeCreateEditor"
+                >
+                  手动新增集
+                </button>
+                <button
+                  v-if="selectedSeasonDetail && !seasonLocalSaved && !(seasonEditorVisible && seasonEditorMode === 'create')"
                   type="button"
                   class="btn-soft-xs px-3 py-1 disabled:opacity-60"
                   :disabled="seasonLocalSaving || seasonDetailLoading || !selectedSeasonDetail"
@@ -1229,7 +1690,7 @@ watch(tvId, () => {
                   {{ seasonLocalSaving ? "保存中..." : "保存到本地数据库" }}
                 </button>
                 <button
-                  v-else
+                  v-else-if="selectedSeasonDetail && !(seasonEditorVisible && seasonEditorMode === 'create')"
                   type="button"
                   class="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1 text-xs text-amber-700 hover:bg-amber-100 disabled:opacity-60"
                   :disabled="seasonLocalSaving || seasonDetailLoading || !selectedSeasonDetail"
@@ -1237,31 +1698,200 @@ watch(tvId, () => {
                 >
                   {{ seasonLocalSaving ? "覆盖中..." : "用 TMDB 覆盖本地" }}
                 </button>
+                <button
+                  v-if="selectedSeasonDetail && seasonLocalSaved && !(seasonEditorVisible && seasonEditorMode === 'create')"
+                  type="button"
+                  class="btn-danger-soft-xs disabled:opacity-60"
+                  :disabled="seasonLocalSaving || seasonDetailLoading"
+                  @click="deleteSeasonLocalData"
+                >
+                  {{ seasonLocalSaving ? "删除中..." : "删除本季" }}
+                </button>
                 <span v-if="seasonLocalSaved" class="text-xs text-black/50">
-                  点击每集“编辑本集”可单独保存
+                  可编辑单集，也可手动新增或删除本地季
                 </span>
               </div>
             </div>
-            <p v-if="selectedSeasonDetail?.overview" class="mt-2 text-xs leading-relaxed text-black/60">
+            <p v-if="selectedSeasonDetail?.overview && !(seasonEditorVisible && seasonEditorMode === 'create')" class="mt-2 text-xs leading-relaxed text-black/60">
               {{ selectedSeasonDetail.overview }}
             </p>
-            <p v-if="seasonLocalSaved" class="mt-1 text-xs text-green-700">
+            <p v-if="seasonLocalSaved && !(seasonEditorVisible && seasonEditorMode === 'create')" class="mt-1 text-xs text-green-700">
               当前季已保存到本地数据库
             </p>
             <p v-if="seasonLocalMessage" class="mt-1 text-xs text-green-700">
               {{ seasonLocalMessage }}
             </p>
+            <p v-if="seasonFormError" class="mt-1 text-xs text-red-600">
+              {{ seasonFormError }}
+            </p>
+            <p v-if="episodeFormError" class="mt-1 text-xs text-red-600">
+              {{ episodeFormError }}
+            </p>
+
+            <div v-if="seasonEditorVisible" class="mt-3 rounded-xl border border-white/70 bg-white/60 p-4">
+              <div class="grid gap-3 md:grid-cols-2">
+                <label class="text-xs text-black/60">
+                  季号
+                  <input
+                    v-model="seasonForm.season_number"
+                    class="field-control mt-1 w-full text-sm"
+                    :disabled="seasonEditorMode === 'edit'"
+                    placeholder="例如：1"
+                  />
+                </label>
+                <label class="text-xs text-black/60">
+                  季标题
+                  <input
+                    v-model="seasonForm.name"
+                    class="field-control mt-1 w-full text-sm"
+                    placeholder="例如：第一季"
+                  />
+                </label>
+                <label class="text-xs text-black/60">
+                  首播日期
+                  <input
+                    v-model="seasonForm.air_date"
+                    class="field-control mt-1 w-full text-sm"
+                    placeholder="YYYY-MM-DD"
+                  />
+                </label>
+                <label class="text-xs text-black/60">
+                  海报路径
+                  <input
+                    v-model="seasonForm.poster_path"
+                    class="field-control mt-1 w-full text-sm"
+                    placeholder="/poster.jpg"
+                  />
+                </label>
+                <label class="text-xs text-black/60 md:col-span-2">
+                  简介
+                  <textarea
+                    v-model="seasonForm.overview"
+                    rows="3"
+                    class="field-control mt-1 w-full text-sm"
+                    placeholder="请输入季简介"
+                  />
+                </label>
+              </div>
+              <div class="mt-3 flex items-center gap-3">
+                <button
+                  type="button"
+                  class="btn-primary disabled:opacity-60"
+                  :disabled="seasonLocalSaving"
+                  @click="saveSeasonEditor"
+                >
+                  {{ seasonLocalSaving ? "保存中..." : (seasonEditorMode === "create" ? "创建本季" : "保存本季") }}
+                </button>
+                <button
+                  type="button"
+                  class="btn-soft disabled:opacity-60"
+                  :disabled="seasonLocalSaving"
+                  @click="closeSeasonEditor"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+
+            <div
+              v-if="episodeCreatorVisible && selectedSeasonDetail && !(seasonEditorVisible && seasonEditorMode === 'create')"
+              class="mt-3 rounded-xl border border-white/70 bg-white/60 p-4"
+            >
+              <div class="grid gap-3 md:grid-cols-2">
+                <label class="text-xs text-black/60">
+                  集号
+                  <input
+                    v-model="episodeForm.episode_number"
+                    class="field-control mt-1 w-full text-sm"
+                    placeholder="例如：1"
+                  />
+                </label>
+                <label class="text-xs text-black/60">
+                  标题
+                  <input
+                    v-model="episodeForm.name"
+                    class="field-control mt-1 w-full text-sm"
+                    placeholder="请输入本集标题"
+                  />
+                </label>
+                <label class="text-xs text-black/60">
+                  播出日期
+                  <input
+                    v-model="episodeForm.air_date"
+                    class="field-control mt-1 w-full text-sm"
+                    placeholder="YYYY-MM-DD"
+                  />
+                </label>
+                <label class="text-xs text-black/60">
+                  时长
+                  <input
+                    v-model="episodeForm.runtime"
+                    class="field-control mt-1 w-full text-sm"
+                    placeholder="分钟"
+                  />
+                </label>
+                <label class="text-xs text-black/60">
+                  评分
+                  <input
+                    v-model="episodeForm.vote_average"
+                    class="field-control mt-1 w-full text-sm"
+                    placeholder="8.6"
+                  />
+                </label>
+                <label class="text-xs text-black/60">
+                  剧照路径
+                  <input
+                    v-model="episodeForm.still_path"
+                    class="field-control mt-1 w-full text-sm"
+                    placeholder="/still.jpg"
+                  />
+                </label>
+                <label class="text-xs text-black/60 md:col-span-2">
+                  简介
+                  <textarea
+                    v-model="episodeForm.overview"
+                    rows="3"
+                    class="field-control mt-1 w-full text-sm"
+                    placeholder="请输入本集简介"
+                  />
+                </label>
+              </div>
+              <div class="mt-3 flex items-center gap-3">
+                <button
+                  type="button"
+                  class="btn-primary disabled:opacity-60"
+                  :disabled="seasonLocalSaving"
+                  @click="saveEpisodeCreate"
+                >
+                  {{ seasonLocalSaving ? "保存中..." : "创建本集" }}
+                </button>
+                <button
+                  type="button"
+                  class="btn-soft disabled:opacity-60"
+                  :disabled="seasonLocalSaving"
+                  @click="closeEpisodeCreator"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
 
             <p v-if="seasonDetailLoading" class="mt-3 text-xs text-black/60">正在加载分集明细...</p>
             <p v-else-if="seasonDetailError" class="mt-3 text-xs text-red-600">{{ seasonDetailError }}</p>
             <p
-              v-else-if="!selectedSeasonEpisodes.length"
+              v-else-if="!selectedSeasonDetail && !seasonEditorVisible"
+              class="mt-3 rounded-lg border border-white/70 bg-white/55 px-3 py-2 text-xs text-black/55"
+            >
+              请选择一个已有季，或点击“新增季”创建本地季。
+            </p>
+            <p
+              v-else-if="selectedSeasonDetail && !selectedSeasonEpisodes.length && !(seasonEditorVisible && seasonEditorMode === 'create')"
               class="mt-3 rounded-lg border border-white/70 bg-white/55 px-3 py-2 text-xs text-black/55"
             >
               当前季暂无可展示的分集数据
             </p>
 
-            <div class="mt-3 space-y-3">
+            <div v-if="selectedSeasonDetail && !(seasonEditorVisible && seasonEditorMode === 'create')" class="mt-3 space-y-3">
               <article
                 v-for="ep in selectedSeasonEpisodes"
                 :key="ep.id || ep.episode_number"
@@ -1322,15 +1952,24 @@ watch(tvId, () => {
                     <p class="mt-1 text-xs leading-relaxed text-black/65">
                       {{ ep.overview || "暂无简介" }}
                     </p>
-                    <button
-                      v-if="seasonLocalSaved"
-                      type="button"
-                      class="btn-soft-xs mt-2 px-3 py-1 disabled:opacity-60"
-                      :disabled="seasonLocalSaving"
-                      @click="startEpisodeEdit(ep)"
-                    >
-                      编辑本集
-                    </button>
+                    <div v-if="seasonLocalSaved" class="mt-2 flex items-center gap-2">
+                      <button
+                        type="button"
+                        class="btn-soft-xs px-3 py-1 disabled:opacity-60"
+                        :disabled="seasonLocalSaving"
+                        @click="startEpisodeEdit(ep)"
+                      >
+                        编辑本集
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-danger-soft-xs disabled:opacity-60"
+                        :disabled="seasonLocalSaving"
+                        @click="deleteEpisode(ep.episode_number)"
+                      >
+                        {{ seasonLocalSaving ? "删除中..." : "删除本集" }}
+                      </button>
+                    </div>
                   </template>
                 </div>
               </article>

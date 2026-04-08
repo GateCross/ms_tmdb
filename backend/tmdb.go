@@ -57,6 +57,7 @@ func main() {
 			{Method: http.MethodGet, Path: "/tv/:id/season/:season_number/local", Handler: adminhandler.GetTvSeasonLocalHandler(ctx)},
 			{Method: http.MethodPost, Path: "/tv/:id/season/:season_number/local", Handler: adminhandler.SaveTvSeasonLocalHandler(ctx)},
 			{Method: http.MethodPut, Path: "/tv/:id/season/:season_number/local", Handler: adminhandler.UpdateTvSeasonLocalHandler(ctx)},
+			{Method: http.MethodDelete, Path: "/tv/:id/season/:season_number/local", Handler: adminhandler.DeleteTvSeasonLocalHandler(ctx)},
 			{Method: http.MethodPut, Path: "/person/:id", Handler: adminhandler.UpdatePersonHandler(ctx)},
 			{Method: http.MethodGet, Path: "/compare/movie/:id", Handler: adminhandler.CompareMovieRemoteHandler(ctx)},
 			{Method: http.MethodGet, Path: "/compare/tv/:id", Handler: adminhandler.CompareTvRemoteHandler(ctx)},

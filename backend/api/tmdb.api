@@ -645,6 +645,9 @@ service tmdb-api {
 	@handler UpdateTvSeasonLocal
 	put /tv/:id/season/:season_number/local (AdminTvSeasonLocalUpdateReq) returns (AdminTvSeasonLocalResp)
 
+	@handler DeleteTvSeasonLocal
+	delete /tv/:id/season/:season_number/local (AdminTvSeasonLocalReq) returns (AdminTvSeasonLocalResp)
+
 	@handler UpdatePerson
 	put /person/:id (AdminUpdateReq)
 

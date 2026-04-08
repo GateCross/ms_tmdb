@@ -65,3 +65,13 @@ func (l *TvSeasonLocalLogic) UpdateLocalSeason(seriesID, seasonNumber int, paylo
 	}
 	return l.svcCtx.ProxyService.UpdateLocalTvSeason(seriesID, seasonNumber, payload)
 }
+
+func (l *TvSeasonLocalLogic) DeleteLocalSeason(seriesID, seasonNumber int) error {
+	if seriesID <= 0 {
+		return errors.New("无效剧集 ID")
+	}
+	if seasonNumber < 0 {
+		return errors.New("无效季号")
+	}
+	return l.svcCtx.ProxyService.DeleteLocalTvSeason(seriesID, seasonNumber)
+}

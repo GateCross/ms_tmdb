@@ -309,6 +309,10 @@ export function updateTVSeasonLocal(id: number, seasonNumber: number, payload: R
   return http.put<AdminTVSeasonLocalResp>(`/api/admin/tv/${id}/season/${seasonNumber}/local`, { payload });
 }
 
+export function deleteTVSeasonLocal(id: number, seasonNumber: number) {
+  return http.delete<AdminTVSeasonLocalResp>(`/api/admin/tv/${id}/season/${seasonNumber}/local`);
+}
+
 export function listPeople(page = 1, pageSize = 20) {
   return http.get("/api/admin/people", { params: { page, page_size: pageSize } });
 }
