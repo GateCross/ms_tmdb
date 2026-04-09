@@ -130,33 +130,33 @@ func (l *SyncMovieLogic) SyncMovie(req *types.AdminSyncReq) (*types.AdminSyncRes
 
 	now := time.Now()
 	isModified := len(remainingPatch) > 0
+	updates := map[string]interface{}{
+		"title":             mapString(finalData, "title"),
+		"original_title":    mapString(finalData, "original_title"),
+		"overview":          mapString(finalData, "overview"),
+		"release_date":      mapString(finalData, "release_date"),
+		"popularity":        mapFloat64(finalData, "popularity"),
+		"vote_average":      mapFloat64(finalData, "vote_average"),
+		"vote_count":        mapInt(finalData, "vote_count"),
+		"poster_path":       mapString(finalData, "poster_path"),
+		"backdrop_path":     mapString(finalData, "backdrop_path"),
+		"original_language": mapString(finalData, "original_language"),
+		"adult":             mapBool(finalData, "adult"),
+		"status":            mapString(finalData, "status"),
+		"runtime":           mapInt(finalData, "runtime"),
+		"budget":            mapInt64(finalData, "budget"),
+		"revenue":           mapInt64(finalData, "revenue"),
+		"tagline":           mapString(finalData, "tagline"),
+		"homepage":          mapString(finalData, "homepage"),
+		"imdb_id":           mapString(finalData, "imdb_id"),
+		"tmdb_data":         tmdbData,
+		"local_data":        localData,
+		"is_modified":       isModified,
+		"sync_tmdb_id":      remoteTmdbID,
+		"last_synced_at":    &now,
+	}
 
 	if exists {
-		updates := map[string]interface{}{
-			"title":             mapString(finalData, "title"),
-			"original_title":    mapString(finalData, "original_title"),
-			"overview":          mapString(finalData, "overview"),
-			"release_date":      mapString(finalData, "release_date"),
-			"popularity":        mapFloat64(finalData, "popularity"),
-			"vote_average":      mapFloat64(finalData, "vote_average"),
-			"vote_count":        mapInt(finalData, "vote_count"),
-			"poster_path":       mapString(finalData, "poster_path"),
-			"backdrop_path":     mapString(finalData, "backdrop_path"),
-			"original_language": mapString(finalData, "original_language"),
-			"adult":             mapBool(finalData, "adult"),
-			"status":            mapString(finalData, "status"),
-			"runtime":           mapInt(finalData, "runtime"),
-			"budget":            mapInt64(finalData, "budget"),
-			"revenue":           mapInt64(finalData, "revenue"),
-			"tagline":           mapString(finalData, "tagline"),
-			"homepage":          mapString(finalData, "homepage"),
-			"imdb_id":           mapString(finalData, "imdb_id"),
-			"tmdb_data":         tmdbData,
-			"local_data":        localData,
-			"is_modified":       isModified,
-			"sync_tmdb_id":      remoteTmdbID,
-			"last_synced_at":    &now,
-		}
 		if err := l.svcCtx.DB.Model(&model.Movie{}).Where("tmdb_id = ?", req.Id).Updates(updates).Error; err != nil {
 			return nil, err
 		}
@@ -188,7 +188,12 @@ func (l *SyncMovieLogic) SyncMovie(req *types.AdminSyncReq) (*types.AdminSyncRes
 			LastSyncedAt:     &now,
 		}
 		if err := l.svcCtx.DB.Create(&record).Error; err != nil {
-			return nil, err
+			if !isUniqueViolation(err) {
+				return nil, err
+			}
+			if err := l.svcCtx.DB.Model(&model.Movie{}).Where("tmdb_id = ?", req.Id).Updates(updates).Error; err != nil {
+				return nil, err
+			}
 		}
 	}
 

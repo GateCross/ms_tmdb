@@ -130,33 +130,33 @@ func (l *SyncTvSeriesLogic) SyncTvSeries(req *types.AdminSyncReq) (*types.AdminS
 
 	now := time.Now()
 	isModified := len(remainingPatch) > 0
+	updates := map[string]interface{}{
+		"name":               mapString(finalData, "name"),
+		"original_name":      mapString(finalData, "original_name"),
+		"overview":           mapString(finalData, "overview"),
+		"first_air_date":     mapString(finalData, "first_air_date"),
+		"last_air_date":      mapString(finalData, "last_air_date"),
+		"popularity":         mapFloat64(finalData, "popularity"),
+		"vote_average":       mapFloat64(finalData, "vote_average"),
+		"vote_count":         mapInt(finalData, "vote_count"),
+		"poster_path":        mapString(finalData, "poster_path"),
+		"backdrop_path":      mapString(finalData, "backdrop_path"),
+		"original_language":  mapString(finalData, "original_language"),
+		"status":             mapString(finalData, "status"),
+		"type":               mapString(finalData, "type"),
+		"number_of_seasons":  mapInt(finalData, "number_of_seasons"),
+		"number_of_episodes": mapInt(finalData, "number_of_episodes"),
+		"homepage":           mapString(finalData, "homepage"),
+		"in_production":      mapBool(finalData, "in_production"),
+		"tagline":            mapString(finalData, "tagline"),
+		"tmdb_data":          tmdbData,
+		"local_data":         localData,
+		"is_modified":        isModified,
+		"sync_tmdb_id":       remoteTmdbID,
+		"last_synced_at":     &now,
+	}
 
 	if exists {
-		updates := map[string]interface{}{
-			"name":               mapString(finalData, "name"),
-			"original_name":      mapString(finalData, "original_name"),
-			"overview":           mapString(finalData, "overview"),
-			"first_air_date":     mapString(finalData, "first_air_date"),
-			"last_air_date":      mapString(finalData, "last_air_date"),
-			"popularity":         mapFloat64(finalData, "popularity"),
-			"vote_average":       mapFloat64(finalData, "vote_average"),
-			"vote_count":         mapInt(finalData, "vote_count"),
-			"poster_path":        mapString(finalData, "poster_path"),
-			"backdrop_path":      mapString(finalData, "backdrop_path"),
-			"original_language":  mapString(finalData, "original_language"),
-			"status":             mapString(finalData, "status"),
-			"type":               mapString(finalData, "type"),
-			"number_of_seasons":  mapInt(finalData, "number_of_seasons"),
-			"number_of_episodes": mapInt(finalData, "number_of_episodes"),
-			"homepage":           mapString(finalData, "homepage"),
-			"in_production":      mapBool(finalData, "in_production"),
-			"tagline":            mapString(finalData, "tagline"),
-			"tmdb_data":          tmdbData,
-			"local_data":         localData,
-			"is_modified":        isModified,
-			"sync_tmdb_id":       remoteTmdbID,
-			"last_synced_at":     &now,
-		}
 		if err := l.svcCtx.DB.Model(&model.TVSeries{}).Where("tmdb_id = ?", req.Id).Updates(updates).Error; err != nil {
 			return nil, err
 		}
@@ -188,7 +188,12 @@ func (l *SyncTvSeriesLogic) SyncTvSeries(req *types.AdminSyncReq) (*types.AdminS
 			LastSyncedAt:     &now,
 		}
 		if err := l.svcCtx.DB.Create(&record).Error; err != nil {
-			return nil, err
+			if !isUniqueViolation(err) {
+				return nil, err
+			}
+			if err := l.svcCtx.DB.Model(&model.TVSeries{}).Where("tmdb_id = ?", req.Id).Updates(updates).Error; err != nil {
+				return nil, err
+			}
 		}
 	}
 

@@ -218,6 +218,14 @@ func effectiveSyncTmdbID(syncTmdbID int, currentTmdbID int) int {
 	return 0
 }
 
+func isUniqueViolation(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "duplicate key value violates unique constraint") || strings.Contains(msg, "sqlstate 23505")
+}
+
 func sanitizeLocalPatch(localPatch map[string]interface{}, remote map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{}, len(localPatch))
 	for key, value := range localPatch {
