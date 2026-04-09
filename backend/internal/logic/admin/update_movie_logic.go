@@ -27,16 +27,28 @@ func NewUpdateMovieLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Updat
 }
 
 func (l *UpdateMovieLogic) UpdateMovie(req *types.AdminUpdateReq) error {
-	if req.Id <= 0 {
+	if req.Id == 0 {
 		return errors.New("无效电影 ID")
 	}
 
 	var movie model.Movie
 	if err := l.svcCtx.DB.Where("tmdb_id = ?", req.Id).First(&movie).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("电影未同步到本地，请先打开详情页")
+			if req.Id < 0 {
+				return errors.New("本地电影不存在或已删除，请重新创建")
+			}
+			if _, syncErr := l.svcCtx.ProxyService.GetMovieDetail(req.Id, nil); syncErr != nil {
+				return syncErr
+			}
+			if retryErr := l.svcCtx.DB.Where("tmdb_id = ?", req.Id).First(&movie).Error; retryErr != nil {
+				if errors.Is(retryErr, gorm.ErrRecordNotFound) {
+					return errors.New("电影未同步到本地，请刷新详情页后重试")
+				}
+				return retryErr
+			}
+		} else {
+			return err
 		}
-		return err
 	}
 
 	patch := make(map[string]interface{})
@@ -153,7 +165,11 @@ func (l *UpdateMovieLogic) UpdateMovie(req *types.AdminUpdateReq) error {
 	if err != nil {
 		return err
 	}
-	localData, err := toRawJSON(patch)
+	localPatch, err := rawJSONToMap(movie.LocalData)
+	if err != nil {
+		return err
+	}
+	localData, err := toRawJSON(mergeMap(localPatch, patch))
 	if err != nil {
 		return err
 	}

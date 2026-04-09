@@ -8,9 +8,13 @@ const http = axios.create({
 http.interceptors.response.use(
   (response) => response,
   (error) => {
+    const data = error?.response?.data;
     const msg =
-      error?.response?.data?.status_message ||
-      error?.response?.data?.error ||
+      (typeof data === "string" ? data : "") ||
+      data?.status_message ||
+      data?.error ||
+      data?.message ||
+      data?.msg ||
       error?.message ||
       "请求失败";
     return Promise.reject(new Error(msg));
