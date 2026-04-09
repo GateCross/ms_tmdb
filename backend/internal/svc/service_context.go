@@ -29,6 +29,10 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	if err := model.AutoMigrate(db); err != nil {
 		logx.Must(err)
 	}
+	// 启动时清理历史软删除残留数据（前端删除已改为物理删除）
+	if err := model.CleanupSoftDeletedRows(db); err != nil {
+		logx.Must(err)
+	}
 	if err := model.EnsureQueryIndexes(db); err != nil {
 		logx.Must(err)
 	}

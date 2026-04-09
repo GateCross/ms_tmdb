@@ -30,11 +30,11 @@ func (l *DeleteTvSeriesLogic) DeleteTvSeries(req *types.PathIdReq) error {
 		return errors.New("无效剧集 ID")
 	}
 
-	if err := l.svcCtx.DB.Where("tmdb_id = ?", req.Id).Delete(&model.TVLangSnapshot{}).Error; err != nil {
+	if err := l.svcCtx.DB.Unscoped().Where("tmdb_id = ?", req.Id).Delete(&model.TVLangSnapshot{}).Error; err != nil {
 		return err
 	}
 
-	result := l.svcCtx.DB.Where("tmdb_id = ?", req.Id).Delete(&model.TVSeries{})
+	result := l.svcCtx.DB.Unscoped().Where("tmdb_id = ?", req.Id).Delete(&model.TVSeries{})
 	if result.Error != nil {
 		return result.Error
 	}

@@ -400,6 +400,16 @@ func (s *ProxyService) upsertTVSeries(tmdbID int, syncTmdbID int, data json.RawM
 	}
 
 	now := time.Now()
+	updates := map[string]interface{}{
+		"name":           parsed.Name,
+		"overview":       parsed.Overview,
+		"popularity":     parsed.Popularity,
+		"vote_average":   parsed.VoteAverage,
+		"poster_path":    parsed.PosterPath,
+		"tmdb_data":      model.RawJSON(data),
+		"last_synced_at": &now,
+		"sync_tmdb_id":   resolveSyncTmdbID(syncTmdbID, tmdbID),
+	}
 	result := s.DB.Where("tmdb_id = ?", tmdbID).First(&model.TVSeries{})
 	if result.Error == gorm.ErrRecordNotFound {
 		if err := s.DB.Create(&model.TVSeries{
@@ -412,16 +422,28 @@ func (s *ProxyService) upsertTVSeries(tmdbID int, syncTmdbID int, data json.RawM
 			if !isUniqueViolation(err) {
 				return err
 			}
+			restoredUpdates := make(map[string]interface{}, len(updates)+1)
+			for key, value := range updates {
+				restoredUpdates[key] = value
+			}
+			restoredUpdates["deleted_at"] = nil
+			restoreResult := s.DB.Unscoped().
+				Model(&model.TVSeries{}).
+				Where("tmdb_id = ?", tmdbID).
+				Updates(restoredUpdates)
+			if restoreResult.Error != nil {
+				return restoreResult.Error
+			}
+			if restoreResult.RowsAffected == 0 {
+				return gorm.ErrRecordNotFound
+			}
+			return nil
 		}
 	} else if result.Error != nil {
 		return result.Error
 	}
 
-	if err := s.DB.Model(&model.TVSeries{}).Where("tmdb_id = ?", tmdbID).Updates(map[string]interface{}{
-		"name": parsed.Name, "overview": parsed.Overview,
-		"popularity": parsed.Popularity, "vote_average": parsed.VoteAverage,
-		"poster_path": parsed.PosterPath, "tmdb_data": model.RawJSON(data), "last_synced_at": &now, "sync_tmdb_id": resolveSyncTmdbID(syncTmdbID, tmdbID),
-	}).Error; err != nil {
+	if err := s.DB.Model(&model.TVSeries{}).Where("tmdb_id = ?", tmdbID).Updates(updates).Error; err != nil {
 		return err
 	}
 
@@ -851,8 +873,16 @@ func (s *ProxyService) ensureTVSeriesExists(seriesID int, opts *tmdbclient.Reque
 		return err
 	}
 
-	_, err := s.GetTvSeriesDetail(seriesID, opts)
-	return err
+	if _, err := s.GetTvSeriesDetail(seriesID, opts); err != nil {
+		return err
+	}
+	if err := s.DB.Where("tmdb_id = ?", seriesID).First(&tv).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("剧集未同步到本地，请刷新详情页后重试")
+		}
+		return err
+	}
+	return nil
 }
 
 func (s *ProxyService) saveTvSeasonPayload(seriesID, seasonNumber int, payload map[string]interface{}) error {

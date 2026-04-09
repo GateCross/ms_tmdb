@@ -191,8 +191,20 @@ func (l *SyncTvSeriesLogic) SyncTvSeries(req *types.AdminSyncReq) (*types.AdminS
 			if !isUniqueViolation(err) {
 				return nil, err
 			}
-			if err := l.svcCtx.DB.Model(&model.TVSeries{}).Where("tmdb_id = ?", req.Id).Updates(updates).Error; err != nil {
-				return nil, err
+			restoredUpdates := make(map[string]interface{}, len(updates)+1)
+			for key, value := range updates {
+				restoredUpdates[key] = value
+			}
+			restoredUpdates["deleted_at"] = nil
+			restoreResult := l.svcCtx.DB.Unscoped().
+				Model(&model.TVSeries{}).
+				Where("tmdb_id = ?", req.Id).
+				Updates(restoredUpdates)
+			if restoreResult.Error != nil {
+				return nil, restoreResult.Error
+			}
+			if restoreResult.RowsAffected == 0 {
+				return nil, gorm.ErrRecordNotFound
 			}
 		}
 	}

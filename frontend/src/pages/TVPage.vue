@@ -130,8 +130,16 @@ const seasonFormError = ref("");
 const episodeCreatorVisible = ref(false);
 const episodeFormError = ref("");
 const editingEpisodeNumber = ref<number | null>(null);
-const editingEpisodeName = ref("");
-const editingEpisodeOverview = ref("");
+const editingEpisodeInitialForm = ref<TVEpisodeForm | null>(null);
+const episodeEditableFields: Array<keyof TVEpisodeForm> = [
+  "episode_number",
+  "name",
+  "air_date",
+  "runtime",
+  "vote_average",
+  "still_path",
+  "overview",
+];
 const genreOptions = ref<GenreOption[]>([]);
 const genreKeyword = ref("");
 const filteredGenreOptions = computed(() => {
@@ -188,6 +196,14 @@ const seasonPanelVisible = computed(() => {
   return seasonOptions.value.length > 0 || seasonEditorVisible.value || !!selectedSeasonDetail.value;
 });
 const selectedSeasonEpisodes = computed<TVEpisodeItem[]>(() => selectedSeasonDetail.value?.episodes ?? []);
+const episodeEditChangedCount = computed(() => {
+  if (editingEpisodeNumber.value == null || !editingEpisodeInitialForm.value) {
+    return 0;
+  }
+  return episodeEditableFields.reduce((count, field) => {
+    return count + (isEpisodeFieldChanged(field) ? 1 : 0);
+  }, 0);
+});
 const hasRemoteOnlyDiff = computed(() => (remoteDiffNotice.value?.remoteFields.length ?? 0) > 0);
 const hasLocalOverrideDiff = computed(() => (remoteDiffNotice.value?.localOverrideFields.length ?? 0) > 0);
 const shouldShowSyncPanel = computed(() => {
@@ -415,6 +431,24 @@ function toPlainRecord(raw: unknown): Record<string, unknown> {
   }
 }
 
+function normalizeEpisodeFormValue(raw: string): string {
+  return String(raw ?? "").trim();
+}
+
+function isEpisodeFieldChanged(field: keyof TVEpisodeForm): boolean {
+  if (editingEpisodeNumber.value == null || !editingEpisodeInitialForm.value) {
+    return false;
+  }
+  return normalizeEpisodeFormValue(episodeForm.value[field]) !== normalizeEpisodeFormValue(editingEpisodeInitialForm.value[field]);
+}
+
+function episodeEditFieldClass(field: keyof TVEpisodeForm): string {
+  if (isEpisodeFieldChanged(field)) {
+    return "rounded-lg border border-amber-300 bg-amber-50/80 p-2";
+  }
+  return "rounded-lg border border-transparent bg-white/65 p-2";
+}
+
 function resetSeasonLocalState() {
   selectedSeasonPayload.value = null;
   seasonLocalSaved.value = false;
@@ -428,8 +462,7 @@ function resetSeasonLocalState() {
   episodeFormError.value = "";
   resetEpisodeForm();
   editingEpisodeNumber.value = null;
-  editingEpisodeName.value = "";
-  editingEpisodeOverview.value = "";
+  editingEpisodeInitialForm.value = null;
 }
 
 function closeTmdbRiskModal(confirmed: boolean) {
@@ -453,9 +486,18 @@ function askTmdbRiskConfirm(currentId: number, nextId: number): Promise<boolean>
 }
 
 function startEpisodeEdit(ep: TVEpisodeItem) {
+  const formData: TVEpisodeForm = {
+    episode_number: String(ep.episode_number || ""),
+    name: ep.name ?? "",
+    air_date: ep.air_date ?? "",
+    runtime: ep.runtime == null || !Number.isFinite(ep.runtime) ? "" : String(ep.runtime),
+    vote_average: ep.vote_average == null || !Number.isFinite(ep.vote_average) ? "" : String(ep.vote_average),
+    still_path: ep.still_path ?? "",
+    overview: ep.overview ?? "",
+  };
   editingEpisodeNumber.value = ep.episode_number;
-  editingEpisodeName.value = ep.name ?? "";
-  editingEpisodeOverview.value = ep.overview ?? "";
+  resetEpisodeForm(formData);
+  editingEpisodeInitialForm.value = { ...formData };
   episodeCreatorVisible.value = false;
   episodeFormError.value = "";
   seasonEditorVisible.value = false;
@@ -466,8 +508,8 @@ function startEpisodeEdit(ep: TVEpisodeItem) {
 
 function cancelEpisodeEdit() {
   editingEpisodeNumber.value = null;
-  editingEpisodeName.value = "";
-  editingEpisodeOverview.value = "";
+  editingEpisodeInitialForm.value = null;
+  resetEpisodeForm();
 }
 
 function openSeasonCreateEditor() {
@@ -730,12 +772,40 @@ async function saveSeasonToLocalFromTMDB() {
 async function saveEpisodeEdit() {
   if (!tvId.value || selectedSeasonNumber.value == null || !selectedSeasonDetail.value) return;
   if (editingEpisodeNumber.value == null) {
-    seasonDetailError.value = "请先选择要编辑的集";
+    episodeFormError.value = "请先选择要编辑的集";
+    return;
+  }
+  if (!seasonLocalSaved.value) {
+    episodeFormError.value = "请先将当前季保存到本地数据库";
+    return;
+  }
+
+  const targetEpisodeNumber = editingEpisodeNumber.value;
+  const episodeNumber = parseOptionalInt(episodeForm.value.episode_number);
+  if (episodeNumber === undefined || episodeNumber <= 0) {
+    episodeFormError.value = "集号必须是大于 0 的整数";
+    return;
+  }
+  if (
+    episodeNumber !== targetEpisodeNumber
+    && selectedSeasonEpisodes.value.some((item) => item.episode_number === episodeNumber)
+  ) {
+    episodeFormError.value = "该集号已存在，请使用其他集号";
+    return;
+  }
+
+  const runtime = parseOptionalInt(episodeForm.value.runtime);
+  if (episodeForm.value.runtime.trim() && runtime === undefined) {
+    episodeFormError.value = "时长必须是数字";
+    return;
+  }
+  const voteAverage = parseOptionalFloat(episodeForm.value.vote_average);
+  if (episodeForm.value.vote_average.trim() && voteAverage === undefined) {
+    episodeFormError.value = "评分必须是数字";
     return;
   }
 
   const basePayload = toPlainRecord(selectedSeasonPayload.value ?? selectedSeasonDetail.value);
-  const targetEpisodeNumber = editingEpisodeNumber.value;
   let updated = false;
   const updatedEpisodes = selectedSeasonEpisodes.value.map((ep, idx) => {
     if (ep.episode_number !== targetEpisodeNumber) {
@@ -749,13 +819,17 @@ async function saveEpisodeEdit() {
     return {
       ...ep,
       id: ep.id || idx + 1,
-      episode_number: ep.episode_number || idx + 1,
-      name: editingEpisodeName.value.trim(),
-      overview: editingEpisodeOverview.value.trim(),
+      episode_number: episodeNumber,
+      name: episodeForm.value.name.trim(),
+      air_date: episodeForm.value.air_date.trim(),
+      runtime: runtime ?? null,
+      vote_average: voteAverage ?? null,
+      still_path: episodeForm.value.still_path.trim(),
+      overview: episodeForm.value.overview.trim(),
     };
   });
   if (!updated) {
-    seasonDetailError.value = "未找到要编辑的目标集";
+    episodeFormError.value = "未找到要编辑的目标集";
     return;
   }
 
@@ -768,17 +842,18 @@ async function saveEpisodeEdit() {
   seasonLocalSaving.value = true;
   seasonLocalMessage.value = "";
   seasonDetailError.value = "";
+  episodeFormError.value = "";
   try {
     const resp = await updateTVSeasonLocal(tvId.value, selectedSeasonNumber.value, payload);
     selectedSeasonPayload.value = toPlainRecord(resp.data?.data);
     selectedSeasonDetail.value = normalizeSeasonDetail(selectedSeasonPayload.value, selectedSeasonNumber.value);
     seasonLocalSaved.value = true;
     syncSeasonSummaryInDetail(selectedSeasonDetail.value);
-    seasonLocalMessage.value = `第 ${targetEpisodeNumber} 集本地修改已保存`;
+    seasonLocalMessage.value = `第 ${episodeNumber} 集本地修改已保存`;
     cancelEpisodeEdit();
     closeEpisodeCreator();
   } catch (err: any) {
-    seasonDetailError.value = err.message ?? "保存本集修改失败";
+    episodeFormError.value = err.message ?? "保存本集修改失败";
   } finally {
     seasonLocalSaving.value = false;
   }
@@ -1911,23 +1986,68 @@ watch(tvId, () => {
                     <span class="badge">⭐ {{ formatEpisodeRating(ep.vote_average) }}</span>
                   </div>
                   <template v-if="seasonLocalSaved && editingEpisodeNumber === ep.episode_number">
-                    <label class="mt-2 block text-xs text-black/60">
-                      标题
-                      <input
-                        v-model="editingEpisodeName"
-                        class="field-control mt-1 w-full px-2.5 py-1.5 text-sm"
-                        placeholder="请输入本集标题"
-                      />
-                    </label>
-                    <label class="mt-2 block text-xs text-black/60">
-                      简介
-                      <textarea
-                        v-model="editingEpisodeOverview"
-                        rows="3"
-                        class="field-control mt-1 w-full px-2.5 py-1.5 text-sm"
-                        placeholder="请输入本集简介"
-                      />
-                    </label>
+                    <p class="mt-2 text-xs" :class="episodeEditChangedCount > 0 ? 'text-amber-700' : 'text-black/55'">
+                      {{ episodeEditChangedCount > 0 ? `已修改 ${episodeEditChangedCount} 个字段` : "尚未修改字段" }}
+                    </p>
+                    <div class="mt-2 grid gap-2 md:grid-cols-3">
+                      <label :class="['text-xs text-black/60', episodeEditFieldClass('episode_number')]">
+                        集号
+                        <input
+                          v-model="episodeForm.episode_number"
+                          class="field-control mt-1 w-full px-2.5 py-1.5 text-sm"
+                          placeholder="例如：1"
+                        />
+                      </label>
+                      <label :class="['text-xs text-black/60', episodeEditFieldClass('name')]">
+                        标题
+                        <input
+                          v-model="episodeForm.name"
+                          class="field-control mt-1 w-full px-2.5 py-1.5 text-sm"
+                          placeholder="请输入本集标题"
+                        />
+                      </label>
+                      <label :class="['text-xs text-black/60', episodeEditFieldClass('air_date')]">
+                        播出日期
+                        <input
+                          v-model="episodeForm.air_date"
+                          class="field-control mt-1 w-full px-2.5 py-1.5 text-sm"
+                          placeholder="YYYY-MM-DD"
+                        />
+                      </label>
+                      <label :class="['text-xs text-black/60', episodeEditFieldClass('runtime')]">
+                        时长
+                        <input
+                          v-model="episodeForm.runtime"
+                          class="field-control mt-1 w-full px-2.5 py-1.5 text-sm"
+                          placeholder="分钟"
+                        />
+                      </label>
+                      <label :class="['text-xs text-black/60', episodeEditFieldClass('vote_average')]">
+                        评分
+                        <input
+                          v-model="episodeForm.vote_average"
+                          class="field-control mt-1 w-full px-2.5 py-1.5 text-sm"
+                          placeholder="8.6"
+                        />
+                      </label>
+                      <label :class="['text-xs text-black/60', episodeEditFieldClass('still_path')]">
+                        剧照路径
+                        <input
+                          v-model="episodeForm.still_path"
+                          class="field-control mt-1 w-full px-2.5 py-1.5 text-sm"
+                          placeholder="/still.jpg"
+                        />
+                      </label>
+                      <label :class="['text-xs text-black/60 md:col-span-3', episodeEditFieldClass('overview')]">
+                        简介
+                        <textarea
+                          v-model="episodeForm.overview"
+                          rows="3"
+                          class="field-control mt-1 w-full px-2.5 py-1.5 text-sm"
+                          placeholder="请输入本集简介"
+                        />
+                      </label>
+                    </div>
                     <div class="mt-2 flex items-center gap-2">
                       <button
                         type="button"
@@ -1935,7 +2055,7 @@ watch(tvId, () => {
                         :disabled="seasonLocalSaving"
                         @click="saveEpisodeEdit"
                       >
-                        {{ seasonLocalSaving ? "保存中..." : "保存本集" }}
+                        {{ seasonLocalSaving ? "保存中..." : "保存本集修改" }}
                       </button>
                       <button
                         type="button"
