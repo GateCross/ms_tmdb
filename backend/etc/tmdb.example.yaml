@@ -1,6 +1,8 @@
 Name: ms-tmdb-api
 Host: 0.0.0.0
 Port: 8888
+# 允许保存较大的季明细 payload（默认 1MB）
+MaxBytes: 8388608
 
 # PostgreSQL 配置
 Postgres:

@@ -1,6 +1,9 @@
 package admin
 
 import (
+	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 
 	"ms_tmdb/internal/logic/admin"
@@ -8,12 +11,6 @@ import (
 
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
-
-type adminTvSeasonLocalUpdateReq struct {
-	Id           int                    `path:"id"`
-	SeasonNumber int                    `path:"season_number"`
-	Payload      map[string]interface{} `json:"payload"`
-}
 
 func UpdateTvSeasonLocalHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -23,8 +20,8 @@ func UpdateTvSeasonLocalHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		body := make(map[string]interface{})
-		if err := httpx.ParseJsonBody(r, &body); err != nil {
+		body, err := parseTvSeasonLocalBody(r)
+		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
@@ -44,6 +41,23 @@ func UpdateTvSeasonLocalHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			"message": "季明细本地修改已保存",
 		})
 	}
+}
+
+func parseTvSeasonLocalBody(r *http.Request) (map[string]interface{}, error) {
+	result := make(map[string]interface{})
+	if r.ContentLength == 0 || r.Body == nil {
+		return result, nil
+	}
+
+	decoder := json.NewDecoder(io.LimitReader(r.Body, 8<<20))
+	decoder.UseNumber()
+	if err := decoder.Decode(&result); err != nil {
+		if errors.Is(err, io.EOF) {
+			return map[string]interface{}{}, nil
+		}
+		return nil, err
+	}
+	return result, nil
 }
 
 func resolveTvSeasonLocalPayload(body map[string]interface{}) map[string]interface{} {

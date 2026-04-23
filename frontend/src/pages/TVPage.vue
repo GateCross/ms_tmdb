@@ -33,6 +33,10 @@ const {
   tmdbRiskCurrentId,
   tmdbRiskNextId,
   deleteConfirmModalVisible,
+  localDeleteConfirmModalVisible,
+  localDeleteConfirmTitle,
+  localDeleteConfirmMessage,
+  localDeleteConfirmActionText,
   selectedSeasonNumber,
   selectedSeasonDetail,
   seasonDetailLoading,
@@ -70,6 +74,7 @@ const {
   toggleLocalOverrideDiffDetails,
   closeTmdbRiskModal,
   closeDeleteConfirmModal,
+  closeLocalDeleteConfirmModal,
   checkRemoteDiffAndPrompt,
   keepLocalData,
   handleSynced,
@@ -317,6 +322,27 @@ const {
         <button class="btn-soft" :disabled="deleting" @click="closeDeleteConfirmModal">取消</button>
         <button class="btn-danger-soft" :disabled="deleting" @click="confirmDeleteCurrentTV">
           {{ deleting ? "删除中..." : "确认删除" }}
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <div
+    v-if="localDeleteConfirmModalVisible"
+    class="fixed inset-0 z-[1300] flex items-center justify-center bg-black/45 p-4"
+    @click.self="closeLocalDeleteConfirmModal(false)"
+  >
+    <section class="panel-glass w-full max-w-md rounded-2xl p-5">
+      <h3 class="text-base font-semibold text-red-700">{{ localDeleteConfirmTitle || "删除确认" }}</h3>
+      <p class="mt-2 text-sm text-black/75">
+        {{ localDeleteConfirmMessage }}
+      </p>
+      <p class="mt-2 text-xs text-red-700">删除后不可恢复。</p>
+
+      <div class="mt-4 flex items-center justify-end gap-2">
+        <button class="btn-soft" @click="closeLocalDeleteConfirmModal(false)">取消</button>
+        <button class="btn-danger-soft" @click="closeLocalDeleteConfirmModal(true)">
+          {{ localDeleteConfirmActionText }}
         </button>
       </div>
     </section>

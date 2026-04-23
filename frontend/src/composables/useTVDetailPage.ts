@@ -42,6 +42,11 @@ export function useTVDetailPage() {
   const tmdbRiskNextId = ref<number | null>(null);
   let tmdbRiskConfirmResolver: ((confirmed: boolean) => void) | null = null;
   const deleteConfirmModalVisible = ref(false);
+  const localDeleteConfirmModalVisible = ref(false);
+  const localDeleteConfirmTitle = ref("");
+  const localDeleteConfirmMessage = ref("");
+  const localDeleteConfirmActionText = ref("确认删除");
+  let localDeleteConfirmResolver: ((confirmed: boolean) => void) | null = null;
   const selectedSeasonNumber = ref<number | null>(null);
   const selectedSeasonDetail = ref<TVSeasonDetail | null>(null);
   const selectedSeasonPayload = ref<Record<string, unknown> | null>(null);
@@ -503,6 +508,36 @@ export function useTVDetailPage() {
     });
   }
 
+  function closeLocalDeleteConfirmModal(confirmed: boolean) {
+    localDeleteConfirmModalVisible.value = false;
+    const resolver = localDeleteConfirmResolver;
+    localDeleteConfirmResolver = null;
+    localDeleteConfirmTitle.value = "";
+    localDeleteConfirmMessage.value = "";
+    localDeleteConfirmActionText.value = "确认删除";
+    if (resolver) {
+      resolver(confirmed);
+    }
+  }
+
+  function askLocalDeleteConfirm(params: {
+    title: string;
+    message: string;
+    actionText?: string;
+  }): Promise<boolean> {
+    if (localDeleteConfirmResolver) {
+      localDeleteConfirmResolver(false);
+      localDeleteConfirmResolver = null;
+    }
+    localDeleteConfirmTitle.value = params.title;
+    localDeleteConfirmMessage.value = params.message;
+    localDeleteConfirmActionText.value = params.actionText?.trim() || "确认删除";
+    localDeleteConfirmModalVisible.value = true;
+    return new Promise((resolve) => {
+      localDeleteConfirmResolver = resolve;
+    });
+  }
+
   function startEpisodeEdit(ep: TVEpisodeItem) {
     const formData: TVEpisodeForm = {
       episode_number: String(ep.episode_number || ""),
@@ -671,7 +706,11 @@ export function useTVDetailPage() {
       seasonDetailError.value = "当前季还未保存到本地数据库";
       return;
     }
-    if (!window.confirm(`确认删除第 ${selectedSeasonNumber.value} 季的本地数据吗？`)) {
+    const confirmed = await askLocalDeleteConfirm({
+      title: "删除本季确认",
+      message: `确认删除第 ${selectedSeasonNumber.value} 季的本地数据吗？`,
+    });
+    if (!confirmed) {
       return;
     }
 
@@ -889,7 +928,11 @@ export function useTVDetailPage() {
       seasonDetailError.value = "请先将当前季保存到本地数据库";
       return;
     }
-    if (!window.confirm(`确认删除第 ${targetEpisodeNumber} 集吗？`)) {
+    const confirmed = await askLocalDeleteConfirm({
+      title: "删除本集确认",
+      message: `确认删除第 ${targetEpisodeNumber} 集吗？`,
+    });
+    if (!confirmed) {
       return;
     }
 
@@ -1415,6 +1458,10 @@ export function useTVDetailPage() {
     tmdbRiskCurrentId,
     tmdbRiskNextId,
     deleteConfirmModalVisible,
+    localDeleteConfirmModalVisible,
+    localDeleteConfirmTitle,
+    localDeleteConfirmMessage,
+    localDeleteConfirmActionText,
     selectedSeasonNumber,
     selectedSeasonDetail,
     seasonDetailLoading,
@@ -1452,6 +1499,7 @@ export function useTVDetailPage() {
     toggleLocalOverrideDiffDetails,
     closeTmdbRiskModal,
     closeDeleteConfirmModal,
+    closeLocalDeleteConfirmModal,
     checkRemoteDiffAndPrompt,
     keepLocalData,
     handleSynced,
