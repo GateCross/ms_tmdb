@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { getPopularMovies } from "@/api/movie";
+import { prefetchMediaDetail } from "@/api/prefetch";
 import { searchByType, type SearchType } from "@/api/search";
 import { getPopularTV } from "@/api/tv";
 import { profileImg, tmdbImg } from "@/api/tmdb";
@@ -104,6 +105,17 @@ function subtitleByItem(item: SearchResultItem) {
   return date ? `${tag} · ${date}` : tag;
 }
 
+function prefetchSearchItem(item: SearchResultItem) {
+  const mediaType = item.media_type ?? searchType.value;
+  if (mediaType === "movie" || mediaType === "tv" || mediaType === "person") {
+    prefetchMediaDetail(mediaType, Number(item.id));
+  }
+}
+
+function prefetchListItem(mediaType: "movie" | "tv", id: number | undefined) {
+  prefetchMediaDetail(mediaType, Number(id));
+}
+
 onMounted(loadData);
 </script>
 
@@ -155,7 +167,13 @@ onMounted(loadData);
     </div>
     <ul v-if="searchResults.length" class="space-y-2">
       <li v-for="item in searchResults" :key="`${item.media_type ?? searchType}-${item.id}`" class="search-item">
-        <RouterLink :to="routeByItem(item)" class="flex items-center gap-3">
+        <RouterLink
+          :to="routeByItem(item)"
+          class="flex items-center gap-3"
+          @mouseenter="prefetchSearchItem(item)"
+          @focus="prefetchSearchItem(item)"
+          @touchstart.passive="prefetchSearchItem(item)"
+        >
           <img
             :src="thumbByItem(item)"
             :alt="titleByItem(item)"
@@ -199,6 +217,9 @@ onMounted(loadData);
         :key="item.id"
         :to="`/movie/${item.id}`"
         class="poster-card"
+        @mouseenter="prefetchListItem('movie', item.id)"
+        @focus="prefetchListItem('movie', item.id)"
+        @touchstart.passive="prefetchListItem('movie', item.id)"
       >
         <img
           :src="tmdbImg(item.poster_path, 'w185')"
@@ -226,6 +247,9 @@ onMounted(loadData);
         :key="item.id"
         :to="`/tv/${item.id}`"
         class="poster-card"
+        @mouseenter="prefetchListItem('tv', item.id)"
+        @focus="prefetchListItem('tv', item.id)"
+        @touchstart.passive="prefetchListItem('tv', item.id)"
       >
         <img
           :src="tmdbImg(item.poster_path, 'w185')"

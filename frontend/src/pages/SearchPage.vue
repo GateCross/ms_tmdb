@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import GlassSelect from "@/components/GlassSelect.vue";
+import { prefetchMediaDetail } from "@/api/prefetch";
 import { searchByType, type SearchType } from "@/api/search";
 import { tmdbImg, profileImg } from "@/api/tmdb";
 import type { ApiErrorLike, SearchResultItem } from "@/types/media";
@@ -68,6 +69,13 @@ function subtitleByItem(item: SearchResultItem) {
   const date = item.release_date || item.first_air_date || "";
   return date ? `${tag} · ${date}` : tag;
 }
+
+function prefetchSearchItem(item: SearchResultItem) {
+  const mt = item.media_type ?? type.value;
+  if (mt === "movie" || mt === "tv" || mt === "person") {
+    prefetchMediaDetail(mt, Number(item.id));
+  }
+}
 </script>
 
 <template>
@@ -96,7 +104,13 @@ function subtitleByItem(item: SearchResultItem) {
     <h3 class="section-title">结果（{{ results.length }}）</h3>
     <ul class="space-y-2">
       <li v-for="item in results.slice(0, 20)" :key="item.id" class="search-item">
-        <RouterLink :to="routeByItem(item)" class="flex items-center gap-3">
+        <RouterLink
+          :to="routeByItem(item)"
+          class="flex items-center gap-3"
+          @mouseenter="prefetchSearchItem(item)"
+          @focus="prefetchSearchItem(item)"
+          @touchstart.passive="prefetchSearchItem(item)"
+        >
           <img
             :src="thumbByItem(item)"
             :alt="titleByItem(item)"

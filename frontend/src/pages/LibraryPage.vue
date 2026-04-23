@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import GlassSelect from "@/components/GlassSelect.vue";
+import { prefetchMediaDetail } from "@/api/prefetch";
 import {
   createMovie,
   createTV,
@@ -319,6 +320,10 @@ function gotoPage(p: number) {
 function routeByItem(item: LibraryListItem) {
   if (activeTab.value === "movie") return `/movie/${item.tmdb_id}`;
   return `/tv/${item.tmdb_id}`;
+}
+
+function prefetchItemDetail(item: LibraryListItem) {
+  prefetchMediaDetail(activeTab.value, Number(item.tmdb_id));
 }
 
 function openItemDetail(item: LibraryListItem) {
@@ -841,7 +846,13 @@ onMounted(loadData);
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
           </svg>
         </button>
-        <RouterLink :to="routeByItem(item)" class="block">
+        <RouterLink
+          :to="routeByItem(item)"
+          class="block"
+          @mouseenter="prefetchItemDetail(item)"
+          @focus="prefetchItemDetail(item)"
+          @touchstart.passive="prefetchItemDetail(item)"
+        >
           <img
             :src="tmdbImg(item.poster_path, 'w185')"
             :alt="item.title || item.name"
@@ -915,6 +926,8 @@ onMounted(loadData);
               <div class="flex items-center gap-3">
                 <button
                   class="btn-soft px-3 py-1 text-xs"
+                  @mouseenter="prefetchItemDetail(item)"
+                  @focus="prefetchItemDetail(item)"
                   @click="openItemDetail(item)"
                 >
                   查看详情

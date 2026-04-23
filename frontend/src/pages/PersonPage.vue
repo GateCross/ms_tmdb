@@ -1,14 +1,43 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { prefetchMediaDetail } from "@/api/prefetch";
 import { useRoute, useRouter } from "vue-router";
-import { getPersonDetail } from "@/api/person";
+import { getPersonCombinedCredits, getPersonDetail, getPersonImages } from "@/api/person";
 import { profileImg, tmdbImg } from "@/api/tmdb";
+import { scheduleAfterPaint } from "@/utils/schedule";
+
+type PersonCreditItem = {
+  id: number;
+  media_type: string;
+  title?: string;
+  name?: string;
+  character?: string;
+  job?: string;
+  poster_path?: string;
+  popularity?: number;
+};
+
+type PersonImageItem = {
+  file_path: string;
+};
 
 const route = useRoute();
 const router = useRouter();
 const loading = ref(false);
 const error = ref("");
 const detail = ref<any>(null);
+const topCreditItems = ref<PersonCreditItem[]>([]);
+const photoProfiles = ref<PersonImageItem[]>([]);
+const creditsLoading = ref(false);
+const creditsLoaded = ref(false);
+const creditsError = ref("");
+const photosLoading = ref(false);
+const photosLoaded = ref(false);
+const photosError = ref("");
+let detailReqSeq = 0;
+let creditsReqSeq = 0;
+let photosReqSeq = 0;
+let cancelDeferredLoads: (() => void) | null = null;
 
 const personId = computed(() => Number(route.params.id));
 const sourceType = computed(() => {
@@ -21,6 +50,11 @@ const sourceType = computed(() => {
 const sourceId = computed(() => {
   const value = Number(route.query.fromId);
   return Number.isFinite(value) && value > 0 ? value : 0;
+});
+const topCredits = computed(() => {
+  return [...topCreditItems.value]
+    .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
+    .slice(0, 12);
 });
 
 function goBack() {
@@ -35,32 +69,163 @@ function goBack() {
   void router.push("/");
 }
 
+function stopDeferredLoads() {
+  if (cancelDeferredLoads) {
+    cancelDeferredLoads();
+    cancelDeferredLoads = null;
+  }
+}
+
+function resetAuxState() {
+  creditsReqSeq++;
+  photosReqSeq++;
+  topCreditItems.value = [];
+  photoProfiles.value = [];
+  creditsLoading.value = false;
+  creditsLoaded.value = false;
+  creditsError.value = "";
+  photosLoading.value = false;
+  photosLoaded.value = false;
+  photosError.value = "";
+}
+
+function normalizeCreditItems(raw: unknown): PersonCreditItem[] {
+  const cast = Array.isArray((raw as Record<string, unknown> | null)?.cast)
+    ? ((raw as Record<string, unknown>).cast as unknown[])
+    : [];
+  return cast
+    .map((item: any) => ({
+      id: Number(item?.id) || 0,
+      media_type: String(item?.media_type ?? ""),
+      title: typeof item?.title === "string" ? item.title : undefined,
+      name: typeof item?.name === "string" ? item.name : undefined,
+      character: typeof item?.character === "string" ? item.character : undefined,
+      job: typeof item?.job === "string" ? item.job : undefined,
+      poster_path: typeof item?.poster_path === "string" ? item.poster_path : undefined,
+      popularity: Number.isFinite(Number(item?.popularity)) ? Number(item.popularity) : 0,
+    }))
+    .filter((item) => item.id > 0);
+}
+
+function normalizeImageItems(raw: unknown): PersonImageItem[] {
+  const profiles = Array.isArray((raw as Record<string, unknown> | null)?.profiles)
+    ? ((raw as Record<string, unknown>).profiles as unknown[])
+    : [];
+  return profiles
+    .map((item: any) => ({
+      file_path: String(item?.file_path ?? "").trim(),
+    }))
+    .filter((item) => item.file_path);
+}
+
+function prefetchCreditItem(item: PersonCreditItem) {
+  const mediaType = item.media_type === "tv" ? "tv" : "movie";
+  prefetchMediaDetail(mediaType, item.id);
+}
+
+function scheduleDeferredLoadsForDetail() {
+  stopDeferredLoads();
+  cancelDeferredLoads = scheduleAfterPaint(() => {
+    void loadPersonCombinedCredits();
+    void loadPersonImages();
+  });
+}
+
+async function loadPersonCombinedCredits(force = false) {
+  if (!personId.value || creditsLoading.value || (creditsLoaded.value && !force)) {
+    return;
+  }
+
+  const requestSeq = ++creditsReqSeq;
+  const targetId = personId.value;
+  creditsLoading.value = true;
+  creditsError.value = "";
+  try {
+    const resp = await getPersonCombinedCredits(targetId, "zh-CN", { force });
+    if (requestSeq !== creditsReqSeq || targetId !== personId.value) {
+      return;
+    }
+    topCreditItems.value = normalizeCreditItems(resp.data);
+    creditsLoaded.value = true;
+  } catch (err: any) {
+    if (requestSeq !== creditsReqSeq || targetId !== personId.value) {
+      return;
+    }
+    creditsError.value = err.message ?? "加载代表作品失败";
+  } finally {
+    if (requestSeq === creditsReqSeq) {
+      creditsLoading.value = false;
+    }
+  }
+}
+
+async function loadPersonImages(force = false) {
+  if (!personId.value || photosLoading.value || (photosLoaded.value && !force)) {
+    return;
+  }
+
+  const requestSeq = ++photosReqSeq;
+  const targetId = personId.value;
+  photosLoading.value = true;
+  photosError.value = "";
+  try {
+    const resp = await getPersonImages(targetId, { force });
+    if (requestSeq !== photosReqSeq || targetId !== personId.value) {
+      return;
+    }
+    photoProfiles.value = normalizeImageItems(resp.data).slice(0, 6);
+    photosLoaded.value = true;
+  } catch (err: any) {
+    if (requestSeq !== photosReqSeq || targetId !== personId.value) {
+      return;
+    }
+    photosError.value = err.message ?? "加载照片失败";
+  } finally {
+    if (requestSeq === photosReqSeq) {
+      photosLoading.value = false;
+    }
+  }
+}
+
 async function loadData() {
   if (!personId.value) {
     error.value = "无效人物 ID";
     return;
   }
+
+  const requestSeq = ++detailReqSeq;
+  stopDeferredLoads();
   loading.value = true;
   error.value = "";
+  resetAuxState();
   try {
     const resp = await getPersonDetail(personId.value);
+    if (requestSeq !== detailReqSeq) {
+      return;
+    }
     detail.value = resp.data;
+    scheduleDeferredLoadsForDetail();
   } catch (err: any) {
-    error.value = err.message ?? "加载失败";
+    if (requestSeq === detailReqSeq) {
+      error.value = err.message ?? "加载失败";
+    }
   } finally {
-    loading.value = false;
+    if (requestSeq === detailReqSeq) {
+      loading.value = false;
+    }
   }
-}
-
-// 合并电影和电视出演，按热度排序取前12
-function topCredits(d: any) {
-  const mc = d?.combined_credits?.cast ?? [];
-  return mc.sort((a: any, b: any) => (b.popularity ?? 0) - (a.popularity ?? 0)).slice(0, 12);
 }
 
 onMounted(loadData);
 watch(personId, () => {
   void loadData();
+});
+
+onBeforeUnmount(() => {
+  detailReqSeq++;
+  creditsReqSeq++;
+  photosReqSeq++;
+  stopDeferredLoads();
 });
 </script>
 
@@ -79,7 +244,6 @@ watch(personId, () => {
         </button>
       </div>
       <div class="detail-layout">
-        <!-- 头像 -->
         <div class="detail-poster">
           <img
             :src="profileImg(detail.profile_path, 'w342')"
@@ -88,7 +252,6 @@ watch(personId, () => {
           />
         </div>
 
-        <!-- 个人信息 -->
         <div class="detail-info">
           <h1 class="text-2xl font-bold">{{ detail.name }}</h1>
 
@@ -105,12 +268,23 @@ watch(personId, () => {
             {{ detail.biography || "暂无简介" }}
           </p>
 
-          <!-- 照片墙 -->
-          <div v-if="detail.images?.profiles?.length" class="mt-6">
-            <h3 class="mb-2 text-sm font-semibold">照片</h3>
-            <div class="flex gap-2 overflow-x-auto pb-2">
+          <div class="content-auto mt-6">
+            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-sm font-semibold">照片</h3>
+              <button
+                class="btn-soft-xs px-3 py-1 disabled:opacity-60"
+                :disabled="photosLoading"
+                @click="loadPersonImages(true)"
+              >
+                {{ photosLoading ? "加载中..." : (photosLoaded ? "刷新照片" : "加载照片") }}
+              </button>
+            </div>
+            <p v-if="photosLoading" class="text-xs text-black/55">正在加载照片...</p>
+            <p v-else-if="photosError" class="text-xs text-red-600">{{ photosError }}</p>
+            <p v-else-if="photosLoaded && !photoProfiles.length" class="text-xs text-black/55">暂无照片数据</p>
+            <div v-else-if="photoProfiles.length" class="flex gap-2 overflow-x-auto pb-2">
               <img
-                v-for="(img, idx) in detail.images.profiles.slice(0, 6)"
+                v-for="(img, idx) in photoProfiles"
                 :key="idx"
                 :src="tmdbImg(img.file_path, 'w185')"
                 :alt="`${detail.name} photo`"
@@ -120,12 +294,28 @@ watch(personId, () => {
             </div>
           </div>
 
-          <!-- 代表作品 -->
-          <div v-if="topCredits(detail).length" class="mt-6">
-            <h3 class="mb-2 text-sm font-semibold">代表作品</h3>
-            <div class="cast-grid">
-              <div v-for="c in topCredits(detail)" :key="c.id + (c.media_type || '')" class="cast-card">
-                <RouterLink :to="`/${c.media_type === 'tv' ? 'tv' : 'movie'}/${c.id}`">
+          <div class="content-auto mt-6">
+            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-sm font-semibold">代表作品</h3>
+              <button
+                class="btn-soft-xs px-3 py-1 disabled:opacity-60"
+                :disabled="creditsLoading"
+                @click="loadPersonCombinedCredits(true)"
+              >
+                {{ creditsLoading ? "加载中..." : (creditsLoaded ? "刷新作品" : "加载作品") }}
+              </button>
+            </div>
+            <p v-if="creditsLoading" class="text-xs text-black/55">正在加载代表作品...</p>
+            <p v-else-if="creditsError" class="text-xs text-red-600">{{ creditsError }}</p>
+            <p v-else-if="creditsLoaded && !topCredits.length" class="text-xs text-black/55">暂无代表作品数据</p>
+            <div v-else-if="topCredits.length" class="cast-grid">
+              <div v-for="c in topCredits" :key="c.id + (c.media_type || '')" class="cast-card">
+                <RouterLink
+                  :to="`/${c.media_type === 'tv' ? 'tv' : 'movie'}/${c.id}`"
+                  @mouseenter="prefetchCreditItem(c)"
+                  @focus="prefetchCreditItem(c)"
+                  @touchstart.passive="prefetchCreditItem(c)"
+                >
                   <img
                     :src="tmdbImg(c.poster_path, 'w185')"
                     :alt="c.title || c.name"

@@ -555,6 +555,18 @@ select.field-control option:checked {
   backdrop-filter: blur(16px) saturate(145%);
 }
 
+.content-auto {
+  content-visibility: auto;
+  contain: layout paint style;
+  contain-intrinsic-size: 420px;
+}
+
+.content-auto-heavy {
+  content-visibility: auto;
+  contain: layout paint style;
+  contain-intrinsic-size: 960px;
+}
+
 .chip-local-new {
   @apply inline-block rounded px-2 py-0.5 text-[11px];
   color: #1f5a75;
@@ -645,4 +657,16 @@ select.field-control option:checked {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+  .app-header,
+  .app-nav,
+  .card,
+  .poster-card,
+  .glass-pill,
+  .panel-glass,
+  .table-shell {
+    backdrop-filter: none;
+  }
 }

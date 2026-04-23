@@ -17,14 +17,22 @@ type adminTvSeasonLocalUpdateReq struct {
 
 func UpdateTvSeasonLocalHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req adminTvSeasonLocalUpdateReq
-		if err := httpx.Parse(r, &req); err != nil {
+		var req adminTvSeasonLocalPathReq
+		if err := httpx.ParsePath(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
+		body := make(map[string]interface{})
+		if err := httpx.ParseJsonBody(r, &body); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
+		payload := resolveTvSeasonLocalPayload(body)
+
 		l := admin.NewTvSeasonLocalLogic(r.Context(), svcCtx)
-		data, err := l.UpdateLocalSeason(req.Id, req.SeasonNumber, req.Payload)
+		data, err := l.UpdateLocalSeason(req.Id, req.SeasonNumber, payload)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
@@ -36,4 +44,16 @@ func UpdateTvSeasonLocalHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			"message": "季明细本地修改已保存",
 		})
 	}
+}
+
+func resolveTvSeasonLocalPayload(body map[string]interface{}) map[string]interface{} {
+	if len(body) == 0 {
+		return map[string]interface{}{}
+	}
+	if raw, ok := body["payload"]; ok {
+		if payload, ok := raw.(map[string]interface{}); ok {
+			return payload
+		}
+	}
+	return body
 }

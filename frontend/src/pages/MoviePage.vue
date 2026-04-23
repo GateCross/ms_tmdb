@@ -1,17 +1,27 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { compareMovieRemote, deleteMovie, updateMovie } from "@/api/admin";
+import { prefetchMediaDetail } from "@/api/prefetch";
 import type { AdminCompareFieldDetail, AdminSyncMode } from "@/api/admin";
-import DetailSyncPanel from "@/components/DetailSyncPanel.vue";
-import GlassSelect from "@/components/GlassSelect.vue";
-import { getMovieDetail, getMovieGenreList } from "@/api/movie";
+import { getMovieCredits, getMovieDetail, getMovieGenreList } from "@/api/movie";
 import { tmdbImg } from "@/api/tmdb";
 import { formatStatusLabel, movieStatusOptions } from "@/constants/mediaStatus";
+import { scheduleAfterPaint } from "@/utils/schedule";
+
+const DetailSyncPanel = defineAsyncComponent(() => import("@/components/DetailSyncPanel.vue"));
+const GlassSelect = defineAsyncComponent(() => import("@/components/GlassSelect.vue"));
 
 type GenreOption = {
   id: number;
   name: string;
+};
+
+type MovieCastMember = {
+  id: number;
+  name: string;
+  character: string;
+  profile_path: string;
 };
 
 type MovieEditForm = {
@@ -48,6 +58,10 @@ const router = useRouter();
 const loading = ref(false);
 const error = ref("");
 const detail = ref<any>(null);
+const castMembers = ref<MovieCastMember[]>([]);
+const creditsLoading = ref(false);
+const creditsLoaded = ref(false);
+const creditsError = ref("");
 const isEditing = ref(false);
 const saving = ref(false);
 const deleting = ref(false);
@@ -68,7 +82,11 @@ const tmdbRiskNextId = ref<number | null>(null);
 let tmdbRiskConfirmResolver: ((confirmed: boolean) => void) | null = null;
 const deleteConfirmModalVisible = ref(false);
 const genreOptions = ref<GenreOption[]>([]);
+const genreOptionsLoaded = ref(false);
 const genreKeyword = ref("");
+let loadReqSeq = 0;
+let creditsReqSeq = 0;
+let cancelDeferredLoads: (() => void) | null = null;
 const filteredGenreOptions = computed(() => {
   const keyword = genreKeyword.value.trim().toLowerCase();
   if (!keyword) {
@@ -147,6 +165,10 @@ function personLink(personId: number) {
   };
 }
 
+function prefetchPerson(personId: number) {
+  prefetchMediaDetail("person", personId);
+}
+
 function resetEditForm(data: any) {
   editForm.value = {
     tmdb_id: data?.id != null ? String(data.id) : String(movieId.value || ""),
@@ -177,12 +199,64 @@ function normalizeGenreOptions(raw: any): GenreOption[] {
     .filter((item: GenreOption) => !!item.name);
 }
 
-async function loadGenreOptions() {
+function normalizeCastMembers(raw: unknown): MovieCastMember[] {
+  const cast = Array.isArray((raw as Record<string, unknown> | null)?.cast)
+    ? ((raw as Record<string, unknown>).cast as unknown[])
+    : [];
+  return cast
+    .map((item: any) => ({
+      id: Number(item?.id) || 0,
+      name: String(item?.name ?? "").trim(),
+      character: String(item?.character ?? "").trim(),
+      profile_path: String(item?.profile_path ?? ""),
+    }))
+    .filter((item) => item.id > 0 && item.name)
+    .slice(0, 8);
+}
+
+function resetRemoteDiffState() {
+  remoteDiffNotice.value = null;
+  remoteDiffMessage.value = "";
+  remoteDiffError.value = "";
+  remoteDiffDecision.value = "unknown";
+  showRemoteDiffDetails.value = false;
+  showLocalOverrideDiffDetails.value = false;
+  checkingRemoteDiff.value = false;
+  comparedRemoteId.value = null;
+}
+
+function resetCreditsState() {
+  creditsReqSeq++;
+  castMembers.value = [];
+  creditsLoading.value = false;
+  creditsLoaded.value = false;
+  creditsError.value = "";
+}
+
+function stopDeferredLoads() {
+  if (cancelDeferredLoads) {
+    cancelDeferredLoads();
+    cancelDeferredLoads = null;
+  }
+}
+
+function scheduleDeferredLoadsForDetail() {
+  stopDeferredLoads();
+  cancelDeferredLoads = scheduleAfterPaint(() => {
+    void loadMovieCredits();
+  });
+}
+
+async function loadGenreOptions(force = false) {
+  if (!force && genreOptionsLoaded.value) {
+    return;
+  }
   try {
     const resp = await getMovieGenreList();
     const options = normalizeGenreOptions(resp.data?.genres);
     if (options.length > 0) {
       genreOptions.value = options;
+      genreOptionsLoaded.value = true;
       return;
     }
   } catch {
@@ -199,6 +273,9 @@ function enterEditMode() {
   saveError.value = "";
   saveMessage.value = "";
   isEditing.value = true;
+  if (!genreOptionsLoaded.value) {
+    void loadGenreOptions();
+  }
 }
 
 function cancelEditMode() {
@@ -265,8 +342,36 @@ async function confirmDeleteCurrentMovie() {
   }
 }
 
-async function checkRemoteDiffAndPrompt() {
-  if (!movieId.value || checkingRemoteDiff.value || comparedRemoteId.value === movieId.value) {
+async function loadMovieCredits(force = false) {
+  if (!movieId.value || creditsLoading.value || (creditsLoaded.value && !force)) {
+    return;
+  }
+
+  const requestSeq = ++creditsReqSeq;
+  const targetId = movieId.value;
+  creditsLoading.value = true;
+  creditsError.value = "";
+  try {
+    const resp = await getMovieCredits(targetId, "zh-CN", { force });
+    if (requestSeq !== creditsReqSeq || targetId !== movieId.value) {
+      return;
+    }
+    castMembers.value = normalizeCastMembers(resp.data);
+    creditsLoaded.value = true;
+  } catch (err: any) {
+    if (requestSeq !== creditsReqSeq || targetId !== movieId.value) {
+      return;
+    }
+    creditsError.value = err.message ?? "加载演员失败";
+  } finally {
+    if (requestSeq === creditsReqSeq) {
+      creditsLoading.value = false;
+    }
+  }
+}
+
+async function checkRemoteDiffAndPrompt(force = false) {
+  if (!movieId.value || checkingRemoteDiff.value || (!force && comparedRemoteId.value === movieId.value)) {
     return;
   }
   if (movieId.value < 0) {
@@ -342,32 +447,44 @@ function keepLocalData() {
 
 function handleSynced() {
   comparedRemoteId.value = null;
-  void loadData();
+  void loadData({ force: true });
 }
 
-async function loadData(options: { checkRemoteDiff?: boolean } = {}) {
-  const { checkRemoteDiff = true } = options;
+async function loadData(options: { force?: boolean; checkRemoteDiff?: boolean } = {}) {
+  const { force = false, checkRemoteDiff = true } = options;
   if (!movieId.value) {
     error.value = "无效电影 ID";
     return;
   }
+  const requestSeq = ++loadReqSeq;
+  stopDeferredLoads();
   loading.value = true;
   error.value = "";
-  remoteDiffError.value = "";
+  resetRemoteDiffState();
+  resetCreditsState();
   try {
-    const resp = await getMovieDetail(movieId.value);
+    const resp = await getMovieDetail(movieId.value, "zh-CN", "", { force });
+    if (requestSeq !== loadReqSeq) {
+      return;
+    }
     detail.value = resp.data;
     resetEditForm(resp.data);
-    await loadGenreOptions();
+    genreOptions.value = normalizeGenreOptions(resp.data?.genres);
+    genreOptionsLoaded.value = false;
     genreKeyword.value = "";
     isEditing.value = false;
     if (checkRemoteDiff) {
       await checkRemoteDiffAndPrompt();
     }
+    scheduleDeferredLoadsForDetail();
   } catch (err: any) {
-    error.value = err.message ?? "加载失败";
+    if (requestSeq === loadReqSeq) {
+      error.value = err.message ?? "加载失败";
+    }
   } finally {
-    loading.value = false;
+    if (requestSeq === loadReqSeq) {
+      loading.value = false;
+    }
   }
 }
 
@@ -490,7 +607,7 @@ async function saveMovieChanges() {
       await router.replace(`/movie/${nextTmdbID}`);
       return;
     }
-    await loadData();
+    await loadData({ force: true });
   } catch (err: any) {
     saveError.value = err.message ?? "保存失败";
   } finally {
@@ -501,6 +618,12 @@ async function saveMovieChanges() {
 onMounted(loadData);
 watch(movieId, () => {
   void loadData();
+});
+
+onBeforeUnmount(() => {
+  loadReqSeq++;
+  creditsReqSeq++;
+  stopDeferredLoads();
 });
 </script>
 
@@ -518,7 +641,7 @@ watch(movieId, () => {
       />
       <div class="absolute left-4 top-4 z-10">
         <button
-          class="rounded-lg border border-white/40 bg-black/40 px-3 py-1.5 text-xs text-white backdrop-blur hover:bg-black/55"
+          class="rounded-lg border border-white/40 bg-black/40 px-3 py-1.5 text-xs text-white hover:bg-black/55"
           @click="goBack"
         >
           返回上一页
@@ -590,7 +713,7 @@ watch(movieId, () => {
           </p>
 
           <div
-            v-if="checkingRemoteDiff || remoteDiffNotice || remoteDiffMessage || remoteDiffError"
+            v-if="checkingRemoteDiff || remoteDiffNotice || remoteDiffMessage || remoteDiffError || remoteDiffDecision === 'no_diff'"
             class="mt-4 rounded-xl border border-amber-200 bg-amber-50/80 p-4"
           >
             <p v-if="checkingRemoteDiff" class="text-xs text-amber-700">
@@ -598,7 +721,7 @@ watch(movieId, () => {
             </p>
 
             <template v-else-if="remoteDiffNotice">
-              <p class="text-sm font-medium text-amber-800">
+              <p class="mt-3 text-sm font-medium text-amber-800">
                 检测到远程电影数据与本地不一致
               </p>
               <p class="mt-1 text-xs text-amber-700">
@@ -671,7 +794,10 @@ watch(movieId, () => {
               @synced="handleSynced"
             />
 
-            <p v-if="!checkingRemoteDiff && !remoteDiffNotice && remoteDiffMessage" class="text-xs text-green-700">
+            <p v-if="!checkingRemoteDiff && !remoteDiffNotice && remoteDiffDecision === 'no_diff'" class="mt-3 text-xs text-green-700">
+              已完成检查，当前未发现远程差异。
+            </p>
+            <p v-if="!checkingRemoteDiff && !remoteDiffNotice && remoteDiffMessage" class="mt-3 text-xs text-green-700">
               {{ remoteDiffMessage }}
             </p>
             <p v-if="remoteDiffError" class="mt-1 text-xs text-red-600">
@@ -679,7 +805,7 @@ watch(movieId, () => {
             </p>
           </div>
 
-          <div class="panel-glass mt-6 rounded-xl p-4">
+          <div class="panel-glass content-auto mt-6 rounded-xl p-4">
             <div class="flex items-center justify-between gap-3">
               <h3 class="text-sm font-semibold">本地信息编辑</h3>
               <div class="flex items-center gap-2">
@@ -735,7 +861,7 @@ watch(movieId, () => {
                 </label>
                 <label class="text-xs text-black/60 md:col-span-2">
                   类型（多选）
-                  <div class="mt-1 flex flex-wrap gap-2 rounded-lg border border-white/70 bg-white/55 p-2 backdrop-blur">
+                  <div class="mt-1 flex flex-wrap gap-2 rounded-lg border border-white/70 bg-white/55 p-2">
                     <input
                       v-model="genreKeyword"
                       class="field-control-xs w-full"
@@ -875,11 +1001,28 @@ watch(movieId, () => {
           </div>
 
           <!-- 演员 -->
-          <div v-if="detail.credits?.cast?.length" class="mt-6">
-            <h3 class="mb-2 text-sm font-semibold">主要演员</h3>
-            <div class="cast-grid">
-              <div v-for="c in detail.credits.cast.slice(0, 8)" :key="c.id" class="cast-card">
-                <RouterLink :to="personLink(c.id)">
+          <div class="content-auto mt-6">
+            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-sm font-semibold">主要演员</h3>
+              <button
+                class="btn-soft-xs px-3 py-1 disabled:opacity-60"
+                :disabled="creditsLoading"
+                @click="loadMovieCredits(true)"
+              >
+                {{ creditsLoading ? "加载中..." : (creditsLoaded ? "刷新演员" : "加载演员") }}
+              </button>
+            </div>
+            <p v-if="creditsLoading" class="text-xs text-black/55">正在加载演员信息...</p>
+            <p v-else-if="creditsError" class="text-xs text-red-600">{{ creditsError }}</p>
+            <p v-else-if="creditsLoaded && !castMembers.length" class="text-xs text-black/55">暂无演员数据</p>
+            <div v-else-if="castMembers.length" class="cast-grid">
+              <div v-for="c in castMembers" :key="c.id" class="cast-card">
+                <RouterLink
+                  :to="personLink(c.id)"
+                  @mouseenter="prefetchPerson(c.id)"
+                  @focus="prefetchPerson(c.id)"
+                  @touchstart.passive="prefetchPerson(c.id)"
+                >
                   <img
                     :src="tmdbImg(c.profile_path, 'w185')"
                     :alt="c.name"
