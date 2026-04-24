@@ -544,16 +544,100 @@ body::after {
   background: rgba(15, 23, 42, 0.54);
 }
 
-.settings-hero {
-  @apply max-w-4xl;
+.settings-toolbar {
+  @apply flex flex-col justify-between gap-4 md:flex-row md:items-center;
+}
+
+.settings-summary-grid {
+  @apply grid gap-3 md:grid-cols-2 lg:grid-cols-4;
+}
+
+.settings-summary-card {
+  @apply rounded-2xl px-4 py-3;
+  background: linear-gradient(150deg, rgba(27, 40, 64, 0.78) 0%, rgba(24, 36, 58, 0.58) 100%);
+  border: 1px solid rgba(191, 219, 254, 0.14);
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(14px) saturate(145%);
+}
+
+.settings-summary-card strong {
+  @apply mt-1 block truncate text-lg font-semibold;
+  color: #eef7ff;
+}
+
+.settings-summary-card p {
+  @apply mt-1 truncate text-xs;
+  color: rgba(203, 213, 225, 0.72);
+}
+
+.settings-summary-label {
+  @apply text-[11px] uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(56, 189, 248, 0.74);
+}
+
+.settings-form-grid {
+  @apply grid items-stretch gap-4 lg:grid-cols-2;
 }
 
 .settings-card {
-  @apply max-w-4xl;
+  @apply flex h-full min-w-0 flex-col;
 }
 
 .settings-card-wide {
   @apply w-full;
+}
+
+.settings-panel-header {
+  @apply flex flex-wrap items-start justify-between gap-3;
+}
+
+.settings-toggle-row {
+  @apply mt-4 flex items-start gap-3 rounded-2xl p-3 text-sm;
+  border: 1px solid rgba(191, 219, 254, 0.14);
+  background: rgba(15, 23, 42, 0.48);
+}
+
+.settings-toggle-row strong {
+  @apply block font-medium;
+  color: rgba(241, 247, 255, 0.94);
+}
+
+.settings-toggle-row small {
+  @apply mt-1 block text-xs leading-relaxed;
+  color: rgba(203, 213, 225, 0.68);
+}
+
+.settings-field-label {
+  @apply mt-3 block text-xs;
+  color: rgba(226, 232, 240, 0.78);
+}
+
+.settings-field-label span,
+.settings-help-text {
+  @apply mt-1 block text-xs leading-relaxed;
+  color: rgba(203, 213, 225, 0.66);
+}
+
+.settings-card-actions {
+  @apply mt-auto flex flex-wrap items-center gap-3 pt-4;
+}
+
+.settings-feedback {
+  @apply mt-3 rounded-xl px-3 py-2 text-sm;
+  border: 1px solid transparent;
+}
+
+.settings-feedback-success {
+  color: #86efac;
+  border-color: rgba(74, 222, 128, 0.24);
+  background: rgba(20, 83, 45, 0.18);
+}
+
+.settings-feedback-error {
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, 0.26);
+  background: rgba(127, 29, 29, 0.2);
 }
 
 .settings-section-title {
@@ -568,6 +652,143 @@ body::after {
 
 .settings-log-header {
   @apply flex flex-col gap-3 md:flex-row md:items-center md:justify-between;
+}
+
+.settings-log-card {
+  overflow: visible;
+}
+
+.settings-log-actions {
+  @apply flex flex-wrap items-end gap-2;
+}
+
+.settings-log-filter {
+  @apply flex flex-wrap items-center gap-2 text-xs;
+  color: rgba(226, 232, 240, 0.78);
+}
+
+.settings-table-shell {
+  @apply mt-4;
+  box-shadow: var(--glass-shadow-soft);
+}
+
+.settings-log-table th,
+.settings-log-table td {
+  vertical-align: top;
+}
+
+.settings-detail-table th,
+.settings-detail-table td {
+  vertical-align: middle;
+}
+
+.settings-table-primary {
+  color: rgba(241, 247, 255, 0.94);
+  font-weight: 500;
+}
+
+.settings-status-pill {
+  @apply inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs;
+}
+
+.settings-count-pill {
+  @apply mr-1 inline-flex min-w-7 justify-center rounded-full px-2 py-0.5 text-xs;
+  color: rgba(226, 232, 240, 0.86);
+  background: rgba(30, 41, 59, 0.66);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.settings-count-success {
+  color: #86efac;
+  background: rgba(20, 83, 45, 0.22);
+  border-color: rgba(74, 222, 128, 0.22);
+}
+
+.settings-count-danger {
+  color: #fca5a5;
+  background: rgba(127, 29, 29, 0.22);
+  border-color: rgba(248, 113, 113, 0.24);
+}
+
+.settings-log-summary {
+  @apply block max-w-64 truncate;
+}
+
+.settings-pagination-row {
+  @apply mt-3 flex flex-col gap-3 text-sm md:flex-row md:items-center md:justify-between;
+  color: rgba(226, 232, 240, 0.74);
+}
+
+.settings-pagination-row-sm {
+  @apply text-xs;
+}
+
+.settings-detail-modal {
+  border-color: rgba(191, 219, 254, 0.18);
+}
+
+.settings-detail-summary-grid {
+  @apply grid gap-3 md:grid-cols-2 lg:grid-cols-4;
+}
+
+.settings-detail-summary-item {
+  @apply rounded-2xl px-4 py-3;
+  background: rgba(15, 23, 42, 0.46);
+  border: 1px solid rgba(191, 219, 254, 0.14);
+}
+
+.settings-detail-summary-item span {
+  @apply text-[11px] uppercase;
+  letter-spacing: 0.16em;
+  color: rgba(56, 189, 248, 0.72);
+}
+
+.settings-detail-summary-item strong {
+  @apply mt-1 block truncate text-sm font-semibold;
+  color: rgba(241, 247, 255, 0.94);
+}
+
+.settings-detail-summary-item small {
+  @apply mt-1 block truncate text-xs;
+  color: rgba(203, 213, 225, 0.68);
+}
+
+.settings-detail-section {
+  @apply mt-5;
+}
+
+.settings-detail-section-header {
+  @apply flex flex-col gap-2 md:flex-row md:items-start md:justify-between;
+}
+
+.settings-chip-list {
+  @apply text-xs leading-relaxed;
+  color: rgba(226, 232, 240, 0.82);
+}
+
+.settings-field-stack {
+  @apply grid gap-1 text-xs;
+}
+
+.settings-field-stack p {
+  @apply rounded-lg px-2 py-1 leading-relaxed;
+  color: rgba(226, 232, 240, 0.82);
+  background: rgba(15, 23, 42, 0.46);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.settings-field-stack span {
+  @apply mr-2 inline-flex min-w-8 justify-center rounded-full px-1.5 py-0.5 text-[11px];
+  color: #bae6fd;
+  background: rgba(2, 132, 199, 0.18);
+}
+
+.settings-diff-pre {
+  @apply max-h-36 overflow-auto whitespace-pre-wrap rounded-xl px-3 py-2 text-xs leading-relaxed;
+  color: rgba(226, 232, 240, 0.78);
+  background: rgba(2, 6, 23, 0.34);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
 
 .modal-header-dark {

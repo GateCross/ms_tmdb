@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import GlassSelect from "@/components/GlassSelect.vue";
 import {
   clearAutoSyncLogs,
@@ -66,6 +66,14 @@ const logStatusOptions: Array<{ label: string; value: string }> = [
   { label: "部分失败", value: "partial_failed" },
   { label: "异常", value: "panic" },
 ];
+
+const settingsBusy = computed(() => loading.value || proxySaving.value || syncSaving.value || syncTriggering.value || logsLoading.value || logsClearing.value);
+const proxyStatusText = computed(() => (proxyEnabled.value ? "已启用" : "直连"));
+const syncStatusText = computed(() => (syncEnabled.value ? "已启用" : "已关闭"));
+const taskRunStatusText = computed(() => (syncRunning.value ? "执行中" : "空闲"));
+const latestLog = computed(() => logsItems.value[0] ?? null);
+const latestLogStatusText = computed(() => (latestLog.value ? formatStatus(latestLog.value.status) : "暂无记录"));
+const latestLogTimeText = computed(() => (latestLog.value ? formatDateTime(latestLog.value.triggered_at) : "等待首次执行"));
 
 function normalizeProxyURL(raw: string) {
   return raw.trim();
@@ -438,143 +446,191 @@ onMounted(reloadAll);
 
 <template>
   <section class="grid gap-4">
-    <div class="card settings-hero">
-      <p class="section-label">Settings</p>
-      <h2 class="search-page-title">系统设置</h2>
-      <p class="settings-note">统一管理代理访问、库内定时同步任务和执行日志。</p>
-      <p v-if="loading" class="mt-4 text-sm text-black/55">加载中...</p>
-      <div v-else class="mt-3">
+    <section class="settings-toolbar card">
+      <div class="min-w-0">
+        <p class="section-label">系统设置</p>
+        <h2 class="library-toolbar-title">运行配置</h2>
+        <p class="mt-1 text-sm text-black/55">统一管理 TMDB 网络代理、库内定时同步任务和执行日志。</p>
+      </div>
+
+      <div class="library-toolbar-actions">
+        <span class="badge">{{ taskRunStatusText }}</span>
         <button
           class="btn-soft disabled:opacity-60"
-          :disabled="proxySaving || syncSaving || syncTriggering || logsLoading || logsClearing"
+          :disabled="settingsBusy"
           @click="reloadAll"
         >
-          重新读取全部设置
+          {{ loading || logsLoading ? "读取中..." : "重新读取" }}
         </button>
       </div>
-    </div>
+    </section>
 
-    <div class="card settings-card">
-      <h3 class="settings-section-title">代理设置</h3>
-      <p class="settings-note">配置后端访问 TMDB 时使用的网络代理。</p>
+    <section class="settings-summary-grid">
+      <article class="settings-summary-card">
+        <span class="settings-summary-label">代理访问</span>
+        <strong>{{ proxyStatusText }}</strong>
+        <p>{{ proxyEnabled ? proxyURL || "已启用，等待代理地址" : "后端直连 TMDB" }}</p>
+      </article>
+      <article class="settings-summary-card">
+        <span class="settings-summary-label">自动同步</span>
+        <strong>{{ syncStatusText }}</strong>
+        <p>{{ syncEnabled ? `${syncCronExpr} · ${formatMode(syncMode)}` : "不会自动调度同步任务" }}</p>
+      </article>
+      <article class="settings-summary-card">
+        <span class="settings-summary-label">任务状态</span>
+        <strong>{{ taskRunStatusText }}</strong>
+        <p>批大小 {{ syncBatchSize }} · 启动延迟 {{ syncStartDelaySecond }} 秒</p>
+      </article>
+      <article class="settings-summary-card">
+        <span class="settings-summary-label">最近执行</span>
+        <strong>{{ latestLogStatusText }}</strong>
+        <p>{{ latestLogTimeText }}</p>
+      </article>
+    </section>
 
-      <label class="mt-4 inline-flex items-center gap-2 text-sm">
-        <input v-model="proxyEnabled" type="checkbox" class="check-control" />
-        <span>启用代理访问 TMDB</span>
-      </label>
+    <section class="settings-form-grid">
+      <div class="card settings-card">
+        <div class="settings-panel-header">
+          <div>
+            <p class="section-label">Network</p>
+            <h3 class="settings-section-title">代理设置</h3>
+            <p class="settings-note">配置后端访问 TMDB 时使用的网络代理。</p>
+          </div>
+          <span class="badge">{{ proxyStatusText }}</span>
+        </div>
 
-      <label class="mt-3 block text-xs text-black/60">
-        代理地址
-        <input
-          v-model="proxyURL"
-          type="text"
-          class="field-control mt-1 w-full text-sm"
-          :disabled="!proxyEnabled || proxySaving"
-          placeholder="http://127.0.0.1:7890"
-        />
-      </label>
-      <p class="mt-2 text-xs text-black/50">支持格式示例：`http://127.0.0.1:7890`、`socks5://127.0.0.1:1080`</p>
+        <label class="settings-toggle-row">
+          <input v-model="proxyEnabled" type="checkbox" class="check-control" />
+          <span>
+            <strong>启用代理访问 TMDB</strong>
+            <small>关闭后恢复为直连，保存后即时生效。</small>
+          </span>
+        </label>
 
-      <div class="mt-4 flex items-center gap-3">
-        <button
-          class="btn-primary disabled:opacity-60"
-          :disabled="proxySaving"
-          @click="saveProxySettings"
-        >
-          {{ proxySaving ? "保存中..." : "保存代理设置" }}
-        </button>
+        <label class="settings-field-label">
+          代理地址
+          <input
+            v-model="proxyURL"
+            type="text"
+            class="field-control mt-1 w-full text-sm"
+            :disabled="!proxyEnabled || proxySaving"
+            placeholder="http://127.0.0.1:7890"
+          />
+        </label>
+        <p class="settings-help-text">支持格式示例：http://127.0.0.1:7890、socks5://127.0.0.1:1080</p>
+
+        <div class="settings-card-actions">
+          <button
+            class="btn-primary disabled:opacity-60"
+            :disabled="proxySaving"
+            @click="saveProxySettings"
+          >
+            {{ proxySaving ? "保存中..." : "保存代理设置" }}
+          </button>
+        </div>
+        <p v-if="proxyMessage" class="settings-feedback settings-feedback-success">{{ proxyMessage }}</p>
+        <p v-if="proxyError" class="settings-feedback settings-feedback-error">{{ proxyError }}</p>
       </div>
-      <p v-if="proxyMessage" class="mt-3 text-sm text-green-700">{{ proxyMessage }}</p>
-      <p v-if="proxyError" class="mt-3 text-sm text-red-600">{{ proxyError }}</p>
-    </div>
 
-    <div class="card settings-card">
-      <h3 class="settings-section-title">定时同步设置</h3>
-      <p class="settings-note">仅支持 cron 表达式调度，保存后即时生效。</p>
+      <div class="card settings-card">
+        <div class="settings-panel-header">
+          <div>
+            <p class="section-label">Schedule</p>
+            <h3 class="settings-section-title">定时同步设置</h3>
+            <p class="settings-note">仅支持 cron 表达式调度，保存后即时生效。</p>
+          </div>
+          <span class="badge">{{ taskRunStatusText }}</span>
+        </div>
 
-      <label class="mt-4 inline-flex items-center gap-2 text-sm">
-        <input v-model="syncEnabled" type="checkbox" class="check-control" />
-        <span>启用自动同步任务</span>
-      </label>
-      <p class="mt-2 text-xs text-black/50">当前运行状态：{{ syncRunning ? "执行中" : "空闲" }}</p>
+        <label class="settings-toggle-row">
+          <input v-model="syncEnabled" type="checkbox" class="check-control" />
+          <span>
+            <strong>启用自动同步任务</strong>
+            <small>任务会按 Cron 周期检查远端字段变更。</small>
+          </span>
+        </label>
 
-      <label class="mt-3 block text-xs text-black/60">
-        Cron 表达式
-        <input
-          v-model="syncCronExpr"
-          type="text"
-          class="field-control mt-1 w-full text-sm"
-          :disabled="syncSaving"
-          placeholder="*/30 * * * *"
-        />
-      </label>
-      <p class="mt-1 text-xs text-black/50">5 段格式：分 时 日 月 周，例如 `0 3 * * *`（每天 03:00）。</p>
+        <div class="grid gap-3 md:grid-cols-2">
+          <label class="settings-field-label md:col-span-2">
+            Cron 表达式
+            <input
+              v-model="syncCronExpr"
+              type="text"
+              class="field-control mt-1 w-full text-sm"
+              :disabled="syncSaving"
+              placeholder="*/30 * * * *"
+            />
+            <span>5 段格式：分 时 日 月 周，例如 0 3 * * *（每天 03:00）。</span>
+          </label>
 
-      <label class="mt-3 block text-xs text-black/60">
-        同步策略
-        <GlassSelect v-model="syncMode" :options="modeOptions" :disabled="syncSaving" class="mt-1 w-full" />
-      </label>
-      <p class="mt-1 text-xs text-black/50">{{ modeOptions.find((item) => item.value === syncMode)?.hint }}</p>
+          <label class="settings-field-label md:col-span-2">
+            同步策略
+            <GlassSelect v-model="syncMode" :options="modeOptions" :disabled="syncSaving" class="mt-1 w-full" />
+            <span>{{ modeOptions.find((item) => item.value === syncMode)?.hint }}</span>
+          </label>
 
-      <label class="mt-3 block text-xs text-black/60">
-        每轮批大小（条）
-        <input
-          v-model.number="syncBatchSize"
-          type="number"
-          min="1"
-          max="500"
-          class="field-control mt-1 w-full text-sm"
-          :disabled="syncSaving"
-        />
-      </label>
+          <label class="settings-field-label">
+            每轮批大小（条）
+            <input
+              v-model.number="syncBatchSize"
+              type="number"
+              min="1"
+              max="500"
+              class="field-control mt-1 w-full text-sm"
+              :disabled="syncSaving"
+            />
+          </label>
 
-      <label class="mt-3 block text-xs text-black/60">
-        启动延迟（秒）
-        <input
-          v-model.number="syncStartDelaySecond"
-          type="number"
-          min="0"
-          max="3600"
-          class="field-control mt-1 w-full text-sm"
-          :disabled="syncSaving"
-        />
-      </label>
+          <label class="settings-field-label">
+            启动延迟（秒）
+            <input
+              v-model.number="syncStartDelaySecond"
+              type="number"
+              min="0"
+              max="3600"
+              class="field-control mt-1 w-full text-sm"
+              :disabled="syncSaving"
+            />
+          </label>
+        </div>
 
-      <div class="mt-4 flex items-center gap-3">
-        <button
-          class="btn-primary disabled:opacity-60"
-          :disabled="syncSaving || syncTriggering"
-          @click="saveAutoSyncSettings"
-        >
-          {{ syncSaving ? "保存中..." : "保存定时同步设置" }}
-        </button>
-        <button
-          class="btn-soft disabled:opacity-60"
-          :disabled="syncSaving || syncTriggering"
-          @click="triggerAutoSyncNow"
-        >
-          {{ syncTriggering ? "触发中..." : "立即执行一次" }}
-        </button>
+        <div class="settings-card-actions">
+          <button
+            class="btn-primary disabled:opacity-60"
+            :disabled="syncSaving || syncTriggering"
+            @click="saveAutoSyncSettings"
+          >
+            {{ syncSaving ? "保存中..." : "保存定时同步设置" }}
+          </button>
+          <button
+            class="btn-soft disabled:opacity-60"
+            :disabled="syncSaving || syncTriggering"
+            @click="triggerAutoSyncNow"
+          >
+            {{ syncTriggering ? "触发中..." : "立即执行一次" }}
+          </button>
+        </div>
+        <p v-if="syncMessage" class="settings-feedback settings-feedback-success">{{ syncMessage }}</p>
+        <p v-if="syncError" class="settings-feedback settings-feedback-error">{{ syncError }}</p>
       </div>
-      <p v-if="syncMessage" class="mt-3 text-sm text-green-700">{{ syncMessage }}</p>
-      <p v-if="syncError" class="mt-3 text-sm text-red-600">{{ syncError }}</p>
-    </div>
+    </section>
 
-    <div class="card settings-card-wide">
+    <div class="card settings-card-wide settings-log-card">
       <div class="settings-log-header">
         <div>
+          <p class="section-label">Logs</p>
           <h3 class="settings-section-title">定时任务执行日志</h3>
           <p class="settings-note">最近执行记录会持久化到数据库，可按状态筛选查看。</p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
-          <label class="text-xs text-black/60">
+        <div class="settings-log-actions">
+          <label class="settings-log-filter">
             状态
             <GlassSelect
               v-model="logsStatus"
               :options="logStatusOptions"
               :disabled="logsLoading || logsClearing"
-              class="ml-2 inline-block min-w-[136px] align-middle"
+              class="min-w-[136px]"
               @change="applyLogStatusFilter"
             />
           </label>
@@ -596,11 +652,11 @@ onMounted(reloadAll);
         </div>
       </div>
 
-      <p v-if="logsMessage" class="mt-3 text-sm text-green-700">{{ logsMessage }}</p>
-      <p v-if="logsError" class="mt-3 text-sm text-red-600">{{ logsError }}</p>
+      <p v-if="logsMessage" class="settings-feedback settings-feedback-success">{{ logsMessage }}</p>
+      <p v-if="logsError" class="settings-feedback settings-feedback-error">{{ logsError }}</p>
 
-      <div class="table-shell mt-4">
-        <table class="min-w-full text-sm">
+      <div class="table-shell settings-table-shell">
+        <table class="min-w-full text-sm settings-log-table">
           <thead class="table-head text-left text-black/70">
             <tr>
               <th class="px-3 py-2 font-medium">触发时间</th>
@@ -619,23 +675,27 @@ onMounted(reloadAll);
               class="table-row-hover"
             >
               <td class="px-3 py-2">
-                <p>{{ formatDateTime(item.triggered_at) }}</p>
+                <p class="settings-table-primary">{{ formatDateTime(item.triggered_at) }}</p>
                 <p class="mt-1 text-xs text-black/45">{{ item.cron_expr || "-" }}</p>
               </td>
               <td class="px-3 py-2">
-                <p>{{ formatMode(item.mode) }}</p>
+                <p class="settings-table-primary">{{ formatMode(item.mode) }}</p>
                 <p class="mt-1 text-xs text-black/45">批大小 {{ item.batch_size }}</p>
               </td>
               <td class="px-3 py-2">
-                <span class="inline-flex rounded-full px-2 py-1 text-xs" :class="statusClass(item.status)">
+                <span class="settings-status-pill" :class="statusClass(item.status)">
                   {{ formatStatus(item.status) }}
                 </span>
               </td>
-              <td class="px-3 py-2">
-                {{ item.checked }} / {{ item.synced }} / {{ item.failed }}
+              <td class="px-3 py-2 whitespace-nowrap">
+                <span class="settings-count-pill">{{ item.checked }}</span>
+                <span class="settings-count-pill settings-count-success">{{ item.synced }}</span>
+                <span class="settings-count-pill settings-count-danger">{{ item.failed }}</span>
               </td>
-              <td class="px-3 py-2">{{ formatDuration(item.duration_ms) }}</td>
-              <td class="px-3 py-2 text-black/70">{{ summarizeMessage(item.message) }}</td>
+              <td class="px-3 py-2 whitespace-nowrap">{{ formatDuration(item.duration_ms) }}</td>
+              <td class="px-3 py-2 text-black/70">
+                <span class="settings-log-summary">{{ summarizeMessage(item.message) }}</span>
+              </td>
               <td class="px-3 py-2">
                 <button
                   class="btn-soft-xs px-2.5 py-1"
@@ -655,7 +715,7 @@ onMounted(reloadAll);
         </table>
       </div>
 
-      <div class="mt-3 flex items-center justify-between text-sm text-black/65">
+      <div class="settings-pagination-row">
         <p>共 {{ logsTotal }} 条，当前第 {{ logsPage }} / {{ logsTotalPages() }} 页</p>
         <div class="flex items-center gap-2">
           <button
@@ -677,13 +737,16 @@ onMounted(reloadAll);
 
     </div>
 
-    <div v-if="detailModalVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4" @click.self="closeLogDetail">
-      <div class="panel-glass max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-2xl">
+    <div v-if="detailModalVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 sm:p-4" @click.self="closeLogDetail">
+      <div class="panel-glass settings-detail-modal max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-2xl">
         <div class="modal-header-dark">
-          <h4 class="text-base font-semibold">
-            执行日志明细
-            <span v-if="activeLogDetail" class="text-sm text-black/55">#{{ activeLogDetail.id }}</span>
-          </h4>
+          <div>
+            <p class="section-label">Run Detail</p>
+            <h4 class="text-base font-semibold">
+              执行日志明细
+              <span v-if="activeLogDetail" class="text-sm text-black/55">#{{ activeLogDetail.id }}</span>
+            </h4>
+          </div>
           <button
             class="btn-soft px-3 py-1.5"
             @click="closeLogDetail"
@@ -692,37 +755,53 @@ onMounted(reloadAll);
           </button>
         </div>
 
-        <div class="max-h-[calc(90vh-60px)] overflow-y-auto px-5 py-4">
+        <div class="max-h-[calc(92vh-72px)] overflow-y-auto px-4 py-4 sm:px-5">
           <p v-if="detailLoading && !activeLogDetail" class="text-sm text-black/60">明细加载中...</p>
-          <p v-if="detailError" class="mb-3 text-sm text-red-600">{{ detailError }}</p>
+          <p v-if="detailError" class="settings-feedback settings-feedback-error mb-3">{{ detailError }}</p>
 
           <template v-if="activeLogDetail">
             <p v-if="detailLoading" class="mb-3 text-xs text-black/50">分页加载中...</p>
-            <div class="grid gap-3 text-sm md:grid-cols-2">
-              <p><span class="text-black/55">触发时间：</span>{{ formatDateTime(activeLogDetail.triggered_at) }}</p>
-              <p><span class="text-black/55">Cron：</span>{{ activeLogDetail.cron_expr || "-" }}</p>
-              <p><span class="text-black/55">同步策略：</span>{{ formatMode(activeLogDetail.mode) }}</p>
-              <p><span class="text-black/55">状态：</span>{{ formatStatus(activeLogDetail.status) }}</p>
-              <p><span class="text-black/55">检查条数：</span>{{ activeLogDetail.checked }}</p>
-              <p><span class="text-black/55">同步条数：</span>{{ activeLogDetail.synced }}</p>
-              <p><span class="text-black/55">失败条数：</span>{{ activeLogDetail.failed }}</p>
-              <p><span class="text-black/55">耗时：</span>{{ formatDuration(activeLogDetail.duration_ms) }}</p>
+            <div class="settings-detail-summary-grid">
+              <article class="settings-detail-summary-item">
+                <span>触发时间</span>
+                <strong>{{ formatDateTime(activeLogDetail.triggered_at) }}</strong>
+                <small>{{ activeLogDetail.cron_expr || "-" }}</small>
+              </article>
+              <article class="settings-detail-summary-item">
+                <span>同步策略</span>
+                <strong>{{ formatMode(activeLogDetail.mode) }}</strong>
+                <small>批大小 {{ activeLogDetail.batch_size }}</small>
+              </article>
+              <article class="settings-detail-summary-item">
+                <span>状态</span>
+                <strong>{{ formatStatus(activeLogDetail.status) }}</strong>
+                <small>耗时 {{ formatDuration(activeLogDetail.duration_ms) }}</small>
+              </article>
+              <article class="settings-detail-summary-item">
+                <span>检查 / 同步 / 失败</span>
+                <strong>{{ activeLogDetail.checked }} / {{ activeLogDetail.synced }} / {{ activeLogDetail.failed }}</strong>
+                <small>{{ activeLogDetail.message || "-" }}</small>
+              </article>
             </div>
 
-            <div class="mt-4">
-              <h5 class="text-sm font-semibold text-green-700">同步成功项（{{ activeLogDetail.synced }}）</h5>
-              <div class="table-shell mt-2">
-                <table class="min-w-full text-sm">
+            <div class="settings-detail-section">
+              <div class="settings-detail-section-header">
+                <div>
+                  <h5 class="text-sm font-semibold text-green-700">同步成功项</h5>
+                  <p class="settings-note">展示成功同步条目、远端差异字段和本地字段处理结果。</p>
+                </div>
+                <span class="badge">{{ activeLogDetail.synced }} 条</span>
+              </div>
+              <div class="table-shell settings-table-shell">
+                <table class="min-w-full text-sm settings-detail-table">
                   <thead class="table-head text-left text-black/70">
                     <tr>
                       <th class="px-3 py-2 font-medium">类型</th>
                       <th class="px-3 py-2 font-medium">名称</th>
                       <th class="px-3 py-2 font-medium">TMDB ID</th>
-                      <th class="px-3 py-2 font-medium">远端差异字段</th>
+                      <th class="px-3 py-2 font-medium">远端差异</th>
+                      <th class="px-3 py-2 font-medium">本地处理</th>
                       <th class="px-3 py-2 font-medium">字段前后</th>
-                      <th class="px-3 py-2 font-medium">本地变更字段</th>
-                      <th class="px-3 py-2 font-medium">本地覆盖字段</th>
-                      <th class="px-3 py-2 font-medium">本地保留字段</th>
                       <th class="px-3 py-2 font-medium">信息</th>
                     </tr>
                   </thead>
@@ -732,23 +811,33 @@ onMounted(reloadAll);
                       :key="`synced-${idx}-${entry.media_type}-${entry.tmdb_id}`"
                       class="table-row-hover"
                     >
-                      <td class="px-3 py-2">{{ formatMediaType(entry.media_type) }}</td>
-                      <td class="px-3 py-2">{{ entry.name || "-" }}</td>
-                      <td class="px-3 py-2">{{ entry.tmdb_id || "-" }}</td>
-                      <td class="px-3 py-2">{{ formatFieldList(entry.remote_diff_fields) }}</td>
-                      <td class="px-3 py-2 whitespace-pre-wrap text-xs text-black/70">{{ formatFieldChanges(entry.field_changes) }}</td>
-                      <td class="px-3 py-2">{{ formatFieldList(entry.changed_fields) }}</td>
-                      <td class="px-3 py-2">{{ formatFieldList(entry.overwritten_fields) }}</td>
-                      <td class="px-3 py-2">{{ formatFieldList(entry.kept_local_fields) }}</td>
-                      <td class="px-3 py-2 text-black/70">{{ entry.message || "-" }}</td>
+                      <td class="px-3 py-2 whitespace-nowrap">{{ formatMediaType(entry.media_type) }}</td>
+                      <td class="px-3 py-2 min-w-40">
+                        <p class="settings-table-primary line-clamp-2">{{ entry.name || "-" }}</p>
+                      </td>
+                      <td class="px-3 py-2 whitespace-nowrap">{{ entry.tmdb_id || "-" }}</td>
+                      <td class="px-3 py-2 min-w-44">
+                        <p class="settings-chip-list">{{ formatFieldList(entry.remote_diff_fields) }}</p>
+                      </td>
+                      <td class="px-3 py-2 min-w-56">
+                        <div class="settings-field-stack">
+                          <p><span>变更</span>{{ formatFieldList(entry.changed_fields) }}</p>
+                          <p><span>覆盖</span>{{ formatFieldList(entry.overwritten_fields) }}</p>
+                          <p><span>保留</span>{{ formatFieldList(entry.kept_local_fields) }}</p>
+                        </div>
+                      </td>
+                      <td class="px-3 py-2 min-w-72">
+                        <pre class="settings-diff-pre">{{ formatFieldChanges(entry.field_changes) }}</pre>
+                      </td>
+                      <td class="px-3 py-2 min-w-48 text-black/70">{{ entry.message || "-" }}</td>
                     </tr>
                     <tr v-if="activeLogDetail.synced_list.length === 0">
-                      <td colspan="9" class="px-3 py-4 text-center text-black/55">无成功同步明细</td>
+                      <td colspan="7" class="px-3 py-4 text-center text-black/55">无成功同步明细</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-              <div class="mt-3 flex items-center justify-between text-xs text-black/65">
+              <div class="settings-pagination-row settings-pagination-row-sm">
                 <p>共 {{ activeLogDetail.synced }} 条，当前第 {{ detailSyncedPage }} / {{ detailSyncedTotalPages() }} 页</p>
                 <div class="flex items-center gap-2">
                   <button
@@ -769,10 +858,16 @@ onMounted(reloadAll);
               </div>
             </div>
 
-            <div class="mt-4">
-              <h5 class="text-sm font-semibold text-red-700">同步失败项（{{ activeLogDetail.failed }}）</h5>
-              <div class="table-shell mt-2">
-                <table class="min-w-full text-sm">
+            <div class="settings-detail-section">
+              <div class="settings-detail-section-header">
+                <div>
+                  <h5 class="text-sm font-semibold text-red-700">同步失败项</h5>
+                  <p class="settings-note">失败条目会保留原因，便于定位网络、数据或接口异常。</p>
+                </div>
+                <span class="badge">{{ activeLogDetail.failed }} 条</span>
+              </div>
+              <div class="table-shell settings-table-shell">
+                <table class="min-w-full text-sm settings-detail-table">
                   <thead class="table-head text-left text-black/70">
                     <tr>
                       <th class="px-3 py-2 font-medium">类型</th>
@@ -787,10 +882,12 @@ onMounted(reloadAll);
                       :key="`failed-${idx}-${entry.media_type}-${entry.tmdb_id}`"
                       class="table-row-hover"
                     >
-                      <td class="px-3 py-2">{{ formatMediaType(entry.media_type) }}</td>
-                      <td class="px-3 py-2">{{ entry.name || "-" }}</td>
-                      <td class="px-3 py-2">{{ entry.tmdb_id || "-" }}</td>
-                      <td class="px-3 py-2 text-black/70">{{ entry.message || "-" }}</td>
+                      <td class="px-3 py-2 whitespace-nowrap">{{ formatMediaType(entry.media_type) }}</td>
+                      <td class="px-3 py-2 min-w-44">
+                        <p class="settings-table-primary line-clamp-2">{{ entry.name || "-" }}</p>
+                      </td>
+                      <td class="px-3 py-2 whitespace-nowrap">{{ entry.tmdb_id || "-" }}</td>
+                      <td class="px-3 py-2 min-w-96 text-black/70">{{ entry.message || "-" }}</td>
                     </tr>
                     <tr v-if="activeLogDetail.failed_list.length === 0">
                       <td colspan="4" class="px-3 py-4 text-center text-black/55">无失败明细</td>
@@ -798,7 +895,7 @@ onMounted(reloadAll);
                   </tbody>
                 </table>
               </div>
-              <div class="mt-3 flex items-center justify-between text-xs text-black/65">
+              <div class="settings-pagination-row settings-pagination-row-sm">
                 <p>共 {{ activeLogDetail.failed }} 条，当前第 {{ detailFailedPage }} / {{ detailFailedTotalPages() }} 页</p>
                 <div class="flex items-center gap-2">
                   <button
