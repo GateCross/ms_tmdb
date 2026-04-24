@@ -80,7 +80,11 @@ function prefetchSearchItem(item: SearchResultItem) {
 
 <template>
   <section class="card">
-    <h2 class="mb-4 text-lg font-semibold text-slate-800">全站搜索</h2>
+    <div class="mb-4">
+      <p class="section-label">Search</p>
+      <h2 class="search-page-title">全站搜索</h2>
+      <p class="mt-1 text-sm text-black/55">跨电影、剧集和人物搜索 TMDB 数据，并快速进入详情页。</p>
+    </div>
     <div class="grid gap-3 md:grid-cols-[140px_1fr_auto]">
       <GlassSelect v-model="type" :options="typeOptions" />
       <input
@@ -101,12 +105,15 @@ function prefetchSearchItem(item: SearchResultItem) {
   </section>
 
   <section v-if="results.length" class="card mt-4">
-    <h3 class="section-title">结果（{{ results.length }}）</h3>
-    <ul class="space-y-2">
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <h3 class="section-title !mb-0">结果</h3>
+      <span class="badge">{{ results.length }} 条匹配</span>
+    </div>
+    <ul class="grid gap-2 md:grid-cols-2">
       <li v-for="item in results.slice(0, 20)" :key="item.id" class="search-item">
         <RouterLink
           :to="routeByItem(item)"
-          class="flex items-center gap-3"
+          class="flex h-full items-center gap-3"
           @mouseenter="prefetchSearchItem(item)"
           @focus="prefetchSearchItem(item)"
           @touchstart.passive="prefetchSearchItem(item)"
@@ -124,7 +131,7 @@ function prefetchSearchItem(item: SearchResultItem) {
               {{ item.overview }}
             </p>
           </div>
-          <span class="text-xs text-black/40">⭐ {{ item.vote_average?.toFixed(1) ?? "" }}</span>
+          <span v-if="typeof item.vote_average === 'number'" class="search-score-badge">⭐ {{ item.vote_average.toFixed(1) }}</span>
         </RouterLink>
       </li>
     </ul>

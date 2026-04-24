@@ -237,7 +237,7 @@ onBeforeUnmount(() => {
     <section class="card">
       <div class="mb-4">
         <button
-          class="rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs text-black/70 hover:bg-sand/50"
+          class="btn-soft-xs px-3 py-1.5"
           @click="goBack"
         >
           返回上一页
@@ -248,7 +248,7 @@ onBeforeUnmount(() => {
           <img
             :src="profileImg(detail.profile_path, 'w342')"
             :alt="detail.name"
-            class="w-full rounded-xl shadow-soft"
+            class="detail-poster-img"
           />
         </div>
 
@@ -282,13 +282,13 @@ onBeforeUnmount(() => {
             <p v-if="photosLoading" class="text-xs text-black/55">正在加载照片...</p>
             <p v-else-if="photosError" class="text-xs text-red-600">{{ photosError }}</p>
             <p v-else-if="photosLoaded && !photoProfiles.length" class="text-xs text-black/55">暂无照片数据</p>
-            <div v-else-if="photoProfiles.length" class="flex gap-2 overflow-x-auto pb-2">
+            <div v-else-if="photoProfiles.length" class="person-photo-strip">
               <img
                 v-for="(img, idx) in photoProfiles"
                 :key="idx"
                 :src="tmdbImg(img.file_path, 'w185')"
                 :alt="`${detail.name} photo`"
-                class="h-32 w-auto flex-shrink-0 rounded-lg object-cover"
+                class="person-photo-img"
                 loading="lazy"
               />
             </div>

@@ -28,7 +28,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="app-shell">
+  <div class="app-shell" data-theme="msdark">
     <header class="app-header">
       <div class="page-shell app-header-inner">
         <div>

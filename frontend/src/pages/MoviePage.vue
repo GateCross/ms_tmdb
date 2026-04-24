@@ -641,7 +641,7 @@ onBeforeUnmount(() => {
       />
       <div class="absolute left-4 top-4 z-10">
         <button
-          class="rounded-lg border border-white/40 bg-black/40 px-3 py-1.5 text-xs text-white hover:bg-black/55"
+          class="detail-back-btn"
           @click="goBack"
         >
           返回上一页
@@ -663,7 +663,7 @@ onBeforeUnmount(() => {
           <img
             :src="tmdbImg(detail.poster_path, 'w342')"
             :alt="detail.title"
-            class="w-full rounded-xl shadow-soft"
+            class="detail-poster-img"
           />
         </div>
 
@@ -702,7 +702,7 @@ onBeforeUnmount(() => {
             <span
               v-for="g in detail.genres"
               :key="g.id"
-              class="rounded-full bg-sand/60 px-3 py-1 text-xs text-ink"
+              class="genre-pill"
             >
               {{ g.name }}
             </span>
@@ -714,39 +714,39 @@ onBeforeUnmount(() => {
 
           <div
             v-if="checkingRemoteDiff || remoteDiffNotice || remoteDiffMessage || remoteDiffError || remoteDiffDecision === 'no_diff'"
-            class="mt-4 rounded-xl border border-amber-200 bg-amber-50/80 p-4"
+            class="detail-alert"
           >
             <p v-if="checkingRemoteDiff" class="text-xs text-amber-700">
               正在检测远程数据差异...
             </p>
 
             <template v-else-if="remoteDiffNotice">
-              <p class="mt-3 text-sm font-medium text-amber-800">
+              <p class="detail-alert-title">
                 检测到远程电影数据与本地不一致
               </p>
-              <p class="mt-1 text-xs text-amber-700">
+              <p class="detail-alert-text">
                 远程变化字段：{{ remoteDiffNotice.remoteSummary }}
               </p>
-              <p class="mt-1 text-xs text-amber-700">
+              <p class="detail-alert-text">
                 本地修改字段：{{ remoteDiffNotice.localOverrideSummary }}
               </p>
               <div class="mt-2 flex flex-wrap items-center gap-2">
                 <button
                   v-if="remoteDiffNotice.remoteDetails.length"
-                  class="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-100"
+                  class="detail-alert-action"
                   @click="showRemoteDiffDetails = !showRemoteDiffDetails"
                 >
                   {{ showRemoteDiffDetails ? "收起远程变化明细" : "查看远程变化明细" }}
                 </button>
                 <button
                   v-if="remoteDiffNotice.localOverrideDetails.length"
-                  class="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-100"
+                  class="detail-alert-action"
                   @click="showLocalOverrideDiffDetails = !showLocalOverrideDiffDetails"
                 >
                   {{ showLocalOverrideDiffDetails ? "收起本地修改明细" : "查看本地修改明细" }}
                 </button>
                 <button
-                  class="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-100 disabled:opacity-60"
+                  class="detail-alert-action disabled:opacity-60"
                   @click="keepLocalData"
                 >
                   暂不处理，保留本地
@@ -755,12 +755,12 @@ onBeforeUnmount(() => {
 
               <div
                 v-if="showRemoteDiffDetails && remoteDiffNotice.remoteDetails.length"
-                class="mt-2 space-y-2 rounded-lg border border-amber-200 bg-white/70 p-2"
+                class="detail-diff-list"
               >
                 <div
                   v-for="item in remoteDiffNotice.remoteDetails"
                   :key="`remote-${item.field}`"
-                  class="rounded-md bg-amber-50/70 p-2"
+                  class="detail-diff-item"
                 >
                   <p class="text-xs font-semibold text-amber-900">{{ item.field }}</p>
                   <p class="mt-1 text-xs text-amber-800">本地：{{ item.local }}</p>
@@ -770,12 +770,12 @@ onBeforeUnmount(() => {
 
               <div
                 v-if="showLocalOverrideDiffDetails && remoteDiffNotice.localOverrideDetails.length"
-                class="mt-2 space-y-2 rounded-lg border border-amber-200 bg-white/70 p-2"
+                class="detail-diff-list"
               >
                 <div
                   v-for="item in remoteDiffNotice.localOverrideDetails"
                   :key="`local-${item.field}`"
-                  class="rounded-md bg-amber-50/70 p-2"
+                  class="detail-diff-item"
                 >
                   <p class="text-xs font-semibold text-amber-900">{{ item.field }}</p>
                   <p class="mt-1 text-xs text-amber-800">本地：{{ item.local }}</p>
@@ -805,8 +805,8 @@ onBeforeUnmount(() => {
             </p>
           </div>
 
-          <div class="panel-glass content-auto mt-6 rounded-xl p-4">
-            <div class="flex items-center justify-between gap-3">
+          <div class="panel-glass local-editor-panel content-auto mt-6 rounded-xl p-4">
+            <div class="local-editor-header">
               <h3 class="text-sm font-semibold">本地信息编辑</h3>
               <div class="flex items-center gap-2">
                 <button
@@ -861,7 +861,7 @@ onBeforeUnmount(() => {
                 </label>
                 <label class="text-xs text-black/60 md:col-span-2">
                   类型（多选）
-                  <div class="mt-1 flex flex-wrap gap-2 rounded-lg border border-white/70 bg-white/55 p-2">
+                  <div class="field-group-box">
                     <input
                       v-model="genreKeyword"
                       class="field-control-xs w-full"
@@ -870,7 +870,7 @@ onBeforeUnmount(() => {
                     <label
                       v-for="genre in filteredGenreOptions"
                       :key="genre.id"
-                      class="inline-flex items-center gap-1.5 rounded-md border border-black/10 px-2 py-1 text-xs"
+                      class="field-choice-pill"
                     >
                       <input
                         v-model="editForm.genre_names"

@@ -119,7 +119,7 @@ const {
       />
       <div class="absolute left-4 top-4 z-10">
         <button
-          class="rounded-lg border border-white/40 bg-black/40 px-3 py-1.5 text-xs text-white hover:bg-black/55"
+          class="detail-back-btn"
           @click="goBack"
         >
           返回上一页
@@ -137,7 +137,7 @@ const {
           <img
             :src="tmdbImg(detail.poster_path, 'w342')"
             :alt="detail.name"
-            class="w-full rounded-xl shadow-soft"
+            class="detail-poster-img"
           />
         </div>
 
@@ -177,7 +177,7 @@ const {
             <span
               v-for="g in detail.genres"
               :key="g.id"
-              class="rounded-full bg-sand/60 px-3 py-1 text-xs text-ink"
+              class="genre-pill"
             >
               {{ g.name }}
             </span>

@@ -581,45 +581,60 @@ onMounted(loadData);
 </script>
 
 <template>
-  <section class="flex flex-wrap items-center gap-2">
-    <div class="glass-pill gap-2">
-      <button
-        v-for="tab in ([
-          { key: 'movie', label: '🎬 电影' },
-          { key: 'tv', label: '📺 剧集' },
-        ] as const)"
-        :key="tab.key"
-        class="glass-pill-btn px-5"
-        :class="activeTab === tab.key ? 'glass-pill-btn-active' : ''"
-        @click="switchTab(tab.key as MediaTab)"
-      >
-        {{ tab.label }}
-      </button>
+  <section class="library-toolbar card">
+    <div class="min-w-0">
+      <p class="section-label">本地库</p>
+      <h2 class="library-toolbar-title">{{ activeTab === "movie" ? "电影库" : "剧集库" }}</h2>
+      <p class="mt-1 text-sm text-black/55">管理本地缓存、手动新建条目，并快速进入详情页处理字段覆盖。</p>
     </div>
 
-    <div class="glass-pill">
-      <button
-        class="glass-pill-btn px-4 py-1.5 text-xs"
-        :class="viewMode === 'grid' ? 'glass-pill-btn-active' : ''"
-        @click="viewMode = 'grid'"
-      >
-        卡片
-      </button>
-      <button
-        class="glass-pill-btn px-4 py-1.5 text-xs"
-        :class="viewMode === 'table' ? 'glass-pill-btn-active' : ''"
-        @click="viewMode = 'table'"
-      >
-        表格
+    <div class="library-toolbar-actions">
+      <div class="glass-pill gap-2">
+        <button
+          v-for="tab in ([
+            { key: 'movie', label: '🎬 电影' },
+            { key: 'tv', label: '📺 剧集' },
+          ] as const)"
+          :key="tab.key"
+          class="glass-pill-btn px-5"
+          :class="activeTab === tab.key ? 'glass-pill-btn-active' : ''"
+          @click="switchTab(tab.key as MediaTab)"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+
+      <div class="glass-pill">
+        <button
+          class="glass-pill-btn px-4 py-1.5 text-xs"
+          :class="viewMode === 'grid' ? 'glass-pill-btn-active' : ''"
+          @click="viewMode = 'grid'"
+        >
+          卡片
+        </button>
+        <button
+          class="glass-pill-btn px-4 py-1.5 text-xs"
+          :class="viewMode === 'table' ? 'glass-pill-btn-active' : ''"
+          @click="viewMode = 'table'"
+        >
+          表格
+        </button>
+      </div>
+
+      <button class="btn-primary" @click="openCreatePanel">
+        {{ createTitle }}
       </button>
     </div>
-
-    <button class="btn-primary" @click="openCreatePanel">
-      {{ createTitle }}
-    </button>
   </section>
 
-  <section class="card mt-4">
+  <section class="card library-filter-card mt-4">
+    <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
+      <div>
+        <p class="section-label">快速筛选</p>
+        <p class="mt-1 text-xs text-black/55">支持 TMDB ID、片名或剧名；可切换包含/前缀匹配。</p>
+      </div>
+      <span v-if="keyword" class="badge">当前关键词：{{ keyword }}</span>
+    </div>
     <div class="grid gap-3 md:grid-cols-[1fr_auto_auto_auto] md:items-center">
       <input
         v-model="keywordInput"
@@ -640,7 +655,7 @@ onMounted(loadData);
   <div v-if="createPanelVisible" class="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]" @click="closeCreatePanel" />
     <section class="panel-glass relative z-10 w-full max-w-5xl overflow-hidden rounded-2xl">
-      <div class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/60 bg-white/70 px-4 py-3 backdrop-blur sm:px-6">
+      <div class="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-black/35 px-4 py-3 backdrop-blur sm:px-6">
         <h3 class="text-sm font-semibold">{{ createTitle }}</h3>
         <button class="btn-soft px-3 py-1.5 text-xs" @click="closeCreatePanel">
           关闭
@@ -820,13 +835,14 @@ onMounted(loadData);
   <p v-else-if="error" class="card mt-4 text-sm text-red-600">{{ error }}</p>
 
   <template v-else>
-    <section class="mt-4 flex items-center justify-between">
+    <section class="library-list-summary mt-4">
       <p class="text-sm text-black/60">
         共 <strong>{{ total }}</strong> 条记录 · 第 {{ page }}/{{ totalPages() }} 页
       </p>
+      <span class="badge">{{ activeTab === "movie" ? "电影" : "剧集" }} · {{ viewMode === "grid" ? "卡片视图" : "表格视图" }}</span>
     </section>
 
-    <section v-if="viewMode === 'grid'" class="mt-4 poster-grid">
+    <section v-if="viewMode === 'grid' && items.length" class="mt-4 poster-grid">
       <div
         v-for="item in items"
         :key="item.tmdb_id"
@@ -835,7 +851,7 @@ onMounted(loadData);
         <button
           v-if="canDeleteItem(item)"
           type="button"
-          class="absolute right-2 top-2 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-red-300 bg-white/95 text-red-600 shadow-sm opacity-0 transition-all duration-200 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto hover:bg-red-50 disabled:cursor-not-allowed"
+          class="library-delete-btn pointer-events-none absolute right-2 top-2 z-20 opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100"
           :class="deletingId === item.tmdb_id ? 'opacity-100 pointer-events-none' : ''"
           :disabled="deletingId === item.tmdb_id"
           :title="deletingId === item.tmdb_id ? '删除中' : '删除本地数据'"
@@ -861,9 +877,9 @@ onMounted(loadData);
           />
           <div class="poster-info">
             <p class="truncate text-sm font-medium">{{ item.title || item.name }}</p>
-            <p class="text-xs text-black/55">
-              ⭐ {{ (item.vote_average ?? 0).toFixed(1) }}
-              <span class="ml-1">{{ (item.release_date || item.first_air_date || "").slice(0, 4) }}</span>
+            <p class="poster-meta">
+              <span class="poster-rating">⭐ {{ (item.vote_average ?? 0).toFixed(1) }}</span>
+              <span>{{ (item.release_date || item.first_air_date || "").slice(0, 4) }}</span>
             </p>
             <span v-if="item.tmdb_id < 0" class="chip-local-new mt-1 text-[10px]">
               本地新建
@@ -874,6 +890,10 @@ onMounted(loadData);
           </div>
         </RouterLink>
       </div>
+    </section>
+
+    <section v-else-if="viewMode === 'grid'" class="empty-state mt-4">
+      暂无本地数据，可以尝试切换分类、重置搜索，或新建一条本地记录。
     </section>
 
     <section v-else class="table-shell">
@@ -893,7 +913,7 @@ onMounted(loadData);
           <tr
             v-for="item in items"
             :key="item.tmdb_id"
-            class="border-t border-black/5 hover:bg-black/[0.02]"
+            class="table-row-hover"
           >
             <td class="px-4 py-3">{{ item.tmdb_id }}</td>
             <td class="px-4 py-3">
@@ -923,22 +943,34 @@ onMounted(loadData);
               <span v-else class="text-xs text-black/45">未修改</span>
             </td>
             <td class="px-4 py-3">
-              <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2">
                 <button
-                  class="btn-soft px-3 py-1 text-xs"
+                  class="table-action-btn table-action-btn-soft"
+                  type="button"
+                  data-tooltip="查看详情"
+                  aria-label="查看详情"
                   @mouseenter="prefetchItemDetail(item)"
                   @focus="prefetchItemDetail(item)"
                   @click="openItemDetail(item)"
                 >
-                  查看详情
+                  <svg viewBox="0 0 24 24" class="h-4 w-4 fill-none stroke-current" stroke-width="1.8" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+                    <circle cx="12" cy="12" r="2.6" />
+                  </svg>
                 </button>
                 <button
                   v-if="canDeleteItem(item)"
-                  class="rounded-lg border border-red-300 bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-60"
+                  class="table-action-btn table-action-btn-danger"
+                  type="button"
+                  :data-tooltip="deletingId === item.tmdb_id ? '删除中...' : '删除'"
+                  :aria-label="deletingId === item.tmdb_id ? '删除中' : '删除'"
                   :disabled="deletingId === item.tmdb_id"
                   @click="requestDeleteItem(item)"
                 >
-                  {{ deletingId === item.tmdb_id ? "删除中..." : "删除" }}
+                  <span v-if="deletingId === item.tmdb_id" class="text-[11px]">...</span>
+                  <svg v-else viewBox="0 0 24 24" class="h-4 w-4 fill-none stroke-current" stroke-width="1.8" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                  </svg>
                 </button>
               </div>
             </td>

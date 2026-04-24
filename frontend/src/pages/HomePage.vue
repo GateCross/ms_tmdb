@@ -129,6 +129,12 @@ onMounted(loadData);
       <h2 class="home-hero-title">电影、剧集、人物一站式搜索</h2>
       <p class="home-hero-desc">输入关键词即可查看结果，并快速进入对应详情页。</p>
 
+      <div class="home-hero-stats" aria-label="平台能力">
+        <span class="home-hero-stat">TMDB 代理</span>
+        <span class="home-hero-stat">本地缓存</span>
+        <span class="home-hero-stat">字段覆盖</span>
+      </div>
+
       <div class="home-search-row">
         <input
           v-model="searchQuery"
@@ -161,15 +167,15 @@ onMounted(loadData);
   <section v-if="hasSearched" class="card mt-4">
     <div class="mb-3 flex items-center justify-between gap-2">
       <h3 class="section-title !mb-0">搜索结果</h3>
-      <span class="text-xs text-black/55">
+      <span class="badge search-meta-badge">
         {{ searchResults.length ? `展示前 ${searchResults.length} 条` : "没有匹配结果" }}
       </span>
     </div>
-    <ul v-if="searchResults.length" class="space-y-2">
+    <ul v-if="searchResults.length" class="grid gap-2 md:grid-cols-2">
       <li v-for="item in searchResults" :key="`${item.media_type ?? searchType}-${item.id}`" class="search-item">
         <RouterLink
           :to="routeByItem(item)"
-          class="flex items-center gap-3"
+          class="flex h-full items-center gap-3"
           @mouseenter="prefetchSearchItem(item)"
           @focus="prefetchSearchItem(item)"
           @touchstart.passive="prefetchSearchItem(item)"
@@ -187,13 +193,13 @@ onMounted(loadData);
               {{ item.overview }}
             </p>
           </div>
-          <span class="text-xs text-black/40">
-            {{ typeof item.vote_average === "number" ? `⭐ ${item.vote_average.toFixed(1)}` : "" }}
+          <span v-if="typeof item.vote_average === 'number'" class="search-score-badge">
+            ⭐ {{ item.vote_average.toFixed(1) }}
           </span>
         </RouterLink>
       </li>
     </ul>
-    <p v-else class="text-sm text-black/55">未找到结果，请尝试更换关键词。</p>
+    <p v-else class="empty-state">未找到结果，请尝试更换关键词。</p>
   </section>
 
   <section class="mt-4 flex items-center justify-between">
@@ -229,9 +235,9 @@ onMounted(loadData);
         />
         <div class="poster-info">
           <p class="truncate text-sm font-medium">{{ item.title || item.original_title }}</p>
-          <p class="text-xs text-black/55">
-            ⭐ {{ item.vote_average?.toFixed(1) ?? "-" }}
-            <span class="ml-1">{{ item.release_date?.slice(0, 4) ?? "" }}</span>
+          <p class="poster-meta">
+            <span class="poster-rating">⭐ {{ item.vote_average?.toFixed(1) ?? "-" }}</span>
+            <span>{{ item.release_date?.slice(0, 4) ?? "" }}</span>
           </p>
         </div>
       </RouterLink>
@@ -259,9 +265,9 @@ onMounted(loadData);
         />
         <div class="poster-info">
           <p class="truncate text-sm font-medium">{{ item.name || item.original_name }}</p>
-          <p class="text-xs text-black/55">
-            ⭐ {{ item.vote_average?.toFixed(1) ?? "-" }}
-            <span class="ml-1">{{ item.first_air_date?.slice(0, 4) ?? "" }}</span>
+          <p class="poster-meta">
+            <span class="poster-rating">⭐ {{ item.vote_average?.toFixed(1) ?? "-" }}</span>
+            <span>{{ item.first_air_date?.slice(0, 4) ?? "" }}</span>
           </p>
         </div>
       </RouterLink>

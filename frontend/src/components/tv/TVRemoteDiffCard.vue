@@ -24,39 +24,39 @@ const props = defineProps<{
 <template>
   <div
     v-if="checkingRemoteDiff || remoteDiffNotice || remoteDiffMessage || remoteDiffError || remoteDiffDecision === 'no_diff'"
-    class="mt-4 rounded-xl border border-amber-200 bg-amber-50/80 p-4"
+    class="detail-alert"
   >
     <p v-if="checkingRemoteDiff" class="text-xs text-amber-700">
       正在检测远程数据差异...
     </p>
 
     <template v-else-if="remoteDiffNotice">
-      <p class="mt-3 text-sm font-medium text-amber-800">
+      <p class="detail-alert-title">
         检测到远程剧集数据与本地不一致
       </p>
-      <p class="mt-1 text-xs text-amber-700">
+      <p class="detail-alert-text">
         远程变化字段：{{ remoteDiffNotice.remoteSummary }}
       </p>
-      <p class="mt-1 text-xs text-amber-700">
+      <p class="detail-alert-text">
         本地修改字段：{{ remoteDiffNotice.localOverrideSummary }}
       </p>
       <div class="mt-2 flex flex-wrap items-center gap-2">
         <button
           v-if="remoteDiffNotice.remoteDetails.length"
-          class="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-100"
+          class="detail-alert-action"
           @click="onToggleRemoteDetails"
         >
           {{ showRemoteDiffDetails ? "收起远程变化明细" : "查看远程变化明细" }}
         </button>
         <button
           v-if="remoteDiffNotice.localOverrideDetails.length"
-          class="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-100"
+          class="detail-alert-action"
           @click="onToggleLocalDetails"
         >
           {{ showLocalOverrideDiffDetails ? "收起本地修改明细" : "查看本地修改明细" }}
         </button>
         <button
-          class="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-100 disabled:opacity-60"
+          class="detail-alert-action disabled:opacity-60"
           @click="onKeepLocal"
         >
           暂不处理，保留本地
@@ -65,12 +65,12 @@ const props = defineProps<{
 
       <div
         v-if="showRemoteDiffDetails && remoteDiffNotice.remoteDetails.length"
-        class="mt-2 space-y-2 rounded-lg border border-amber-200 bg-white/70 p-2"
+        class="detail-diff-list"
       >
         <div
           v-for="item in remoteDiffNotice.remoteDetails"
           :key="`remote-${item.field}`"
-          class="rounded-md bg-amber-50/70 p-2"
+          class="detail-diff-item"
         >
           <p class="text-xs font-semibold text-amber-900">{{ item.field }}</p>
           <p class="mt-1 text-xs text-amber-800">本地：{{ item.local }}</p>
@@ -80,12 +80,12 @@ const props = defineProps<{
 
       <div
         v-if="showLocalOverrideDiffDetails && remoteDiffNotice.localOverrideDetails.length"
-        class="mt-2 space-y-2 rounded-lg border border-amber-200 bg-white/70 p-2"
+        class="detail-diff-list"
       >
         <div
           v-for="item in remoteDiffNotice.localOverrideDetails"
           :key="`local-${item.field}`"
-          class="rounded-md bg-amber-50/70 p-2"
+          class="detail-diff-item"
         >
           <p class="text-xs font-semibold text-amber-900">{{ item.field }}</p>
           <p class="mt-1 text-xs text-amber-800">本地：{{ item.local }}</p>

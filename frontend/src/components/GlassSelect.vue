@@ -82,7 +82,7 @@ onBeforeUnmount(() => {
       <span class="truncate">{{ selectedOption?.label ?? "-" }}</span>
       <svg
         viewBox="0 0 20 20"
-        class="h-4 w-4 flex-none text-slate-600 transition"
+        class="h-4 w-4 flex-none transition"
         :class="open ? 'rotate-180' : ''"
         aria-hidden="true"
       >
@@ -106,8 +106,8 @@ onBeforeUnmount(() => {
           v-for="option in options"
           :key="option.value"
           type="button"
-          class="glass-select-option block w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition"
-          :class="option.value === modelValue ? 'bg-slate-200 text-slate-900' : 'hover:bg-slate-100'"
+          class="glass-select-option block w-full rounded-lg px-3 py-2 text-left text-sm transition"
+          :class="option.value === modelValue ? 'glass-select-option-active' : ''"
           @click="selectOption(option.value)"
         >
           {{ option.label }}
@@ -119,13 +119,33 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .glass-select-trigger {
-  background: #ffffff !important;
+  background: var(--field-bg) !important;
   border-color: var(--field-border) !important;
+  color: var(--text-main) !important;
+}
+
+.glass-select-trigger svg {
+  color: var(--text-muted);
 }
 
 .glass-select-menu {
-  background: #ffffff;
+  background: var(--glass-bg-strong);
   border-color: var(--field-border);
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(16px) saturate(145%);
+}
+
+.glass-select-option {
+  color: var(--text-main);
+}
+
+.glass-select-option:hover {
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.glass-select-option-active {
+  color: #f8fbff;
+  background: linear-gradient(135deg, rgba(1, 180, 228, 0.42) 0%, rgba(2, 132, 199, 0.38) 100%);
 }
 
 .glass-select-fade-enter-active,

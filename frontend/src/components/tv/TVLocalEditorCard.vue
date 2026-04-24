@@ -36,8 +36,8 @@ const genreKeywordModel = computed({
 </script>
 
 <template>
-  <div class="panel-glass content-auto mt-6 rounded-xl p-4">
-    <div class="flex items-center justify-between gap-3">
+  <div class="panel-glass local-editor-panel content-auto mt-6 rounded-xl p-4">
+    <div class="local-editor-header">
       <h3 class="text-sm font-semibold">本地信息编辑</h3>
       <div class="flex items-center gap-2">
         <button
@@ -92,7 +92,7 @@ const genreKeywordModel = computed({
         </label>
         <label class="text-xs text-black/60 md:col-span-2">
           类型（多选）
-          <div class="mt-1 flex flex-wrap gap-2 rounded-lg border border-white/70 bg-white/55 p-2">
+          <div class="field-group-box">
             <input
               v-model="genreKeywordModel"
               class="field-control-xs w-full"
@@ -101,7 +101,7 @@ const genreKeywordModel = computed({
             <label
               v-for="genre in filteredGenreOptions"
               :key="genre.id"
-              class="inline-flex items-center gap-1.5 rounded-md border border-black/10 px-2 py-1 text-xs"
+              class="field-choice-pill"
             >
               <input
                 v-model="editForm.genre_names"

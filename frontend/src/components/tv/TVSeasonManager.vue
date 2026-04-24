@@ -65,8 +65,8 @@ const props = defineProps<{
         v-for="s in seasonOptions"
         :key="s.id || s.season_number"
         type="button"
-        class="cast-card rounded-xl p-1 text-left transition"
-        :class="selectedSeasonNumber === s.season_number ? 'bg-sand/60 ring-2 ring-pine/25' : 'hover:bg-white/70'"
+        class="cast-card season-card"
+        :class="selectedSeasonNumber === s.season_number ? 'season-card-active' : ''"
         @click="onSelectSeason(s.season_number)"
       >
         <img
@@ -81,7 +81,7 @@ const props = defineProps<{
     </div>
     <div
       v-else
-      class="rounded-xl border border-white/70 bg-white/55 px-4 py-3 text-xs leading-relaxed text-black/55"
+      class="season-empty"
     >
       当前剧集还没有可展示的季数据，可以直接新增本地季。
     </div>
@@ -126,7 +126,7 @@ const props = defineProps<{
         <button
           v-else-if="selectedSeasonDetail && !(seasonEditorVisible && seasonEditorMode === 'create')"
           type="button"
-          class="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1 text-xs text-amber-700 hover:bg-amber-100 disabled:opacity-60"
+          class="detail-alert-action disabled:opacity-60"
           :disabled="seasonLocalSaving || seasonDetailLoading || !selectedSeasonDetail"
           @click="onSaveSeasonToLocal"
         >
@@ -162,7 +162,7 @@ const props = defineProps<{
       {{ episodeFormError }}
     </p>
 
-    <div v-if="seasonEditorVisible" class="mt-3 rounded-xl border border-white/70 bg-white/60 p-4">
+    <div v-if="seasonEditorVisible" class="season-editor-box">
       <div class="grid gap-3 md:grid-cols-2">
         <label class="text-xs text-black/60">
           季号
@@ -229,7 +229,7 @@ const props = defineProps<{
 
     <div
       v-if="episodeCreatorVisible && selectedSeasonDetail && !(seasonEditorVisible && seasonEditorMode === 'create')"
-      class="mt-3 rounded-xl border border-white/70 bg-white/60 p-4"
+      class="season-editor-box"
     >
       <div class="grid gap-3 md:grid-cols-2">
         <label class="text-xs text-black/60">
@@ -314,13 +314,13 @@ const props = defineProps<{
     <p v-else-if="seasonDetailError" class="mt-3 text-xs text-red-600">{{ seasonDetailError }}</p>
     <p
       v-else-if="!selectedSeasonDetail && !seasonEditorVisible"
-      class="mt-3 rounded-lg border border-white/70 bg-white/55 px-3 py-2 text-xs text-black/55"
+      class="season-inline-note mt-3"
     >
       请选择一个已有季，或点击“新增季”创建本地季。
     </p>
     <p
       v-else-if="selectedSeasonDetail && !selectedSeasonEpisodes.length && !(seasonEditorVisible && seasonEditorMode === 'create')"
-      class="mt-3 rounded-lg border border-white/70 bg-white/55 px-3 py-2 text-xs text-black/55"
+      class="season-inline-note mt-3"
     >
       当前季暂无可展示的分集数据
     </p>
@@ -329,12 +329,12 @@ const props = defineProps<{
       <article
         v-for="ep in selectedSeasonEpisodes"
         :key="ep.id || ep.episode_number"
-        class="rounded-xl border border-white/70 bg-white/62 p-3 md:flex md:gap-3"
+        class="episode-card"
       >
         <img
           :src="tmdbImg(ep.still_path, 'w342')"
           :alt="ep.name || `第${ep.episode_number}集`"
-          class="aspect-video w-full rounded-lg object-contain md:w-48"
+          class="episode-still"
           loading="lazy"
         />
         <div class="mt-2 min-w-0 md:mt-0 md:flex-1">

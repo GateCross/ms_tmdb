@@ -206,7 +206,7 @@ watch(
       <label
         v-for="option in visibleModeOptions"
         :key="option.value"
-        class="rounded-lg border border-black/10 bg-white px-3 py-2 text-sm"
+        class="sync-option-card"
       >
         <div class="flex items-center gap-2">
           <input v-model="syncMode" type="radio" class="radio-control" :value="option.value" />
@@ -216,11 +216,11 @@ watch(
       </label>
     </div>
 
-    <div v-if="syncMode === 'selective'" class="mt-3 rounded-lg border border-black/10 bg-white p-3">
+    <div v-if="syncMode === 'selective'" class="sync-selective-box">
       <div class="flex items-center gap-2">
         <button
           v-if="!usingPresetChangedFields"
-          class="rounded-lg border border-black/10 bg-white px-3 py-1.5 text-xs hover:bg-sand/50 disabled:opacity-60"
+          class="btn-soft-xs disabled:opacity-60"
           :disabled="diffChecking || syncing || !canSync"
           @click="loadChangedFields"
         >
@@ -236,7 +236,7 @@ watch(
         <label
           v-for="field in changedFields"
           :key="field"
-          class="inline-flex items-center gap-1.5 rounded-md border border-black/10 px-2 py-1 text-xs"
+          class="field-choice-pill"
         >
           <input v-model="selectedOverwriteFields" type="checkbox" class="check-control" :value="field" />
           <span>{{ resolveFieldLabel(field) }}</span>
@@ -249,7 +249,7 @@ watch(
 
     <div class="mt-3 flex items-center gap-3">
       <button
-        class="rounded-lg bg-pine px-4 py-2 text-sm font-medium text-white hover:bg-pine/90 disabled:opacity-60"
+        class="btn-primary disabled:opacity-60"
         :disabled="syncing || diffChecking || !canSync"
         @click="applySync"
       >

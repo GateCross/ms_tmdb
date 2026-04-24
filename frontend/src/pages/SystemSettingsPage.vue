@@ -438,9 +438,10 @@ onMounted(reloadAll);
 
 <template>
   <section class="grid gap-4">
-    <div class="card max-w-2xl">
-      <h2 class="text-lg font-semibold">系统设置</h2>
-      <p class="mt-1 text-sm text-black/60">统一管理代理访问和库内定时同步任务。</p>
+    <div class="card settings-hero">
+      <p class="section-label">Settings</p>
+      <h2 class="search-page-title">系统设置</h2>
+      <p class="settings-note">统一管理代理访问、库内定时同步任务和执行日志。</p>
       <p v-if="loading" class="mt-4 text-sm text-black/55">加载中...</p>
       <div v-else class="mt-3">
         <button
@@ -453,9 +454,9 @@ onMounted(reloadAll);
       </div>
     </div>
 
-    <div class="card max-w-2xl">
-      <h3 class="text-base font-semibold">代理设置</h3>
-      <p class="mt-1 text-sm text-black/60">配置后端访问 TMDB 时使用的网络代理。</p>
+    <div class="card settings-card">
+      <h3 class="settings-section-title">代理设置</h3>
+      <p class="settings-note">配置后端访问 TMDB 时使用的网络代理。</p>
 
       <label class="mt-4 inline-flex items-center gap-2 text-sm">
         <input v-model="proxyEnabled" type="checkbox" class="check-control" />
@@ -487,9 +488,9 @@ onMounted(reloadAll);
       <p v-if="proxyError" class="mt-3 text-sm text-red-600">{{ proxyError }}</p>
     </div>
 
-    <div class="card max-w-2xl">
-      <h3 class="text-base font-semibold">定时同步设置</h3>
-      <p class="mt-1 text-sm text-black/60">仅支持 cron 表达式调度，保存后即时生效。</p>
+    <div class="card settings-card">
+      <h3 class="settings-section-title">定时同步设置</h3>
+      <p class="settings-note">仅支持 cron 表达式调度，保存后即时生效。</p>
 
       <label class="mt-4 inline-flex items-center gap-2 text-sm">
         <input v-model="syncEnabled" type="checkbox" class="check-control" />
@@ -559,11 +560,11 @@ onMounted(reloadAll);
       <p v-if="syncError" class="mt-3 text-sm text-red-600">{{ syncError }}</p>
     </div>
 
-    <div class="card">
-      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    <div class="card settings-card-wide">
+      <div class="settings-log-header">
         <div>
-          <h3 class="text-base font-semibold">定时任务执行日志</h3>
-          <p class="mt-1 text-sm text-black/60">最近执行记录会持久化到数据库，可按状态筛选查看。</p>
+          <h3 class="settings-section-title">定时任务执行日志</h3>
+          <p class="settings-note">最近执行记录会持久化到数据库，可按状态筛选查看。</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
@@ -586,7 +587,7 @@ onMounted(reloadAll);
             {{ logsLoading ? "刷新中..." : "刷新日志" }}
           </button>
           <button
-            class="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 hover:bg-red-100 disabled:opacity-60"
+            class="btn-danger-soft disabled:opacity-60"
             :disabled="logsLoading || logsClearing"
             @click="openClearLogsConfirm"
           >
@@ -615,7 +616,7 @@ onMounted(reloadAll);
             <tr
               v-for="item in logsItems"
               :key="item.id"
-              class="border-t border-black/5"
+              class="table-row-hover"
             >
               <td class="px-3 py-2">
                 <p>{{ formatDateTime(item.triggered_at) }}</p>
@@ -678,7 +679,7 @@ onMounted(reloadAll);
 
     <div v-if="detailModalVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4" @click.self="closeLogDetail">
       <div class="panel-glass max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-2xl">
-        <div class="flex items-center justify-between border-b border-white/60 px-5 py-3">
+        <div class="modal-header-dark">
           <h4 class="text-base font-semibold">
             执行日志明细
             <span v-if="activeLogDetail" class="text-sm text-black/55">#{{ activeLogDetail.id }}</span>
@@ -729,7 +730,7 @@ onMounted(reloadAll);
                     <tr
                       v-for="(entry, idx) in activeLogDetail.synced_list"
                       :key="`synced-${idx}-${entry.media_type}-${entry.tmdb_id}`"
-                      class="border-t border-black/5"
+                      class="table-row-hover"
                     >
                       <td class="px-3 py-2">{{ formatMediaType(entry.media_type) }}</td>
                       <td class="px-3 py-2">{{ entry.name || "-" }}</td>
@@ -784,7 +785,7 @@ onMounted(reloadAll);
                     <tr
                       v-for="(entry, idx) in activeLogDetail.failed_list"
                       :key="`failed-${idx}-${entry.media_type}-${entry.tmdb_id}`"
-                      class="border-t border-black/5"
+                      class="table-row-hover"
                     >
                       <td class="px-3 py-2">{{ formatMediaType(entry.media_type) }}</td>
                       <td class="px-3 py-2">{{ entry.name || "-" }}</td>
