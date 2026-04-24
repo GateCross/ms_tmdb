@@ -7,11 +7,13 @@ import (
 
 	"ms_tmdb/config"
 	adminhandler "ms_tmdb/internal/handler/admin"
+	"ms_tmdb/internal/logging"
 	adminlogic "ms_tmdb/internal/logic/admin"
 	"ms_tmdb/internal/middleware"
 	"ms_tmdb/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/conf"
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest"
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
@@ -26,6 +28,7 @@ func main() {
 	c.ConfigFile = *configFile
 
 	server := rest.MustNewServer(c.RestConf)
+	logging.SetupConsoleWriter(c.Log.Mode)
 	defer server.Stop()
 
 	ctx := svc.NewServiceContext(c)
@@ -90,7 +93,7 @@ func main() {
 		rest.WithPrefix("/uploads"),
 	)
 
-	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
+	logx.Infof("服务启动: %s:%d", c.Host, c.Port)
 	server.Start()
 }
 
