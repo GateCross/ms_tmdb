@@ -49,13 +49,13 @@ func writeJSONResponse(w http.ResponseWriter, data json.RawMessage) {
 	_, _ = w.Write(data)
 }
 
-func writeProxyError(w http.ResponseWriter, code int, msg string) {
+func writeProxyError(w http.ResponseWriter, code int) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(code)
 	resp, _ := json.Marshal(map[string]interface{}{
 		"success":        false,
 		"status_code":    code,
-		"status_message": msg,
+		"status_message": "TMDB 代理请求失败，请稍后重试",
 	})
 	_, _ = w.Write(resp)
 }

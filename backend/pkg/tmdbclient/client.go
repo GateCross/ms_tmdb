@@ -15,6 +15,8 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
+const defaultHTTPTimeout = 15 * time.Second
+
 // Client TMDB API 客户端
 type Client struct {
 	apiKey     string
@@ -40,7 +42,7 @@ func NewClient(apiKey, baseURL, defaultLanguage string, rateLimit int, proxyURL 
 		baseURL:  baseURL,
 		language: defaultLanguage,
 		httpClient: &http.Client{
-			Timeout: 15 * time.Second,
+			Timeout: defaultHTTPTimeout,
 		},
 		rateLimiter: make(chan struct{}, rateLimit),
 	}
@@ -94,9 +96,14 @@ func (c *Client) SetProxy(proxyURL string) error {
 		transport.Proxy = http.ProxyURL(parsed)
 	}
 
+	httpClient := &http.Client{
+		Timeout:   defaultHTTPTimeout,
+		Transport: transport,
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.httpClient.Transport = transport
+	c.httpClient = httpClient
 	c.proxyURL = trimmed
 	return nil
 }
@@ -113,20 +120,24 @@ type RequestOption struct {
 
 // Get 发送 GET 请求到 TMDB API
 func (c *Client) Get(path string, opts *RequestOption) (json.RawMessage, error) {
-	// 限流
-	<-c.rateLimiter
+	ctx := context.Background()
+	if opts != nil && opts.Context != nil {
+		ctx = opts.Context
+	}
+
+	// 等待限流令牌时也要响应请求取消，避免客户端断开后继续阻塞。
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-c.rateLimiter:
+	}
 
 	reqURL, err := c.buildURL(path, opts)
 	if err != nil {
 		return nil, fmt.Errorf("构建请求 URL 失败: %w", err)
 	}
 
-	logx.Debugf("TMDB 请求: %s", reqURL)
-
-	ctx := context.Background()
-	if opts != nil && opts.Context != nil {
-		ctx = opts.Context
-	}
+	logx.Debugf("TMDB 请求: %s", maskSensitiveQuery(reqURL))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {
@@ -196,4 +207,18 @@ func (c *Client) buildURL(path string, opts *RequestOption) (string, error) {
 
 	u.RawQuery = q.Encode()
 	return u.String(), nil
+}
+
+func maskSensitiveQuery(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return rawURL
+	}
+
+	q := u.Query()
+	if q.Has("api_key") {
+		q.Set("api_key", "***")
+	}
+	u.RawQuery = q.Encode()
+	return u.String()
 }

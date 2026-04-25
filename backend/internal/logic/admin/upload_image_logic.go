@@ -1,11 +1,13 @@
 package admin
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,6 +29,13 @@ var allowedImageExt = map[string]struct{}{
 	".png":  {},
 	".webp": {},
 	".gif":  {},
+}
+
+var allowedImageContentTypes = map[string]struct{}{
+	"image/jpeg": {},
+	"image/png":  {},
+	"image/webp": {},
+	"image/gif":  {},
 }
 
 type UploadImageLogic struct {
@@ -60,6 +69,14 @@ func (l *UploadImageLogic) UploadImage(file multipart.File, header *multipart.Fi
 	if contentType != "" && !strings.HasPrefix(strings.ToLower(contentType), "image/") {
 		return "", errors.New("仅支持图片文件上传")
 	}
+	reader := bufio.NewReader(file)
+	peek, err := reader.Peek(512)
+	if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, bufio.ErrBufferFull) {
+		return "", err
+	}
+	if detected := http.DetectContentType(peek); !isAllowedImageContentType(detected) {
+		return "", errors.New("文件内容不是受支持的图片格式")
+	}
 
 	uploadDir := filepath.Join(".", uploadDirName)
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
@@ -75,9 +92,23 @@ func (l *UploadImageLogic) UploadImage(file multipart.File, header *multipart.Fi
 	}
 	defer dst.Close()
 
-	if _, err := io.Copy(dst, file); err != nil {
+	written, err := io.Copy(dst, io.LimitReader(reader, maxUploadImageSize+1))
+	if err != nil {
 		return "", err
+	}
+	if written > maxUploadImageSize {
+		_ = os.Remove(savePath)
+		return "", errors.New("图片大小不能超过 10MB")
 	}
 
 	return "/uploads/" + fileName, nil
+}
+
+func isAllowedImageContentType(contentType string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(contentType))
+	if idx := strings.Index(normalized, ";"); idx >= 0 {
+		normalized = strings.TrimSpace(normalized[:idx])
+	}
+	_, ok := allowedImageContentTypes[normalized]
+	return ok
 }

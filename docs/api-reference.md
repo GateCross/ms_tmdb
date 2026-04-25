@@ -83,7 +83,6 @@
 
 - `PUT /api/admin/movie/{id}`
 - `PUT /api/admin/tv/{id}`
-- `PUT /api/admin/person/{id}`
 - `GET /api/admin/tv/{id}/season/{season_number}/local`（查询某季是否已保存本地）
 - `POST /api/admin/tv/{id}/season/{season_number}/local`（拉取 TMDB 季明细并保存/覆盖本地）
 - `PUT /api/admin/tv/{id}/season/{season_number}/local`（更新本地季明细，`payload` 为季详情对象）
@@ -104,9 +103,8 @@
 - `DELETE /api/admin/movie/{id}/local`
 - `DELETE /api/admin/tv/{id}/local`
 
-### 2.4 统计与列表
+### 2.4 列表
 
-- `GET /api/admin/stats`
 - `GET /api/admin/movies?page=1&page_size=20&keyword=&search_mode=contains`
 - `GET /api/admin/tv-series?page=1&page_size=20&keyword=&search_mode=contains`
 

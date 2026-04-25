@@ -38,7 +38,7 @@ func (m *TmdbProxyMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 		data, err := m.dispatcher.dispatch(tmdbPath, parseRequestOptions(r), r)
 		if err != nil {
 			logx.Errorf("TMDB 代理请求失败: %s, 错误: %v", tmdbPath, err)
-			writeProxyError(w, http.StatusBadGateway, err.Error())
+			writeProxyError(w, http.StatusBadGateway)
 			return
 		}
 

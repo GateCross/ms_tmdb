@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -23,6 +24,7 @@ const (
 	autoSyncLogStatusSuccess      = "success"
 	autoSyncLogStatusPartial      = "partial_failed"
 	autoSyncLogStatusPanic        = "panic"
+	autoSyncLogStatusCanceled     = "canceled"
 )
 
 var (
@@ -43,6 +45,9 @@ type LibraryAutoSyncScheduler struct {
 	svcCtx *svc.ServiceContext
 
 	mu                sync.RWMutex
+	stopCtx           context.Context
+	stopCancel        context.CancelFunc
+	wg                sync.WaitGroup
 	settings          AutoSyncSettings
 	running           bool
 	started           bool
@@ -71,6 +76,7 @@ func GetLibraryAutoSyncScheduler() *LibraryAutoSyncScheduler {
 
 func NewLibraryAutoSyncScheduler(svcCtx *svc.ServiceContext) *LibraryAutoSyncScheduler {
 	cfg := svcCtx.Config.Tmdb.AutoSync
+	stopCtx, stopCancel := context.WithCancel(context.Background())
 	settings := normalizeAutoSyncSettings(AutoSyncSettings{
 		Enabled:          cfg.Enabled,
 		CronExpr:         cfg.CronExpr,
@@ -88,6 +94,8 @@ func NewLibraryAutoSyncScheduler(svcCtx *svc.ServiceContext) *LibraryAutoSyncSch
 
 	return &LibraryAutoSyncScheduler{
 		svcCtx:            svcCtx,
+		stopCtx:           stopCtx,
+		stopCancel:        stopCancel,
 		settings:          settings,
 		running:           false,
 		started:           false,
@@ -121,14 +129,32 @@ func (s *LibraryAutoSyncScheduler) Start() {
 		formatTime(eligibleAt),
 	)
 
+	s.wg.Add(1)
 	go func() {
+		defer s.wg.Done()
 		ticker := time.NewTicker(autoSyncLoopTick)
 		defer ticker.Stop()
 		for {
+			select {
+			case <-s.stopCtx.Done():
+				return
+			default:
+			}
+
 			s.maybeRun()
-			<-ticker.C
+			select {
+			case <-s.stopCtx.Done():
+				return
+			case <-ticker.C:
+			}
 		}
 	}()
+}
+
+// Stop 停止自动同步调度循环，并等待已启动的后台任务收尾。
+func (s *LibraryAutoSyncScheduler) Stop() {
+	s.stopCancel()
+	s.wg.Wait()
 }
 
 func (s *LibraryAutoSyncScheduler) GetSettings() AutoSyncSettings {
@@ -201,14 +227,16 @@ func (s *LibraryAutoSyncScheduler) TriggerNow() (bool, bool, error) {
 		settings.BatchSize,
 	)
 
+	s.wg.Add(1)
 	go func() {
+		defer s.wg.Done()
 		defer func() {
 			s.mu.Lock()
 			s.running = false
 			s.mu.Unlock()
 		}()
 
-		s.runOnce(settings, triggeredAt)
+		s.runOnce(s.stopCtx, settings, triggeredAt)
 	}()
 
 	return true, true, nil
@@ -244,10 +272,10 @@ func (s *LibraryAutoSyncScheduler) maybeRun() {
 		s.mu.Unlock()
 	}()
 
-	s.runOnce(settings, minuteKey)
+	s.runOnce(s.stopCtx, settings, minuteKey)
 }
 
-func (s *LibraryAutoSyncScheduler) runOnce(settings AutoSyncSettings, triggeredAt time.Time) {
+func (s *LibraryAutoSyncScheduler) runOnce(ctx context.Context, settings AutoSyncSettings, triggeredAt time.Time) {
 	start := time.Now()
 	status := autoSyncLogStatusSuccess
 	message := "自动同步执行成功"
@@ -263,6 +291,9 @@ func (s *LibraryAutoSyncScheduler) runOnce(settings AutoSyncSettings, triggeredA
 			message = fmt.Sprintf("任务执行异常: %v", recovered)
 			totalFailed++
 			logx.Errorf("TMDB 自动同步任务 panic: %v", recovered)
+		} else if errors.Is(ctx.Err(), context.Canceled) {
+			status = autoSyncLogStatusCanceled
+			message = "自动同步任务已取消"
 		} else if totalFailed > 0 {
 			status = autoSyncLogStatusPartial
 			message = fmt.Sprintf("执行完成，但存在 %d 项失败", totalFailed)
@@ -281,8 +312,6 @@ func (s *LibraryAutoSyncScheduler) runOnce(settings AutoSyncSettings, triggeredA
 		)
 	}()
 
-	ctx := context.Background()
-
 	movieStats := s.syncMovies(ctx, settings, &detail)
 	tvStats := s.syncTvSeries(ctx, settings, &detail)
 	personStats := s.syncPeople(ctx, settings, &detail)
@@ -300,8 +329,12 @@ func (s *LibraryAutoSyncScheduler) syncMovies(ctx context.Context, settings Auto
 
 	var lastID uint
 	for {
+		if err := ctx.Err(); err != nil {
+			return stats
+		}
+
 		var records []model.Movie
-		query := s.svcCtx.DB.
+		query := s.svcCtx.DB.WithContext(ctx).
 			Model(&model.Movie{}).
 			Select("id", "tmdb_id", "sync_tmdb_id", "title").
 			Where("tmdb_id > 0").
@@ -376,8 +409,12 @@ func (s *LibraryAutoSyncScheduler) syncTvSeries(ctx context.Context, settings Au
 
 	var lastID uint
 	for {
+		if err := ctx.Err(); err != nil {
+			return stats
+		}
+
 		var records []model.TVSeries
-		query := s.svcCtx.DB.
+		query := s.svcCtx.DB.WithContext(ctx).
 			Model(&model.TVSeries{}).
 			Select("id", "tmdb_id", "sync_tmdb_id", "name").
 			Where("tmdb_id > 0").
@@ -452,8 +489,12 @@ func (s *LibraryAutoSyncScheduler) syncPeople(ctx context.Context, settings Auto
 
 	var lastID uint
 	for {
+		if err := ctx.Err(); err != nil {
+			return stats
+		}
+
 		var records []model.Person
-		query := s.svcCtx.DB.
+		query := s.svcCtx.DB.WithContext(ctx).
 			Model(&model.Person{}).
 			Select("id", "tmdb_id", "name").
 			Where("tmdb_id > 0").

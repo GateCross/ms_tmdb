@@ -10,11 +10,17 @@ import (
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 
+const maxUploadRequestSize = 11 << 20
+
 func UploadImageHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, maxUploadRequestSize)
 		if err := r.ParseMultipartForm(10 << 20); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
+		}
+		if r.MultipartForm != nil {
+			defer r.MultipartForm.RemoveAll()
 		}
 
 		file, header, err := r.FormFile("file")

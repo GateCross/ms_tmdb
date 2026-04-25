@@ -3,12 +3,111 @@
 
 package types
 
-type AdminCompareResp struct {
-	HasDiff                 bool                      `json:"has_diff"`
-	DiffFields              []string                  `json:"diff_fields"`
-	LocalOverrideDiffFields []string                  `json:"local_override_diff_fields"`
-	DiffDetails             []AdminCompareFieldDetail `json:"diff_details"`
-	Message                 string                    `json:"message"`
+type AdminAutoSyncLogClearResp struct {
+	Message string `json:"message"`
+}
+
+type AdminAutoSyncLogDetailEntry struct {
+	MediaType         string                        `json:"media_type"`
+	TmdbId            int                           `json:"tmdb_id"`
+	Name              string                        `json:"name"`
+	Message           string                        `json:"message"`
+	RemoteDiffFields  []string                      `json:"remote_diff_fields"`
+	FieldChanges      []AdminAutoSyncLogFieldChange `json:"field_changes"`
+	ChangedFields     []string                      `json:"changed_fields"`
+	OverwrittenFields []string                      `json:"overwritten_fields"`
+	KeptLocalFields   []string                      `json:"kept_local_fields"`
+}
+
+type AdminAutoSyncLogDetailReq struct {
+	Id             int `path:"id"`
+	SyncedPage     int `form:"synced_page,optional,default=1"`
+	SyncedPageSize int `form:"synced_page_size,optional,default=10"`
+	FailedPage     int `form:"failed_page,optional,default=1"`
+	FailedPageSize int `form:"failed_page_size,optional,default=10"`
+}
+
+type AdminAutoSyncLogDetailResp struct {
+	Id             int64                         `json:"id"`
+	TriggeredAt    string                        `json:"triggered_at"`
+	CronExpr       string                        `json:"cron_expr"`
+	Mode           string                        `json:"mode"`
+	BatchSize      int                           `json:"batch_size"`
+	Status         string                        `json:"status"`
+	Checked        int                           `json:"checked"`
+	Synced         int                           `json:"synced"`
+	Failed         int                           `json:"failed"`
+	DurationMs     int64                         `json:"duration_ms"`
+	Message        string                        `json:"message"`
+	StartedAt      string                        `json:"started_at"`
+	FinishedAt     string                        `json:"finished_at"`
+	CreatedAt      string                        `json:"created_at"`
+	SyncedPage     int                           `json:"synced_page"`
+	SyncedPageSize int                           `json:"synced_page_size"`
+	SyncedList     []AdminAutoSyncLogDetailEntry `json:"synced_list"`
+	FailedPage     int                           `json:"failed_page"`
+	FailedPageSize int                           `json:"failed_page_size"`
+	FailedList     []AdminAutoSyncLogDetailEntry `json:"failed_list"`
+}
+
+type AdminAutoSyncLogFieldChange struct {
+	Field    string `json:"field"`
+	DiffType string `json:"diff_type"`
+	Before   string `json:"before"`
+	After    string `json:"after"`
+}
+
+type AdminAutoSyncLogItem struct {
+	Id          int64  `json:"id"`
+	TriggeredAt string `json:"triggered_at"`
+	CronExpr    string `json:"cron_expr"`
+	Mode        string `json:"mode"`
+	BatchSize   int    `json:"batch_size"`
+	Status      string `json:"status"`
+	Checked     int    `json:"checked"`
+	Synced      int    `json:"synced"`
+	Failed      int    `json:"failed"`
+	DurationMs  int64  `json:"duration_ms"`
+	Message     string `json:"message"`
+	StartedAt   string `json:"started_at"`
+	FinishedAt  string `json:"finished_at"`
+	CreatedAt   string `json:"created_at"`
+}
+
+type AdminAutoSyncLogListReq struct {
+	Page     int    `form:"page,optional,default=1"`
+	PageSize int    `form:"page_size,optional,default=20"`
+	Status   string `form:"status,optional"`
+}
+
+type AdminAutoSyncLogListResp struct {
+	Total    int64                  `json:"total"`
+	Page     int                    `json:"page"`
+	PageSize int                    `json:"page_size"`
+	Results  []AdminAutoSyncLogItem `json:"results"`
+}
+
+type AdminAutoSyncReq struct {
+	Enabled          *bool  `json:"enabled,optional"`
+	CronExpr         string `json:"cron_expr,optional"`
+	Mode             string `json:"mode,optional"`
+	BatchSize        *int   `json:"batch_size,optional"`
+	StartDelaySecond *int   `json:"start_delay_second,optional"`
+}
+
+type AdminAutoSyncResp struct {
+	Enabled          bool   `json:"enabled"`
+	CronExpr         string `json:"cron_expr"`
+	Mode             string `json:"mode"`
+	BatchSize        int    `json:"batch_size"`
+	StartDelaySecond int    `json:"start_delay_second"`
+	Running          bool   `json:"running"`
+}
+
+type AdminAutoSyncRunResp struct {
+	Started bool   `json:"started"`
+	Running bool   `json:"running"`
+	Message string `json:"message"`
 }
 
 type AdminCompareFieldDetail struct {
@@ -16,6 +115,14 @@ type AdminCompareFieldDetail struct {
 	DiffType string `json:"diff_type"`
 	Local    string `json:"local"`
 	Remote   string `json:"remote"`
+}
+
+type AdminCompareResp struct {
+	HasDiff                 bool                      `json:"has_diff"`
+	DiffFields              []string                  `json:"diff_fields"`
+	LocalOverrideDiffFields []string                  `json:"local_override_diff_fields"`
+	DiffDetails             []AdminCompareFieldDetail `json:"diff_details"`
+	Message                 string                    `json:"message"`
 }
 
 type AdminCreateMovieReq struct {
@@ -42,6 +149,25 @@ type AdminCreateResp struct {
 	Message    string `json:"message"`
 }
 
+type AdminCreateTvReq struct {
+	Name             string   `json:"name"`
+	OriginalName     string   `json:"original_name,optional"`
+	Overview         string   `json:"overview,optional"`
+	Tagline          string   `json:"tagline,optional"`
+	FirstAirDate     string   `json:"first_air_date,optional"`
+	Status           string   `json:"status,optional"`
+	NumberOfSeasons  *int     `json:"number_of_seasons,optional"`
+	NumberOfEpisodes *int     `json:"number_of_episodes,optional"`
+	OriginalLanguage string   `json:"original_language,optional"`
+	Homepage         string   `json:"homepage,optional"`
+	PosterPath       string   `json:"poster_path,optional"`
+	BackdropPath     string   `json:"backdrop_path,optional"`
+	VoteAverage      *float64 `json:"vote_average,optional"`
+	Popularity       *float64 `json:"popularity,optional"`
+	Type             string   `json:"type,optional"`
+	GenreNames       []string `json:"genre_names,optional"`
+}
+
 type AdminProxyReq struct {
 	ProxyURL string `json:"proxy_url,optional"`
 }
@@ -49,113 +175,6 @@ type AdminProxyReq struct {
 type AdminProxyResp struct {
 	ProxyURL string `json:"proxy_url"`
 	Enabled  bool   `json:"enabled"`
-}
-
-type AdminAutoSyncReq struct {
-	Enabled          *bool  `json:"enabled,optional"`
-	CronExpr         string `json:"cron_expr,optional"`
-	Mode             string `json:"mode,optional"`
-	BatchSize        *int   `json:"batch_size,optional"`
-	StartDelaySecond *int   `json:"start_delay_second,optional"`
-}
-
-type AdminAutoSyncResp struct {
-	Enabled          bool   `json:"enabled"`
-	CronExpr         string `json:"cron_expr"`
-	Mode             string `json:"mode"`
-	BatchSize        int    `json:"batch_size"`
-	StartDelaySecond int    `json:"start_delay_second"`
-	Running          bool   `json:"running"`
-}
-
-type AdminAutoSyncRunResp struct {
-	Started bool   `json:"started"`
-	Running bool   `json:"running"`
-	Message string `json:"message"`
-}
-
-type AdminAutoSyncLogClearResp struct {
-	Message string `json:"message"`
-}
-
-type AdminAutoSyncLogListReq struct {
-	Page     int    `form:"page,optional,default=1"`
-	PageSize int    `form:"page_size,optional,default=20"`
-	Status   string `form:"status,optional"`
-}
-
-type AdminAutoSyncLogItem struct {
-	Id          int64  `json:"id"`
-	TriggeredAt string `json:"triggered_at"`
-	CronExpr    string `json:"cron_expr"`
-	Mode        string `json:"mode"`
-	BatchSize   int    `json:"batch_size"`
-	Status      string `json:"status"`
-	Checked     int    `json:"checked"`
-	Synced      int    `json:"synced"`
-	Failed      int    `json:"failed"`
-	DurationMs  int64  `json:"duration_ms"`
-	Message     string `json:"message"`
-	StartedAt   string `json:"started_at"`
-	FinishedAt  string `json:"finished_at"`
-	CreatedAt   string `json:"created_at"`
-}
-
-type AdminAutoSyncLogDetailReq struct {
-	Id             int `path:"id"`
-	SyncedPage     int `form:"synced_page,optional,default=1"`
-	SyncedPageSize int `form:"synced_page_size,optional,default=10"`
-	FailedPage     int `form:"failed_page,optional,default=1"`
-	FailedPageSize int `form:"failed_page_size,optional,default=10"`
-}
-
-type AdminAutoSyncLogDetailEntry struct {
-	MediaType         string                        `json:"media_type"`
-	TmdbId            int                           `json:"tmdb_id"`
-	Name              string                        `json:"name"`
-	Message           string                        `json:"message"`
-	RemoteDiffFields  []string                      `json:"remote_diff_fields"`
-	FieldChanges      []AdminAutoSyncLogFieldChange `json:"field_changes"`
-	ChangedFields     []string                      `json:"changed_fields"`
-	OverwrittenFields []string                      `json:"overwritten_fields"`
-	KeptLocalFields   []string                      `json:"kept_local_fields"`
-}
-
-type AdminAutoSyncLogFieldChange struct {
-	Field    string `json:"field"`
-	DiffType string `json:"diff_type"`
-	Before   string `json:"before"`
-	After    string `json:"after"`
-}
-
-type AdminAutoSyncLogDetailResp struct {
-	Id             int64                         `json:"id"`
-	TriggeredAt    string                        `json:"triggered_at"`
-	CronExpr       string                        `json:"cron_expr"`
-	Mode           string                        `json:"mode"`
-	BatchSize      int                           `json:"batch_size"`
-	Status         string                        `json:"status"`
-	Checked        int                           `json:"checked"`
-	Synced         int                           `json:"synced"`
-	Failed         int                           `json:"failed"`
-	DurationMs     int64                         `json:"duration_ms"`
-	Message        string                        `json:"message"`
-	StartedAt      string                        `json:"started_at"`
-	FinishedAt     string                        `json:"finished_at"`
-	CreatedAt      string                        `json:"created_at"`
-	SyncedPage     int                           `json:"synced_page"`
-	SyncedPageSize int                           `json:"synced_page_size"`
-	SyncedList     []AdminAutoSyncLogDetailEntry `json:"synced_list"`
-	FailedPage     int                           `json:"failed_page"`
-	FailedPageSize int                           `json:"failed_page_size"`
-	FailedList     []AdminAutoSyncLogDetailEntry `json:"failed_list"`
-}
-
-type AdminAutoSyncLogListResp struct {
-	Total    int64                  `json:"total"`
-	Page     int                    `json:"page"`
-	PageSize int                    `json:"page_size"`
-	Results  []AdminAutoSyncLogItem `json:"results"`
 }
 
 type AdminSyncReq struct {
@@ -171,6 +190,24 @@ type AdminSyncResp struct {
 	KeptLocalFields []string `json:"kept_local_fields"`
 	IsModified      bool     `json:"is_modified"`
 	Message         string   `json:"message"`
+}
+
+type AdminTvSeasonLocalReq struct {
+	Id           int    `path:"id"`
+	SeasonNumber int    `path:"season_number"`
+	Language     string `form:"language,optional"`
+}
+
+type AdminTvSeasonLocalResp struct {
+	Saved   bool                   `json:"saved"`
+	Data    map[string]interface{} `json:"data"`
+	Message string                 `json:"message,optional"`
+}
+
+type AdminTvSeasonLocalUpdateReq struct {
+	Id           int                    `path:"id"`
+	SeasonNumber int                    `path:"season_number"`
+	Payload      map[string]interface{} `json:"payload"`
 }
 
 type AdminUpdateReq struct {
@@ -200,25 +237,6 @@ type AdminUpdateReq struct {
 
 type AdminUploadResp struct {
 	Path string `json:"path"`
-}
-
-type AdminCreateTvReq struct {
-	Name             string   `json:"name"`
-	OriginalName     string   `json:"original_name,optional"`
-	Overview         string   `json:"overview,optional"`
-	Tagline          string   `json:"tagline,optional"`
-	FirstAirDate     string   `json:"first_air_date,optional"`
-	Status           string   `json:"status,optional"`
-	NumberOfSeasons  *int     `json:"number_of_seasons,optional"`
-	NumberOfEpisodes *int     `json:"number_of_episodes,optional"`
-	OriginalLanguage string   `json:"original_language,optional"`
-	Homepage         string   `json:"homepage,optional"`
-	PosterPath       string   `json:"poster_path,optional"`
-	BackdropPath     string   `json:"backdrop_path,optional"`
-	VoteAverage      *float64 `json:"vote_average,optional"`
-	Popularity       *float64 `json:"popularity,optional"`
-	Type             string   `json:"type,optional"`
-	GenreNames       []string `json:"genre_names,optional"`
 }
 
 type DetailReq struct {

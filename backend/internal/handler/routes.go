@@ -28,6 +28,36 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		[]rest.Route{
 			{
 				Method:  http.MethodGet,
+				Path:    "/auto-sync",
+				Handler: admin.GetAutoSyncSettingsHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/auto-sync",
+				Handler: admin.UpdateAutoSyncSettingsHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/auto-sync/logs",
+				Handler: admin.ListAutoSyncLogsHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodDelete,
+				Path:    "/auto-sync/logs",
+				Handler: admin.ClearAutoSyncLogsHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/auto-sync/logs/:id",
+				Handler: admin.GetAutoSyncLogDetailHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/auto-sync/run",
+				Handler: admin.RunAutoSyncNowHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
 				Path:    "/compare/movie/:id",
 				Handler: admin.CompareMovieRemoteHandler(serverCtx),
 			},
@@ -40,6 +70,16 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodGet,
 				Path:    "/compare/tv/:id",
 				Handler: admin.CompareTvRemoteHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/movie",
+				Handler: admin.CreateMovieHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodDelete,
+				Path:    "/movie/:id",
+				Handler: admin.DeleteMovieHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPut,
@@ -57,11 +97,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: admin.ListMoviesHandler(serverCtx),
 			},
 			{
-				Method:  http.MethodPut,
-				Path:    "/person/:id",
-				Handler: admin.UpdatePersonHandler(serverCtx),
-			},
-			{
 				Method:  http.MethodGet,
 				Path:    "/proxy",
 				Handler: admin.GetProxySettingsHandler(serverCtx),
@@ -70,11 +105,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPut,
 				Path:    "/proxy",
 				Handler: admin.UpdateProxySettingsHandler(serverCtx),
-			},
-			{
-				Method:  http.MethodGet,
-				Path:    "/stats",
-				Handler: admin.GetStatsHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPost,
@@ -92,9 +122,19 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: admin.SyncTvSeriesHandler(serverCtx),
 			},
 			{
+				Method:  http.MethodPost,
+				Path:    "/tv",
+				Handler: admin.CreateTvSeriesHandler(serverCtx),
+			},
+			{
 				Method:  http.MethodGet,
 				Path:    "/tv-series",
 				Handler: admin.ListTvSeriesHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodDelete,
+				Path:    "/tv/:id",
+				Handler: admin.DeleteTvSeriesHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPut,
@@ -105,6 +145,31 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodDelete,
 				Path:    "/tv/:id/local",
 				Handler: admin.ClearTvSeriesLocalHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/tv/:id/season/:season_number/local",
+				Handler: admin.GetTvSeasonLocalHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/tv/:id/season/:season_number/local",
+				Handler: admin.SaveTvSeasonLocalHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/tv/:id/season/:season_number/local",
+				Handler: admin.UpdateTvSeasonLocalHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodDelete,
+				Path:    "/tv/:id/season/:season_number/local",
+				Handler: admin.DeleteTvSeasonLocalHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/upload/image",
+				Handler: admin.UploadImageHandler(serverCtx),
 			},
 		},
 		rest.WithPrefix("/api/admin"),

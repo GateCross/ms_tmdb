@@ -67,27 +67,27 @@ type (
 	// 管理接口 - 修改数据请求
 	AdminUpdateReq {
 		Id               int      `path:"id"`
-		TmdbId           int      `json:"tmdb_id,optional"`
-		Title            string   `json:"title,optional"`
-		OriginalTitle    string   `json:"original_title,optional"`
-		Overview         string   `json:"overview,optional"`
-		Tagline          string   `json:"tagline,optional"`
-		ReleaseDate      string   `json:"release_date,optional"`
-		Status           string   `json:"status,optional"`
-		Runtime          int      `json:"runtime,optional"`
-		OriginalLanguage string   `json:"original_language,optional"`
-		Homepage         string   `json:"homepage,optional"`
-		PosterPath       string   `json:"poster_path,optional"`
-		BackdropPath     string   `json:"backdrop_path,optional"`
-		VoteAverage      float64  `json:"vote_average,optional"`
-		Popularity       float64  `json:"popularity,optional"`
+		TmdbId           *int     `json:"tmdb_id,optional"`
+		Title            *string  `json:"title,optional"`
+		OriginalTitle    *string  `json:"original_title,optional"`
+		Overview         *string  `json:"overview,optional"`
+		Tagline          *string  `json:"tagline,optional"`
+		ReleaseDate      *string  `json:"release_date,optional"`
+		Status           *string  `json:"status,optional"`
+		Runtime          *int     `json:"runtime,optional"`
+		OriginalLanguage *string  `json:"original_language,optional"`
+		Homepage         *string  `json:"homepage,optional"`
+		PosterPath       *string  `json:"poster_path,optional"`
+		BackdropPath     *string  `json:"backdrop_path,optional"`
+		VoteAverage      *float64 `json:"vote_average,optional"`
+		Popularity       *float64 `json:"popularity,optional"`
 		GenreNames       []string `json:"genre_names,optional"`
-		Name             string   `json:"name,optional"`
-		OriginalName     string   `json:"original_name,optional"`
-		FirstAirDate     string   `json:"first_air_date,optional"`
-		NumberOfSeasons  int      `json:"number_of_seasons,optional"`
-		NumberOfEpisodes int      `json:"number_of_episodes,optional"`
-		Type             string   `json:"type,optional"`
+		Name             *string  `json:"name,optional"`
+		OriginalName     *string  `json:"original_name,optional"`
+		FirstAirDate     *string  `json:"first_air_date,optional"`
+		NumberOfSeasons  *int     `json:"number_of_seasons,optional"`
+		NumberOfEpisodes *int     `json:"number_of_episodes,optional"`
+		Type             *string  `json:"type,optional"`
 	}
 	// 管理接口 - 新建电影请求
 	AdminCreateMovieReq {
@@ -97,13 +97,13 @@ type (
 		Tagline          string   `json:"tagline,optional"`
 		ReleaseDate      string   `json:"release_date,optional"`
 		Status           string   `json:"status,optional"`
-		Runtime          int      `json:"runtime,optional"`
+		Runtime          *int     `json:"runtime,optional"`
 		OriginalLanguage string   `json:"original_language,optional"`
 		Homepage         string   `json:"homepage,optional"`
 		PosterPath       string   `json:"poster_path,optional"`
 		BackdropPath     string   `json:"backdrop_path,optional"`
-		VoteAverage      float64  `json:"vote_average,optional"`
-		Popularity       float64  `json:"popularity,optional"`
+		VoteAverage      *float64 `json:"vote_average,optional"`
+		Popularity       *float64 `json:"popularity,optional"`
 		GenreNames       []string `json:"genre_names,optional"`
 	}
 	// 管理接口 - 新建剧集请求
@@ -114,23 +114,23 @@ type (
 		Tagline          string   `json:"tagline,optional"`
 		FirstAirDate     string   `json:"first_air_date,optional"`
 		Status           string   `json:"status,optional"`
-		NumberOfSeasons  int      `json:"number_of_seasons,optional"`
-		NumberOfEpisodes int      `json:"number_of_episodes,optional"`
+		NumberOfSeasons  *int     `json:"number_of_seasons,optional"`
+		NumberOfEpisodes *int     `json:"number_of_episodes,optional"`
 		OriginalLanguage string   `json:"original_language,optional"`
 		Homepage         string   `json:"homepage,optional"`
 		PosterPath       string   `json:"poster_path,optional"`
 		BackdropPath     string   `json:"backdrop_path,optional"`
-		VoteAverage      float64  `json:"vote_average,optional"`
-		Popularity       float64  `json:"popularity,optional"`
+		VoteAverage      *float64 `json:"vote_average,optional"`
+		Popularity       *float64 `json:"popularity,optional"`
 		Type             string   `json:"type,optional"`
 		GenreNames       []string `json:"genre_names,optional"`
 	}
 	// 管理接口 - 新建响应
 	AdminCreateResp {
-		TmdbId  int    `json:"tmdb_id"`
-		SyncTmdbId int `json:"sync_tmdb_id"`
-		IsLocal bool   `json:"is_local"`
-		Message string `json:"message"`
+		TmdbId     int    `json:"tmdb_id"`
+		SyncTmdbId int    `json:"sync_tmdb_id"`
+		IsLocal    bool   `json:"is_local"`
+		Message    string `json:"message"`
 	}
 	// 管理接口 - 本地季详情路径请求
 	AdminTvSeasonLocalReq {
@@ -140,15 +140,15 @@ type (
 	}
 	// 管理接口 - 本地季详情更新请求
 	AdminTvSeasonLocalUpdateReq {
-		Id           int             `path:"id"`
-		SeasonNumber int             `path:"season_number"`
-		Payload      map[string]any  `json:"payload"`
+		Id           int                    `path:"id"`
+		SeasonNumber int                    `path:"season_number"`
+		Payload      map[string]interface{} `json:"payload"`
 	}
 	// 管理接口 - 本地季详情响应
 	AdminTvSeasonLocalResp {
-		Saved   bool           `json:"saved"`
-		Data    map[string]any `json:"data"`
-		Message string         `json:"message,optional"`
+		Saved   bool                   `json:"saved"`
+		Data    map[string]interface{} `json:"data"`
+		Message string                 `json:"message,optional"`
 	}
 	// 管理接口 - 同步请求
 	AdminSyncReq {
@@ -209,20 +209,20 @@ type (
 	}
 	// 管理接口 - 自动同步日志项
 	AdminAutoSyncLogItem {
-		Id         int64  `json:"id"`
+		Id          int64  `json:"id"`
 		TriggeredAt string `json:"triggered_at"`
-		CronExpr   string `json:"cron_expr"`
-		Mode       string `json:"mode"`
-		BatchSize  int    `json:"batch_size"`
-		Status     string `json:"status"`
-		Checked    int    `json:"checked"`
-		Synced     int    `json:"synced"`
-		Failed     int    `json:"failed"`
-		DurationMs int64  `json:"duration_ms"`
-		Message    string `json:"message"`
-		StartedAt  string `json:"started_at"`
-		FinishedAt string `json:"finished_at"`
-		CreatedAt  string `json:"created_at"`
+		CronExpr    string `json:"cron_expr"`
+		Mode        string `json:"mode"`
+		BatchSize   int    `json:"batch_size"`
+		Status      string `json:"status"`
+		Checked     int    `json:"checked"`
+		Synced      int    `json:"synced"`
+		Failed      int    `json:"failed"`
+		DurationMs  int64  `json:"duration_ms"`
+		Message     string `json:"message"`
+		StartedAt   string `json:"started_at"`
+		FinishedAt  string `json:"finished_at"`
+		CreatedAt   string `json:"created_at"`
 	}
 	// 管理接口 - 自动同步日志详情请求
 	AdminAutoSyncLogDetailReq {
@@ -234,15 +234,15 @@ type (
 	}
 	// 管理接口 - 自动同步日志详情项
 	AdminAutoSyncLogDetailEntry {
-		MediaType         string   `json:"media_type"`
-		TmdbId            int      `json:"tmdb_id"`
-		Name              string   `json:"name"`
-		Message           string   `json:"message"`
-		RemoteDiffFields  []string `json:"remote_diff_fields"`
+		MediaType         string                        `json:"media_type"`
+		TmdbId            int                           `json:"tmdb_id"`
+		Name              string                        `json:"name"`
+		Message           string                        `json:"message"`
+		RemoteDiffFields  []string                      `json:"remote_diff_fields"`
 		FieldChanges      []AdminAutoSyncLogFieldChange `json:"field_changes"`
-		ChangedFields     []string `json:"changed_fields"`
-		OverwrittenFields []string `json:"overwritten_fields"`
-		KeptLocalFields   []string `json:"kept_local_fields"`
+		ChangedFields     []string                      `json:"changed_fields"`
+		OverwrittenFields []string                      `json:"overwritten_fields"`
+		KeptLocalFields   []string                      `json:"kept_local_fields"`
 	}
 	// 管理接口 - 自动同步日志字段差异
 	AdminAutoSyncLogFieldChange {
@@ -290,11 +290,11 @@ type (
 	}
 	// 管理接口 - 远程差异检测响应
 	AdminCompareResp {
-		HasDiff                 bool     `json:"has_diff"`
-		DiffFields              []string `json:"diff_fields"`
-		LocalOverrideDiffFields []string `json:"local_override_diff_fields"`
+		HasDiff                 bool                      `json:"has_diff"`
+		DiffFields              []string                  `json:"diff_fields"`
+		LocalOverrideDiffFields []string                  `json:"local_override_diff_fields"`
 		DiffDetails             []AdminCompareFieldDetail `json:"diff_details"`
-		Message                 string   `json:"message"`
+		Message                 string                    `json:"message"`
 	}
 	// 类型列表请求
 	GenreListReq {
@@ -317,27 +317,29 @@ type (
 	}
 	// 电影列表项
 	MovieListItem {
-		TmdbId        int     `json:"tmdb_id"`
-		Title         string  `json:"title"`
-		OriginalTitle string  `json:"original_title"`
-		PosterPath    string  `json:"poster_path"`
-		VoteAverage   float64 `json:"vote_average"`
-		ReleaseDate   string  `json:"release_date"`
-		Popularity    float64 `json:"popularity"`
-		IsModified    bool    `json:"is_modified"`
+		TmdbId        int      `json:"tmdb_id"`
+		Title         string   `json:"title"`
+		OriginalTitle string   `json:"original_title"`
+		PosterPath    string   `json:"poster_path"`
+		VoteAverage   float64  `json:"vote_average"`
+		ReleaseDate   string   `json:"release_date"`
+		Popularity    float64  `json:"popularity"`
+		IsModified    bool     `json:"is_modified"`
+		GenreNames    []string `json:"genre_names"`
 	}
 	// 电视剧列表项
 	TvSeriesListItem {
-		TmdbId           int     `json:"tmdb_id"`
-		Name             string  `json:"name"`
-		OriginalName     string  `json:"original_name"`
-		PosterPath       string  `json:"poster_path"`
-		VoteAverage      float64 `json:"vote_average"`
-		FirstAirDate     string  `json:"first_air_date"`
-		NumberOfSeasons  int     `json:"number_of_seasons"`
-		NumberOfEpisodes int     `json:"number_of_episodes"`
-		Popularity       float64 `json:"popularity"`
-		IsModified       bool    `json:"is_modified"`
+		TmdbId           int      `json:"tmdb_id"`
+		Name             string   `json:"name"`
+		OriginalName     string   `json:"original_name"`
+		PosterPath       string   `json:"poster_path"`
+		VoteAverage      float64  `json:"vote_average"`
+		FirstAirDate     string   `json:"first_air_date"`
+		NumberOfSeasons  int      `json:"number_of_seasons"`
+		NumberOfEpisodes int      `json:"number_of_episodes"`
+		Popularity       float64  `json:"popularity"`
+		IsModified       bool     `json:"is_modified"`
+		GenreNames       []string `json:"genre_names"`
 	}
 	// 电影列表响应
 	MovieListResp {
@@ -648,9 +650,6 @@ service tmdb-api {
 	@handler DeleteTvSeasonLocal
 	delete /tv/:id/season/:season_number/local (AdminTvSeasonLocalReq) returns (AdminTvSeasonLocalResp)
 
-	@handler UpdatePerson
-	put /person/:id (AdminUpdateReq)
-
 	@handler SyncMovie
 	post /sync/movie/:id (AdminSyncReq) returns (AdminSyncResp)
 
@@ -665,9 +664,6 @@ service tmdb-api {
 
 	@handler ClearTvSeriesLocal
 	delete /tv/:id/local (AdminSyncReq)
-
-	@handler GetStats
-	get /stats
 
 	@handler ListMovies
 	get /movies (LibraryListReq) returns (MovieListResp)
