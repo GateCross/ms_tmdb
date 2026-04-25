@@ -37,7 +37,7 @@ func (l *UpdateTvSeriesLogic) UpdateTvSeries(req *types.AdminUpdateReq) error {
 			if req.Id < 0 {
 				return errors.New("本地剧集不存在或已删除，请重新创建")
 			}
-			if _, syncErr := l.svcCtx.ProxyService.GetTvSeriesDetail(req.Id, nil); syncErr != nil {
+			if _, syncErr := l.svcCtx.ProxyService.SaveTvSeriesDetailToLocal(req.Id, nil); syncErr != nil {
 				return syncErr
 			}
 			if retryErr := l.svcCtx.DB.Where("tmdb_id = ?", req.Id).First(&tv).Error; retryErr != nil {

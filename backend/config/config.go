@@ -16,12 +16,13 @@ type Config struct {
 
 	// TMDB 配置
 	Tmdb struct {
-		ApiKey          string
-		BaseURL         string
-		DefaultLanguage string
-		RateLimit       int
-		ProxyURL        string           `json:",optional"`
-		AutoSync        TmdbAutoSyncConf `json:",optional"`
+		ApiKey            string
+		BaseURL           string
+		DefaultLanguage   string
+		RateLimit         int
+		ProxyURL          string           `json:",optional"`
+		LocalWriteEnabled bool             `json:",default=true"`
+		AutoSync          TmdbAutoSyncConf `json:",optional"`
 	}
 }
 

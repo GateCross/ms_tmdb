@@ -23,6 +23,7 @@ const proxyError = ref("");
 const proxyMessage = ref("");
 const proxyEnabled = ref(false);
 const proxyURL = ref("");
+const proxyLocalWriteEnabled = ref(true);
 
 const syncSaving = ref(false);
 const syncError = ref("");
@@ -69,6 +70,7 @@ const logStatusOptions: Array<{ label: string; value: string }> = [
 
 const settingsBusy = computed(() => loading.value || proxySaving.value || syncSaving.value || syncTriggering.value || logsLoading.value || logsClearing.value);
 const proxyStatusText = computed(() => (proxyEnabled.value ? "已启用" : "直连"));
+const proxyLocalWriteStatusText = computed(() => (proxyLocalWriteEnabled.value ? "自动写入本地" : "仅读已有本地"));
 const syncStatusText = computed(() => (syncEnabled.value ? "已启用" : "已关闭"));
 const taskRunStatusText = computed(() => (syncRunning.value ? "执行中" : "空闲"));
 const latestLog = computed(() => logsItems.value[0] ?? null);
@@ -356,6 +358,7 @@ async function loadSettings() {
     const proxyData = proxyResp.data;
     proxyEnabled.value = !!proxyData.enabled;
     proxyURL.value = proxyData.proxy_url ?? "";
+    proxyLocalWriteEnabled.value = proxyData.local_write_enabled !== false;
 
     const syncData = autoSyncResp.data;
     syncEnabled.value = !!syncData.enabled;
@@ -379,11 +382,15 @@ async function saveProxySettings() {
   proxyMessage.value = "";
   try {
     const nextProxyURL = proxyEnabled.value ? normalizeProxyURL(proxyURL.value) : "";
-    const resp = await updateProxySettings({ proxy_url: nextProxyURL });
+    const resp = await updateProxySettings({
+      proxy_url: nextProxyURL,
+      local_write_enabled: proxyLocalWriteEnabled.value,
+    });
     const data = resp.data;
     proxyURL.value = data.proxy_url ?? "";
     proxyEnabled.value = !!data.enabled;
-    proxyMessage.value = proxyEnabled.value ? "代理已启用" : "代理已关闭，当前为直连";
+    proxyLocalWriteEnabled.value = data.local_write_enabled !== false;
+    proxyMessage.value = proxyEnabled.value ? "代理配置已保存" : "代理已关闭，当前为直连";
   } catch (err: any) {
     proxyError.value = err.message ?? "保存代理设置失败";
   } finally {
@@ -469,7 +476,7 @@ onMounted(reloadAll);
       <article class="settings-summary-card">
         <span class="settings-summary-label">代理访问</span>
         <strong>{{ proxyStatusText }}</strong>
-        <p>{{ proxyEnabled ? proxyURL || "已启用，等待代理地址" : "后端直连 TMDB" }}</p>
+        <p>{{ proxyEnabled ? proxyURL || "已启用，等待代理地址" : "后端直连 TMDB" }} · {{ proxyLocalWriteStatusText }}</p>
       </article>
       <article class="settings-summary-card">
         <span class="settings-summary-label">自动同步</span>
@@ -504,6 +511,14 @@ onMounted(reloadAll);
           <span>
             <strong>启用代理访问 TMDB</strong>
             <small>关闭后恢复为直连，保存后即时生效。</small>
+          </span>
+        </label>
+
+        <label class="settings-toggle-row">
+          <input v-model="proxyLocalWriteEnabled" type="checkbox" class="check-control" :disabled="proxySaving" />
+          <span>
+            <strong>允许代理自动写入本地库</strong>
+            <small>关闭后仍优先读取已有本地数据，回源 TMDB 成功后不再新增或更新本地库。</small>
           </span>
         </label>
 

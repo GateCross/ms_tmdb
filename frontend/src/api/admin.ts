@@ -20,10 +20,12 @@ export type AdminSyncResp = {
 export type AdminProxyResp = {
   proxy_url: string;
   enabled: boolean;
+  local_write_enabled: boolean;
 };
 
 export type AdminProxyPayload = {
   proxy_url?: string;
+  local_write_enabled?: boolean;
 };
 
 export type AdminAutoSyncMode = "overwrite_all" | "update_unmodified";

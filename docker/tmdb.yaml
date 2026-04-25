@@ -18,6 +18,7 @@ Tmdb:
   DefaultLanguage: "zh-CN"
   RateLimit: 40
   ProxyURL: ""
+  LocalWriteEnabled: true
   AutoSync:
     Enabled: true
     CronExpr: "*/30 * * * *"

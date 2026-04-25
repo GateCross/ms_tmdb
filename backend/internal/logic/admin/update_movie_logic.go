@@ -37,7 +37,7 @@ func (l *UpdateMovieLogic) UpdateMovie(req *types.AdminUpdateReq) error {
 			if req.Id < 0 {
 				return errors.New("本地电影不存在或已删除，请重新创建")
 			}
-			if _, syncErr := l.svcCtx.ProxyService.GetMovieDetail(req.Id, nil); syncErr != nil {
+			if _, syncErr := l.svcCtx.ProxyService.SaveMovieDetailToLocal(req.Id, nil); syncErr != nil {
 				return syncErr
 			}
 			if retryErr := l.svcCtx.DB.Where("tmdb_id = ?", req.Id).First(&movie).Error; retryErr != nil {

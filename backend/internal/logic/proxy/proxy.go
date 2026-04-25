@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"ms_tmdb/internal/model"
@@ -22,14 +23,32 @@ type ProxyService struct {
 	DB          *gorm.DB
 	TmdbClient  *tmdbclient.Client
 	DefaultLang string
+	mu          sync.RWMutex
+
+	localWriteEnabled bool
 }
 
-func NewProxyService(db *gorm.DB, client *tmdbclient.Client, defaultLang string) *ProxyService {
+func NewProxyService(db *gorm.DB, client *tmdbclient.Client, defaultLang string, localWriteEnabled bool) *ProxyService {
 	return &ProxyService{
-		DB:          db,
-		TmdbClient:  client,
-		DefaultLang: strings.TrimSpace(defaultLang),
+		DB:                db,
+		TmdbClient:        client,
+		DefaultLang:       strings.TrimSpace(defaultLang),
+		localWriteEnabled: localWriteEnabled,
 	}
+}
+
+// LocalWriteEnabled 返回代理回源后是否允许自动写入本地库。
+func (s *ProxyService) LocalWriteEnabled() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.localWriteEnabled
+}
+
+// SetLocalWriteEnabled 更新当前进程内的本地自动写入开关。
+func (s *ProxyService) SetLocalWriteEnabled(enabled bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.localWriteEnabled = enabled
 }
 
 // ResolveMovieSyncID 将对外 TMDB ID 解析为实际拉取 TMDB 的 ID。
@@ -60,9 +79,18 @@ func (s *ProxyService) ResolveTVSyncID(tmdbID int) int {
 
 // GetMovieDetail Read-Through 获取电影详情
 func (s *ProxyService) GetMovieDetail(tmdbID int, opts *tmdbclient.RequestOption) (json.RawMessage, error) {
+	return s.getMovieDetail(tmdbID, opts, false)
+}
+
+// SaveMovieDetailToLocal 拉取电影详情并写入本地库，用于明确的管理操作。
+func (s *ProxyService) SaveMovieDetailToLocal(tmdbID int, opts *tmdbclient.RequestOption) (json.RawMessage, error) {
+	return s.getMovieDetail(tmdbID, opts, true)
+}
+
+func (s *ProxyService) getMovieDetail(tmdbID int, opts *tmdbclient.RequestOption, forceWrite bool) (json.RawMessage, error) {
 	language := s.requestLanguage(opts)
 	if s.isNonDefaultLanguage(language) {
-		return s.getMovieDetailByLanguage(tmdbID, opts, language)
+		return s.getMovieDetailByLanguage(tmdbID, opts, language, forceWrite)
 	}
 
 	var movie model.Movie
@@ -93,17 +121,28 @@ func (s *ProxyService) GetMovieDetail(tmdbID int, opts *tmdbclient.RequestOption
 		return nil, normalizeErr
 	}
 
-	if err := s.upsertMovie(tmdbID, syncTmdbID, normalizedData); err != nil {
-		return nil, err
+	if s.shouldWriteLocal(forceWrite) {
+		if err := s.upsertMovie(tmdbID, syncTmdbID, normalizedData); err != nil {
+			return nil, err
+		}
 	}
 	return normalizedData, nil
 }
 
 // GetTvSeriesDetail Read-Through 获取电视剧详情
 func (s *ProxyService) GetTvSeriesDetail(tmdbID int, opts *tmdbclient.RequestOption) (json.RawMessage, error) {
+	return s.getTvSeriesDetail(tmdbID, opts, false)
+}
+
+// SaveTvSeriesDetailToLocal 拉取剧集详情并写入本地库，用于明确的管理操作。
+func (s *ProxyService) SaveTvSeriesDetailToLocal(tmdbID int, opts *tmdbclient.RequestOption) (json.RawMessage, error) {
+	return s.getTvSeriesDetail(tmdbID, opts, true)
+}
+
+func (s *ProxyService) getTvSeriesDetail(tmdbID int, opts *tmdbclient.RequestOption, forceWrite bool) (json.RawMessage, error) {
 	language := s.requestLanguage(opts)
 	if s.isNonDefaultLanguage(language) {
-		return s.getTVSeriesDetailByLanguage(tmdbID, opts, language)
+		return s.getTVSeriesDetailByLanguage(tmdbID, opts, language, forceWrite)
 	}
 
 	var tv model.TVSeries
@@ -143,8 +182,10 @@ func (s *ProxyService) GetTvSeriesDetail(tmdbID int, opts *tmdbclient.RequestOpt
 		return nil, normalizeErr
 	}
 
-	if err := s.upsertTVSeries(tmdbID, syncTmdbID, normalizedData); err != nil {
-		return nil, err
+	if s.shouldWriteLocal(forceWrite) {
+		if err := s.upsertTVSeries(tmdbID, syncTmdbID, normalizedData); err != nil {
+			return nil, err
+		}
 	}
 	return mergeTVSeriesWithLocalData(normalizedData, localData)
 }
@@ -296,9 +337,13 @@ func (s *ProxyService) DeleteLocalTvSeason(seriesID, seasonNumber int) error {
 
 // GetPersonDetail Read-Through 获取人物详情
 func (s *ProxyService) GetPersonDetail(tmdbID int, opts *tmdbclient.RequestOption) (json.RawMessage, error) {
+	return s.getPersonDetail(tmdbID, opts, false)
+}
+
+func (s *ProxyService) getPersonDetail(tmdbID int, opts *tmdbclient.RequestOption, forceWrite bool) (json.RawMessage, error) {
 	language := s.requestLanguage(opts)
 	if s.isNonDefaultLanguage(language) {
-		return s.getPersonDetailByLanguage(tmdbID, opts, language)
+		return s.getPersonDetailByLanguage(tmdbID, opts, language, forceWrite)
 	}
 
 	var person model.Person
@@ -318,8 +363,10 @@ func (s *ProxyService) GetPersonDetail(tmdbID int, opts *tmdbclient.RequestOptio
 		return nil, fetchErr
 	}
 
-	if err := s.upsertPerson(tmdbID, data); err != nil {
-		return nil, err
+	if s.shouldWriteLocal(forceWrite) {
+		if err := s.upsertPerson(tmdbID, data); err != nil {
+			return nil, err
+		}
 	}
 	return data, nil
 }
@@ -509,11 +556,15 @@ func (s *ProxyService) isNonDefaultLanguage(language string) bool {
 	return normalized != defaultLanguage
 }
 
+func (s *ProxyService) shouldWriteLocal(forceWrite bool) bool {
+	return forceWrite || s.LocalWriteEnabled()
+}
+
 func normalizeLanguageTag(language string) string {
 	return strings.ToLower(strings.TrimSpace(language))
 }
 
-func (s *ProxyService) getMovieDetailByLanguage(tmdbID int, opts *tmdbclient.RequestOption, language string) (json.RawMessage, error) {
+func (s *ProxyService) getMovieDetailByLanguage(tmdbID int, opts *tmdbclient.RequestOption, language string, forceWrite bool) (json.RawMessage, error) {
 	normalizedLanguage := normalizeLanguageTag(language)
 
 	var movie model.Movie
@@ -565,16 +616,18 @@ func (s *ProxyService) getMovieDetailByLanguage(tmdbID int, opts *tmdbclient.Req
 	if err != nil {
 		return nil, err
 	}
-	if err := s.upsertMovieLangSnapshot(tmdbID, normalizedLanguage, syncTmdbID, normalizedData); err != nil {
-		return nil, err
-	}
-	if errors.Is(movieErr, gorm.ErrRecordNotFound) {
-		s.warmDefaultMovieRecord(tmdbID, opts)
+	if s.shouldWriteLocal(forceWrite) {
+		if err := s.upsertMovieLangSnapshot(tmdbID, normalizedLanguage, syncTmdbID, normalizedData); err != nil {
+			return nil, err
+		}
+		if errors.Is(movieErr, gorm.ErrRecordNotFound) {
+			s.warmDefaultMovieRecord(tmdbID, opts)
+		}
 	}
 	return mergeTMDBWithLocalData(normalizedData, localData)
 }
 
-func (s *ProxyService) getTVSeriesDetailByLanguage(tmdbID int, opts *tmdbclient.RequestOption, language string) (json.RawMessage, error) {
+func (s *ProxyService) getTVSeriesDetailByLanguage(tmdbID int, opts *tmdbclient.RequestOption, language string, forceWrite bool) (json.RawMessage, error) {
 	normalizedLanguage := normalizeLanguageTag(language)
 
 	var tv model.TVSeries
@@ -630,16 +683,18 @@ func (s *ProxyService) getTVSeriesDetailByLanguage(tmdbID int, opts *tmdbclient.
 	if err != nil {
 		return nil, err
 	}
-	if err := s.upsertTVLangSnapshot(tmdbID, normalizedLanguage, syncTmdbID, normalizedData); err != nil {
-		return nil, err
-	}
-	if errors.Is(tvErr, gorm.ErrRecordNotFound) {
-		s.warmDefaultTVSeriesRecord(tmdbID, opts)
+	if s.shouldWriteLocal(forceWrite) {
+		if err := s.upsertTVLangSnapshot(tmdbID, normalizedLanguage, syncTmdbID, normalizedData); err != nil {
+			return nil, err
+		}
+		if errors.Is(tvErr, gorm.ErrRecordNotFound) {
+			s.warmDefaultTVSeriesRecord(tmdbID, opts)
+		}
 	}
 	return mergeTVSeriesWithLocalData(normalizedData, localData)
 }
 
-func (s *ProxyService) getPersonDetailByLanguage(tmdbID int, opts *tmdbclient.RequestOption, language string) (json.RawMessage, error) {
+func (s *ProxyService) getPersonDetailByLanguage(tmdbID int, opts *tmdbclient.RequestOption, language string, forceWrite bool) (json.RawMessage, error) {
 	normalizedLanguage := normalizeLanguageTag(language)
 
 	var person model.Person
@@ -673,11 +728,13 @@ func (s *ProxyService) getPersonDetailByLanguage(tmdbID int, opts *tmdbclient.Re
 		return nil, fetchErr
 	}
 
-	if err := s.upsertPersonLangSnapshot(tmdbID, normalizedLanguage, data); err != nil {
-		return nil, err
-	}
-	if errors.Is(personErr, gorm.ErrRecordNotFound) {
-		s.warmDefaultPersonRecord(tmdbID, opts)
+	if s.shouldWriteLocal(forceWrite) {
+		if err := s.upsertPersonLangSnapshot(tmdbID, normalizedLanguage, data); err != nil {
+			return nil, err
+		}
+		if errors.Is(personErr, gorm.ErrRecordNotFound) {
+			s.warmDefaultPersonRecord(tmdbID, opts)
+		}
 	}
 	return mergeTMDBWithLocalData(data, localData)
 }
@@ -814,7 +871,7 @@ func mergeTVSeriesWithLocalData(tmdbData json.RawMessage, localData model.RawJSO
 func (s *ProxyService) warmDefaultMovieRecord(tmdbID int, opts *tmdbclient.RequestOption) {
 	defaultOpts := cloneRequestOption(opts)
 	defaultOpts.Language = s.DefaultLang
-	if _, err := s.GetMovieDetail(tmdbID, defaultOpts); err != nil {
+	if _, err := s.getMovieDetail(tmdbID, defaultOpts, true); err != nil {
 		logx.Errorf("写入默认语言电影缓存失败: movie/%d err=%v", tmdbID, err)
 	}
 }
@@ -822,7 +879,7 @@ func (s *ProxyService) warmDefaultMovieRecord(tmdbID int, opts *tmdbclient.Reque
 func (s *ProxyService) warmDefaultTVSeriesRecord(tmdbID int, opts *tmdbclient.RequestOption) {
 	defaultOpts := cloneRequestOption(opts)
 	defaultOpts.Language = s.DefaultLang
-	if _, err := s.GetTvSeriesDetail(tmdbID, defaultOpts); err != nil {
+	if _, err := s.getTvSeriesDetail(tmdbID, defaultOpts, true); err != nil {
 		logx.Errorf("写入默认语言剧集缓存失败: tv/%d err=%v", tmdbID, err)
 	}
 }
@@ -830,7 +887,7 @@ func (s *ProxyService) warmDefaultTVSeriesRecord(tmdbID int, opts *tmdbclient.Re
 func (s *ProxyService) warmDefaultPersonRecord(tmdbID int, opts *tmdbclient.RequestOption) {
 	defaultOpts := cloneRequestOption(opts)
 	defaultOpts.Language = s.DefaultLang
-	if _, err := s.GetPersonDetail(tmdbID, defaultOpts); err != nil {
+	if _, err := s.getPersonDetail(tmdbID, defaultOpts, true); err != nil {
 		logx.Errorf("写入默认语言人物缓存失败: person/%d err=%v", tmdbID, err)
 	}
 }
@@ -873,7 +930,7 @@ func (s *ProxyService) ensureTVSeriesExists(seriesID int, opts *tmdbclient.Reque
 		return err
 	}
 
-	if _, err := s.GetTvSeriesDetail(seriesID, opts); err != nil {
+	if _, err := s.SaveTvSeriesDetailToLocal(seriesID, opts); err != nil {
 		return err
 	}
 	if err := s.DB.Where("tmdb_id = ?", seriesID).First(&tv).Error; err != nil {

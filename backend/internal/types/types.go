@@ -169,12 +169,14 @@ type AdminCreateTvReq struct {
 }
 
 type AdminProxyReq struct {
-	ProxyURL string `json:"proxy_url,optional"`
+	ProxyURL          string `json:"proxy_url,optional"`
+	LocalWriteEnabled *bool  `json:"local_write_enabled,optional"`
 }
 
 type AdminProxyResp struct {
-	ProxyURL string `json:"proxy_url"`
-	Enabled  bool   `json:"enabled"`
+	ProxyURL          string `json:"proxy_url"`
+	Enabled           bool   `json:"enabled"`
+	LocalWriteEnabled bool   `json:"local_write_enabled"`
 }
 
 type AdminSyncReq struct {
