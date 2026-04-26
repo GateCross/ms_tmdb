@@ -59,7 +59,16 @@ jobs:
           SKIP_SIMPLE_GIT_HOOKS: 1
         run: pnpm -C frontend install --frozen-lockfile
 
+      - name: Prepare Docker build version
+        id: app-version
+        run: |
+          APP_VERSION="$(TZ=Asia/Shanghai date +%Y%m%d%H%M)"
+          echo "APP_VERSION=${APP_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Docker build version: ${APP_VERSION}"
+
       - name: Build frontend
+        env:
+          VITE_APP_VERSION: ${{ steps.app-version.outputs.APP_VERSION }}
         run: pnpm -C frontend run build
 
       - name: Upload dist

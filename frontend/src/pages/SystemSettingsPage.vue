@@ -18,6 +18,7 @@ import {
 import { resolveErrorMessage } from "@/utils/errors";
 
 const loading = ref(false);
+const appVersion = __APP_VERSION__;
 
 const proxySaving = ref(false);
 const proxyError = ref("");
@@ -511,6 +512,11 @@ onMounted(reloadAll);
         <span class="settings-summary-label">最近执行</span>
         <strong>{{ latestLogStatusText }}</strong>
         <p>{{ latestLogTimeText }}</p>
+      </article>
+      <article class="settings-summary-card">
+        <span class="settings-summary-label">当前版本</span>
+        <strong>v{{ appVersion || "-" }}</strong>
+        <p>前端构建版本</p>
       </article>
     </section>
 
