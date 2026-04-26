@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { getProxySettings, updateProxySettings } from "@/api/admin";
+import { resolveErrorMessage } from "@/utils/errors";
 
 const loading = ref(false);
 const saving = ref(false);
@@ -22,8 +23,8 @@ async function loadSettings() {
     const data = resp.data;
     proxyURL.value = data.proxy_url ?? "";
     enabled.value = !!data.enabled;
-  } catch (err: any) {
-    error.value = err.message ?? "读取代理设置失败";
+  } catch (err: unknown) {
+    error.value = resolveErrorMessage(err, "读取代理设置失败");
   } finally {
     loading.value = false;
   }
@@ -40,8 +41,8 @@ async function saveSettings() {
     proxyURL.value = data.proxy_url ?? "";
     enabled.value = !!data.enabled;
     message.value = enabled.value ? "代理已启用" : "代理已关闭，当前为直连";
-  } catch (err: any) {
-    error.value = err.message ?? "保存代理设置失败";
+  } catch (err: unknown) {
+    error.value = resolveErrorMessage(err, "保存代理设置失败");
   } finally {
     saving.value = false;
   }
@@ -53,9 +54,7 @@ onMounted(loadSettings);
 <template>
   <section class="card max-w-2xl">
     <h2 class="text-lg font-semibold">代理设置</h2>
-    <p class="mt-1 text-sm text-black/60">
-      配置后端访问 TMDB 时使用的网络代理。关闭后将恢复为直连。
-    </p>
+    <p class="mt-1 text-sm text-black/60">配置后端访问 TMDB 时使用的网络代理。关闭后将恢复为直连。</p>
 
     <p v-if="loading" class="mt-4 text-sm text-black/55">加载中...</p>
 
@@ -76,25 +75,13 @@ onMounted(loadSettings);
         />
       </label>
 
-      <p class="mt-2 text-xs text-black/50">
-        支持格式示例：`http://127.0.0.1:7890`、`socks5://127.0.0.1:1080`
-      </p>
+      <p class="mt-2 text-xs text-black/50">支持格式示例：`http://127.0.0.1:7890`、`socks5://127.0.0.1:1080`</p>
 
       <div class="mt-4 flex items-center gap-3">
-        <button
-          class="btn-primary disabled:opacity-60"
-          :disabled="saving"
-          @click="saveSettings"
-        >
+        <button class="btn-primary disabled:opacity-60" :disabled="saving" @click="saveSettings">
           {{ saving ? "保存中..." : "保存设置" }}
         </button>
-        <button
-          class="btn-soft disabled:opacity-60"
-          :disabled="saving"
-          @click="loadSettings"
-        >
-          重新读取
-        </button>
+        <button class="btn-soft disabled:opacity-60" :disabled="saving" @click="loadSettings">重新读取</button>
       </div>
     </template>
 

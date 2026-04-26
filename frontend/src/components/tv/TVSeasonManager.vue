@@ -2,7 +2,7 @@
 import { tmdbImg } from "@/api/tmdb";
 import type { TVEpisodeForm, TVEpisodeItem, TVSeasonDetail, TVSeasonForm, TVSeasonSummary } from "./types";
 
-const props = defineProps<{
+defineProps<{
   seasonOptions: TVSeasonSummary[];
   selectedSeasonNumber: number | null;
   seasonLocalSaving: boolean;
@@ -69,31 +69,28 @@ const props = defineProps<{
         :class="selectedSeasonNumber === s.season_number ? 'season-card-active' : ''"
         @click="onSelectSeason(s.season_number)"
       >
-        <img
-          :src="tmdbImg(s.poster_path, 'w185')"
-          :alt="s.name"
-          class="cast-img"
-          loading="lazy"
-        />
+        <img :src="tmdbImg(s.poster_path, 'w185')" :alt="s.name" class="cast-img" loading="lazy" />
         <p class="mt-1 truncate text-xs font-medium">{{ s.name }}</p>
         <p class="truncate text-xs text-black/50">{{ s.episode_count }} 集</p>
       </button>
     </div>
-    <div
-      v-else
-      class="season-empty"
-    >
-      当前剧集还没有可展示的季数据，可以直接新增本地季。
-    </div>
+    <div v-else class="season-empty">当前剧集还没有可展示的季数据，可以直接新增本地季。</div>
   </div>
 
   <div v-if="seasonPanelVisible" class="panel-glass content-auto-heavy mt-4 rounded-xl p-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <h3 class="text-sm font-semibold">
-        {{ seasonEditorVisible && seasonEditorMode === "create" ? "新增本地季" : (selectedSeasonDetail?.name || "季信息与分集") }}
+        {{
+          seasonEditorVisible && seasonEditorMode === "create"
+            ? "新增本地季"
+            : selectedSeasonDetail?.name || "季信息与分集"
+        }}
       </h3>
       <div class="flex flex-wrap items-center gap-2">
-        <span v-if="selectedSeasonDetail && !(seasonEditorVisible && seasonEditorMode === 'create')" class="text-xs text-black/55">
+        <span
+          v-if="selectedSeasonDetail && !(seasonEditorVisible && seasonEditorMode === 'create')"
+          class="text-xs text-black/55"
+        >
           共 {{ selectedSeasonEpisodes.length }} 集
         </span>
         <button
@@ -141,15 +138,19 @@ const props = defineProps<{
         >
           {{ seasonLocalSaving ? "删除中..." : "删除本季" }}
         </button>
-        <span v-if="seasonLocalSaved" class="text-xs text-black/50">
-          可编辑单集，也可手动新增或删除本地季
-        </span>
+        <span v-if="seasonLocalSaved" class="text-xs text-black/50"> 可编辑单集，也可手动新增或删除本地季 </span>
       </div>
     </div>
-    <p v-if="selectedSeasonDetail?.overview && !(seasonEditorVisible && seasonEditorMode === 'create')" class="mt-2 text-xs leading-relaxed text-black/60">
+    <p
+      v-if="selectedSeasonDetail?.overview && !(seasonEditorVisible && seasonEditorMode === 'create')"
+      class="mt-2 text-xs leading-relaxed text-black/60"
+    >
       {{ selectedSeasonDetail.overview }}
     </p>
-    <p v-if="seasonLocalSaved && !(seasonEditorVisible && seasonEditorMode === 'create')" class="mt-1 text-xs text-green-700">
+    <p
+      v-if="seasonLocalSaved && !(seasonEditorVisible && seasonEditorMode === 'create')"
+      class="mt-1 text-xs text-green-700"
+    >
       当前季已保存到本地数据库
     </p>
     <p v-if="seasonLocalMessage" class="mt-1 text-xs text-green-700">
@@ -175,27 +176,15 @@ const props = defineProps<{
         </label>
         <label class="text-xs text-black/60">
           季标题
-          <input
-            v-model="seasonForm.name"
-            class="field-control mt-1 w-full text-sm"
-            placeholder="例如：第一季"
-          />
+          <input v-model="seasonForm.name" class="field-control mt-1 w-full text-sm" placeholder="例如：第一季" />
         </label>
         <label class="text-xs text-black/60">
           首播日期
-          <input
-            v-model="seasonForm.air_date"
-            class="field-control mt-1 w-full text-sm"
-            placeholder="YYYY-MM-DD"
-          />
+          <input v-model="seasonForm.air_date" class="field-control mt-1 w-full text-sm" placeholder="YYYY-MM-DD" />
         </label>
         <label class="text-xs text-black/60">
           海报路径
-          <input
-            v-model="seasonForm.poster_path"
-            class="field-control mt-1 w-full text-sm"
-            placeholder="/poster.jpg"
-          />
+          <input v-model="seasonForm.poster_path" class="field-control mt-1 w-full text-sm" placeholder="/poster.jpg" />
         </label>
         <label class="text-xs text-black/60 md:col-span-2">
           简介
@@ -214,7 +203,7 @@ const props = defineProps<{
           :disabled="seasonLocalSaving"
           @click="onSaveSeasonEditor"
         >
-          {{ seasonLocalSaving ? "保存中..." : (seasonEditorMode === "create" ? "创建本季" : "保存本季") }}
+          {{ seasonLocalSaving ? "保存中..." : seasonEditorMode === "create" ? "创建本季" : "保存本季" }}
         </button>
         <button
           type="button"
@@ -234,51 +223,27 @@ const props = defineProps<{
       <div class="grid gap-3 md:grid-cols-2">
         <label class="text-xs text-black/60">
           集号
-          <input
-            v-model="episodeForm.episode_number"
-            class="field-control mt-1 w-full text-sm"
-            placeholder="例如：1"
-          />
+          <input v-model="episodeForm.episode_number" class="field-control mt-1 w-full text-sm" placeholder="例如：1" />
         </label>
         <label class="text-xs text-black/60">
           标题
-          <input
-            v-model="episodeForm.name"
-            class="field-control mt-1 w-full text-sm"
-            placeholder="请输入本集标题"
-          />
+          <input v-model="episodeForm.name" class="field-control mt-1 w-full text-sm" placeholder="请输入本集标题" />
         </label>
         <label class="text-xs text-black/60">
           播出日期
-          <input
-            v-model="episodeForm.air_date"
-            class="field-control mt-1 w-full text-sm"
-            placeholder="YYYY-MM-DD"
-          />
+          <input v-model="episodeForm.air_date" class="field-control mt-1 w-full text-sm" placeholder="YYYY-MM-DD" />
         </label>
         <label class="text-xs text-black/60">
           时长
-          <input
-            v-model="episodeForm.runtime"
-            class="field-control mt-1 w-full text-sm"
-            placeholder="分钟"
-          />
+          <input v-model="episodeForm.runtime" class="field-control mt-1 w-full text-sm" placeholder="分钟" />
         </label>
         <label class="text-xs text-black/60">
           评分
-          <input
-            v-model="episodeForm.vote_average"
-            class="field-control mt-1 w-full text-sm"
-            placeholder="8.6"
-          />
+          <input v-model="episodeForm.vote_average" class="field-control mt-1 w-full text-sm" placeholder="8.6" />
         </label>
         <label class="text-xs text-black/60">
           剧照路径
-          <input
-            v-model="episodeForm.still_path"
-            class="field-control mt-1 w-full text-sm"
-            placeholder="/still.jpg"
-          />
+          <input v-model="episodeForm.still_path" class="field-control mt-1 w-full text-sm" placeholder="/still.jpg" />
         </label>
         <label class="text-xs text-black/60 md:col-span-2">
           简介
@@ -312,25 +277,22 @@ const props = defineProps<{
 
     <p v-if="seasonDetailLoading" class="mt-3 text-xs text-black/60">正在加载分集明细...</p>
     <p v-else-if="seasonDetailError" class="mt-3 text-xs text-red-600">{{ seasonDetailError }}</p>
-    <p
-      v-else-if="!selectedSeasonDetail && !seasonEditorVisible"
-      class="season-inline-note mt-3"
-    >
+    <p v-else-if="!selectedSeasonDetail && !seasonEditorVisible" class="season-inline-note mt-3">
       请选择一个已有季，或点击“新增季”创建本地季。
     </p>
     <p
-      v-else-if="selectedSeasonDetail && !selectedSeasonEpisodes.length && !(seasonEditorVisible && seasonEditorMode === 'create')"
+      v-else-if="
+        selectedSeasonDetail &&
+        !selectedSeasonEpisodes.length &&
+        !(seasonEditorVisible && seasonEditorMode === 'create')
+      "
       class="season-inline-note mt-3"
     >
       当前季暂无可展示的分集数据
     </p>
 
     <div v-if="selectedSeasonDetail && !(seasonEditorVisible && seasonEditorMode === 'create')" class="mt-3 space-y-3">
-      <article
-        v-for="ep in selectedSeasonEpisodes"
-        :key="ep.id || ep.episode_number"
-        class="episode-card"
-      >
+      <article v-for="ep in selectedSeasonEpisodes" :key="ep.id || ep.episode_number" class="episode-card">
         <img
           :src="tmdbImg(ep.still_path, 'w342')"
           :alt="ep.name || `第${ep.episode_number}集`"

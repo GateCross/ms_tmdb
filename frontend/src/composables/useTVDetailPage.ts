@@ -1,15 +1,55 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { compareTVRemote, deleteTV, deleteTVSeasonLocal, getTVSeasonLocal, saveTVSeasonLocal, updateTV, updateTVSeasonLocal } from "@/api/admin";
+import {
+  compareTVRemote,
+  deleteTV,
+  deleteTVSeasonLocal,
+  getTVSeasonLocal,
+  saveTVSeasonLocal,
+  updateTV,
+  updateTVSeasonLocal,
+} from "@/api/admin";
 import { prefetchMediaDetail } from "@/api/prefetch";
 import type { AdminCompareFieldDetail, AdminSyncMode } from "@/api/admin";
 import { getTVCredits, getTVDetail, getTVGenreList, getTVSeasonDetail } from "@/api/tv";
-import type { GenreOption, RemoteDiffDecision, RemoteDiffNotice, TVCastMember, TVEditForm, TVEpisodeForm, TVEpisodeItem, TVSeasonDetail, TVSeasonForm, TVSeasonSummary } from "@/components/tv/types";
+import type {
+  GenreOption,
+  RemoteDiffDecision,
+  RemoteDiffNotice,
+  TVCastMember,
+  TVEditForm,
+  TVEpisodeForm,
+  TVEpisodeItem,
+  TVSeasonDetail,
+  TVSeasonForm,
+  TVSeasonSummary,
+} from "@/components/tv/types";
+import { resolveErrorMessage } from "@/utils/errors";
+import { normalizeCastMembers, normalizeGenreOptions, normalizeTVEditForm } from "@/utils/mediaNormalizers";
 import { scheduleAfterPaint } from "@/utils/schedule";
 
 type CachedSeasonState = {
   payload: Record<string, unknown>;
   saved: boolean;
+};
+
+type TVDetail = {
+  id?: number;
+  sync_tmdb_id?: number;
+  name?: string;
+  original_name?: string;
+  tagline?: string;
+  poster_path?: string;
+  backdrop_path?: string;
+  vote_average?: number;
+  first_air_date?: string;
+  number_of_seasons?: number;
+  number_of_episodes?: number;
+  status?: string;
+  type?: string;
+  overview?: string;
+  genres?: GenreOption[];
+  seasons?: unknown[];
 };
 
 export function useTVDetailPage() {
@@ -18,7 +58,7 @@ export function useTVDetailPage() {
 
   const loading = ref(false);
   const error = ref("");
-  const detail = ref<any>(null);
+  const detail = ref<TVDetail | null>(null);
   const castMembers = ref<TVCastMember[]>([]);
   const creditsLoading = ref(false);
   const creditsLoaded = ref(false);
@@ -209,51 +249,8 @@ export function useTVDetailPage() {
     showLocalOverrideDiffDetails.value = !showLocalOverrideDiffDetails.value;
   }
 
-  function resetEditForm(data: any) {
-    editForm.value = {
-      tmdb_id: data?.id != null ? String(data.id) : String(tvId.value || ""),
-      name: data?.name ?? "",
-      original_name: data?.original_name ?? "",
-      genre_names: Array.isArray(data?.genres) ? data.genres.map((g: any) => String(g?.name ?? "").trim()).filter(Boolean) : [],
-      type: data?.type ?? "",
-      tagline: data?.tagline ?? "",
-      first_air_date: data?.first_air_date ?? "",
-      status: data?.status ?? "",
-      number_of_seasons: data?.number_of_seasons != null ? String(data.number_of_seasons) : "",
-      number_of_episodes: data?.number_of_episodes != null ? String(data.number_of_episodes) : "",
-      original_language: data?.original_language ?? "",
-      homepage: data?.homepage ?? "",
-      poster_path: data?.poster_path ?? "",
-      backdrop_path: data?.backdrop_path ?? "",
-      vote_average: data?.vote_average != null ? String(data.vote_average) : "",
-      popularity: data?.popularity != null ? String(data.popularity) : "",
-      overview: data?.overview ?? "",
-    };
-  }
-
-  function normalizeGenreOptions(raw: any): GenreOption[] {
-    if (!Array.isArray(raw)) return [];
-    return raw
-      .map((item: any, idx: number) => ({
-        id: Number(item?.id) || idx + 1,
-        name: String(item?.name ?? "").trim(),
-      }))
-      .filter((item: GenreOption) => !!item.name);
-  }
-
-  function normalizeCastMembers(raw: unknown): TVCastMember[] {
-    const cast = Array.isArray((raw as Record<string, unknown> | null)?.cast)
-      ? ((raw as Record<string, unknown>).cast as unknown[])
-      : [];
-    return cast
-      .map((item: any) => ({
-        id: Number(item?.id) || 0,
-        name: String(item?.name ?? "").trim(),
-        character: String(item?.character ?? "").trim(),
-        profile_path: String(item?.profile_path ?? ""),
-      }))
-      .filter((item) => item.id > 0 && item.name)
-      .slice(0, 8);
+  function resetEditForm(data: unknown) {
+    editForm.value = normalizeTVEditForm(data, tvId.value);
   }
 
   function resetRemoteDiffState() {
@@ -292,37 +289,44 @@ export function useTVDetailPage() {
   function normalizeSeasonList(raw: unknown): TVSeasonSummary[] {
     if (!Array.isArray(raw)) return [];
     return raw
-      .map((item: any) => ({
-        id: Number(item?.id) || 0,
-        season_number: Number(item?.season_number) || 0,
-        name: String(item?.name ?? "").trim() || "未知季",
-        poster_path: String(item?.poster_path ?? ""),
-        episode_count: Number(item?.episode_count) || 0,
-      }))
+      .map((item) => {
+        const value = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+        return {
+          id: Number(value.id) || 0,
+          season_number: Number(value.season_number) || 0,
+          name: String(value.name ?? "").trim() || "未知季",
+          poster_path: String(value.poster_path ?? ""),
+          episode_count: Number(value.episode_count) || 0,
+        };
+      })
       .sort((a, b) => a.season_number - b.season_number);
   }
 
-  function normalizeSeasonDetail(raw: any, fallbackSeasonNumber: number): TVSeasonDetail {
-    const episodes = Array.isArray(raw?.episodes)
-      ? raw.episodes.map((item: any) => ({
-        id: Number(item?.id) || 0,
-        episode_number: Number(item?.episode_number) || 0,
-        name: String(item?.name ?? "").trim(),
-        air_date: String(item?.air_date ?? ""),
-        runtime: Number.isFinite(Number(item?.runtime)) ? Number(item.runtime) : null,
-        vote_average: Number.isFinite(Number(item?.vote_average)) ? Number(item.vote_average) : null,
-        overview: String(item?.overview ?? "").trim(),
-        still_path: String(item?.still_path ?? ""),
-      }))
+  function normalizeSeasonDetail(raw: unknown, fallbackSeasonNumber: number): TVSeasonDetail {
+    const value = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+    const episodes = Array.isArray(value.episodes)
+      ? value.episodes.map((item) => {
+          const episode = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+          return {
+            id: Number(episode.id) || 0,
+            episode_number: Number(episode.episode_number) || 0,
+            name: String(episode.name ?? "").trim(),
+            air_date: String(episode.air_date ?? ""),
+            runtime: Number.isFinite(Number(episode.runtime)) ? Number(episode.runtime) : null,
+            vote_average: Number.isFinite(Number(episode.vote_average)) ? Number(episode.vote_average) : null,
+            overview: String(episode.overview ?? "").trim(),
+            still_path: String(episode.still_path ?? ""),
+          };
+        })
       : [];
 
     return {
-      id: Number(raw?.id) || 0,
-      season_number: Number(raw?.season_number) || fallbackSeasonNumber,
-      name: String(raw?.name ?? "").trim() || `第 ${fallbackSeasonNumber} 季`,
-      air_date: String(raw?.air_date ?? ""),
-      overview: String(raw?.overview ?? "").trim(),
-      poster_path: String(raw?.poster_path ?? ""),
+      id: Number(value.id) || 0,
+      season_number: Number(value.season_number) || fallbackSeasonNumber,
+      name: String(value.name ?? "").trim() || `第 ${fallbackSeasonNumber} 季`,
+      air_date: String(value.air_date ?? ""),
+      overview: String(value.overview ?? "").trim(),
+      poster_path: String(value.poster_path ?? ""),
       episodes,
     };
   }
@@ -462,7 +466,10 @@ export function useTVDetailPage() {
     if (editingEpisodeNumber.value == null || !editingEpisodeInitialForm.value) {
       return false;
     }
-    return normalizeEpisodeFormValue(episodeForm.value[field]) !== normalizeEpisodeFormValue(editingEpisodeInitialForm.value[field]);
+    return (
+      normalizeEpisodeFormValue(episodeForm.value[field]) !==
+      normalizeEpisodeFormValue(editingEpisodeInitialForm.value[field])
+    );
   }
 
   function episodeEditFieldClass(field: keyof TVEpisodeForm): string {
@@ -520,11 +527,7 @@ export function useTVDetailPage() {
     }
   }
 
-  function askLocalDeleteConfirm(params: {
-    title: string;
-    message: string;
-    actionText?: string;
-  }): Promise<boolean> {
+  function askLocalDeleteConfirm(params: { title: string; message: string; actionText?: string }): Promise<boolean> {
     if (localDeleteConfirmResolver) {
       localDeleteConfirmResolver(false);
       localDeleteConfirmResolver = null;
@@ -656,14 +659,18 @@ export function useTVDetailPage() {
       seasonFormError.value = "季号必须是大于等于 0 的整数";
       return;
     }
-    if (seasonEditorMode.value === "create" && seasonOptions.value.some((item) => item.season_number === seasonNumber)) {
+    if (
+      seasonEditorMode.value === "create" &&
+      seasonOptions.value.some((item) => item.season_number === seasonNumber)
+    ) {
       seasonFormError.value = "该季号已存在，请直接编辑";
       return;
     }
 
-    const basePayload = seasonEditorMode.value === "edit"
-      ? toPlainRecord(selectedSeasonPayload.value ?? selectedSeasonDetail.value)
-      : { season_number: seasonNumber, episodes: [] };
+    const basePayload =
+      seasonEditorMode.value === "edit"
+        ? toPlainRecord(selectedSeasonPayload.value ?? selectedSeasonDetail.value)
+        : { season_number: seasonNumber, episodes: [] };
     const payload: Record<string, unknown> = {
       ...basePayload,
       season_number: seasonNumber,
@@ -688,13 +695,14 @@ export function useTVDetailPage() {
       seasonLocalSaved.value = true;
       cacheSeasonDetail(seasonNumber, selectedSeasonPayload.value, true);
       syncSeasonSummaryInDetail(selectedSeasonDetail.value);
-      seasonLocalMessage.value = seasonEditorMode.value === "create"
-        ? `第 ${seasonNumber} 季已新增并保存到本地数据库`
-        : `第 ${seasonNumber} 季修改已保存到本地数据库`;
+      seasonLocalMessage.value =
+        seasonEditorMode.value === "create"
+          ? `第 ${seasonNumber} 季已新增并保存到本地数据库`
+          : `第 ${seasonNumber} 季修改已保存到本地数据库`;
       closeSeasonEditor();
       closeEpisodeCreator();
-    } catch (err: any) {
-      seasonFormError.value = err.message ?? "保存季信息失败";
+    } catch (err: unknown) {
+      seasonFormError.value = resolveErrorMessage(err, "保存季信息失败");
     } finally {
       seasonLocalSaving.value = false;
     }
@@ -729,8 +737,8 @@ export function useTVDetailPage() {
       await loadSeasonDetail(deletingSeasonNumber, true);
       await loadData({ force: true, checkRemoteDiff: false });
       seasonLocalMessage.value = `第 ${deletingSeasonNumber} 季本地数据已删除`;
-    } catch (err: any) {
-      seasonDetailError.value = err.message ?? "删除本地季失败";
+    } catch (err: unknown) {
+      seasonDetailError.value = resolveErrorMessage(err, "删除本地季失败");
     } finally {
       seasonLocalSaving.value = false;
     }
@@ -802,8 +810,8 @@ export function useTVDetailPage() {
       syncSeasonSummaryInDetail(selectedSeasonDetail.value);
       seasonLocalMessage.value = `第 ${episodeNumber} 集已新增到本地数据库`;
       closeEpisodeCreator();
-    } catch (err: any) {
-      episodeFormError.value = err.message ?? "新增本集失败";
+    } catch (err: unknown) {
+      episodeFormError.value = resolveErrorMessage(err, "新增本集失败");
     } finally {
       seasonLocalSaving.value = false;
     }
@@ -824,8 +832,8 @@ export function useTVDetailPage() {
       cancelEpisodeEdit();
       closeEpisodeCreator();
       seasonLocalMessage.value = "当前季明细已保存到本地数据库";
-    } catch (err: any) {
-      seasonDetailError.value = err.message ?? "保存季明细失败";
+    } catch (err: unknown) {
+      seasonDetailError.value = resolveErrorMessage(err, "保存季明细失败");
     } finally {
       seasonLocalSaving.value = false;
     }
@@ -849,8 +857,8 @@ export function useTVDetailPage() {
       return;
     }
     if (
-      episodeNumber !== targetEpisodeNumber
-      && selectedSeasonEpisodes.value.some((item) => item.episode_number === episodeNumber)
+      episodeNumber !== targetEpisodeNumber &&
+      selectedSeasonEpisodes.value.some((item) => item.episode_number === episodeNumber)
     ) {
       episodeFormError.value = "该集号已存在，请使用其他集号";
       return;
@@ -915,8 +923,8 @@ export function useTVDetailPage() {
       seasonLocalMessage.value = `第 ${episodeNumber} 集本地修改已保存`;
       cancelEpisodeEdit();
       closeEpisodeCreator();
-    } catch (err: any) {
-      episodeFormError.value = err.message ?? "保存本集修改失败";
+    } catch (err: unknown) {
+      episodeFormError.value = resolveErrorMessage(err, "保存本集修改失败");
     } finally {
       seasonLocalSaving.value = false;
     }
@@ -972,8 +980,8 @@ export function useTVDetailPage() {
         cancelEpisodeEdit();
       }
       seasonLocalMessage.value = `第 ${targetEpisodeNumber} 集已从本地数据库删除`;
-    } catch (err: any) {
-      seasonDetailError.value = err.message ?? "删除本集失败";
+    } catch (err: unknown) {
+      seasonDetailError.value = resolveErrorMessage(err, "删除本集失败");
     } finally {
       seasonLocalSaving.value = false;
     }
@@ -1021,14 +1029,14 @@ export function useTVDetailPage() {
       }
       cacheSeasonDetail(seasonNumber, toPlainRecord(resp.data), false);
       applyCachedSeasonDetail(seasonNumber, seasonDetailCache.get(seasonNumber)!);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (requestSeq !== seasonDetailReqSeq) {
         return;
       }
       selectedSeasonPayload.value = null;
       selectedSeasonDetail.value = null;
       seasonLocalSaved.value = false;
-      seasonDetailError.value = err.message ?? "加载分集明细失败";
+      seasonDetailError.value = resolveErrorMessage(err, "加载分集明细失败");
     } finally {
       if (requestSeq === seasonDetailReqSeq) {
         seasonDetailLoading.value = false;
@@ -1059,11 +1067,11 @@ export function useTVDetailPage() {
       }
       castMembers.value = normalizeCastMembers(resp.data);
       creditsLoaded.value = true;
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (requestSeq !== creditsReqSeq || targetId !== tvId.value) {
         return;
       }
-      creditsError.value = err.message ?? "加载演员失败";
+      creditsError.value = resolveErrorMessage(err, "加载演员失败");
     } finally {
       if (requestSeq === creditsReqSeq) {
         creditsLoading.value = false;
@@ -1139,8 +1147,8 @@ export function useTVDetailPage() {
         path: "/library",
         query: { tab: "tv" },
       });
-    } catch (err: any) {
-      deleteError.value = err.message ?? "删除失败";
+    } catch (err: unknown) {
+      deleteError.value = resolveErrorMessage(err, "删除失败");
     } finally {
       deleting.value = false;
     }
@@ -1165,7 +1173,9 @@ export function useTVDetailPage() {
     try {
       const resp = await compareTVRemote(tvId.value);
       const remoteFields = Array.isArray(resp.data?.diff_fields) ? resp.data.diff_fields : [];
-      const localOverrideFields = Array.isArray(resp.data?.local_override_diff_fields) ? resp.data.local_override_diff_fields : [];
+      const localOverrideFields = Array.isArray(resp.data?.local_override_diff_fields)
+        ? resp.data.local_override_diff_fields
+        : [];
       const hasDiff = Boolean(resp.data?.has_diff) && (remoteFields.length > 0 || localOverrideFields.length > 0);
       if (!hasDiff) {
         remoteDiffNotice.value = null;
@@ -1178,17 +1188,19 @@ export function useTVDetailPage() {
       }
 
       const remoteFieldPreview = remoteFields.slice(0, 6).join("、");
-      const remoteSummary = remoteFields.length === 0
-        ? "无"
-        : remoteFields.length > 6
-          ? `${remoteFieldPreview} 等 ${remoteFields.length} 项`
-          : `${remoteFieldPreview}（共 ${remoteFields.length} 项）`;
+      const remoteSummary =
+        remoteFields.length === 0
+          ? "无"
+          : remoteFields.length > 6
+            ? `${remoteFieldPreview} 等 ${remoteFields.length} 项`
+            : `${remoteFieldPreview}（共 ${remoteFields.length} 项）`;
       const localOverridePreview = localOverrideFields.slice(0, 6).join("、");
-      const localOverrideSummary = localOverrideFields.length === 0
-        ? "无"
-        : localOverrideFields.length > 6
-          ? `${localOverridePreview} 等 ${localOverrideFields.length} 项`
-          : `${localOverridePreview}（共 ${localOverrideFields.length} 项）`;
+      const localOverrideSummary =
+        localOverrideFields.length === 0
+          ? "无"
+          : localOverrideFields.length > 6
+            ? `${localOverridePreview} 等 ${localOverrideFields.length} 项`
+            : `${localOverridePreview}（共 ${localOverrideFields.length} 项）`;
       const detailItems = normalizeDiffDetails(resp.data?.diff_details);
       const remoteDetails = buildDiffDetailsByFields(remoteFields, detailItems, "remote");
       const localOverrideDetails = buildDiffDetailsByFields(localOverrideFields, detailItems, "local_override");
@@ -1205,8 +1217,8 @@ export function useTVDetailPage() {
       remoteDiffMessage.value = "";
       remoteDiffDecision.value = "has_diff_pending";
       comparedRemoteId.value = tvId.value;
-    } catch (err: any) {
-      remoteDiffError.value = err.message ?? "远程差异检测失败";
+    } catch (err: unknown) {
+      remoteDiffError.value = resolveErrorMessage(err, "远程差异检测失败");
     } finally {
       checkingRemoteDiff.value = false;
     }
@@ -1273,9 +1285,9 @@ export function useTVDetailPage() {
         await checkRemoteDiffAndPrompt();
       }
       scheduleDeferredLoadsForDetail();
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (requestSeq === loadReqSeq) {
-        error.value = err.message ?? "加载失败";
+        error.value = resolveErrorMessage(err, "加载失败");
         clearSelectedSeasonState();
       }
     } finally {
@@ -1304,12 +1316,15 @@ export function useTVDetailPage() {
   function normalizeDiffDetails(raw: unknown): AdminCompareFieldDetail[] {
     if (!Array.isArray(raw)) return [];
     return raw
-      .map((item: any) => ({
-        field: String(item?.field ?? "").trim(),
-        diff_type: String(item?.diff_type ?? "remote").trim() || "remote",
-        local: String(item?.local ?? "-"),
-        remote: String(item?.remote ?? "-"),
-      }))
+      .map((item) => {
+        const value = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+        return {
+          field: String(value.field ?? "").trim(),
+          diff_type: String(value.diff_type ?? "remote").trim() || "remote",
+          local: String(value.local ?? "-"),
+          remote: String(value.remote ?? "-"),
+        };
+      })
       .filter((item) => item.field.length > 0);
   }
 
@@ -1318,17 +1333,16 @@ export function useTVDetailPage() {
     details: AdminCompareFieldDetail[],
     diffType: "remote" | "local_override",
   ): AdminCompareFieldDetail[] {
-    const detailMap = new Map(
-      details
-        .filter((item) => item.diff_type === diffType)
-        .map((item) => [item.field, item]),
+    const detailMap = new Map(details.filter((item) => item.diff_type === diffType).map((item) => [item.field, item]));
+    return fields.map(
+      (field) =>
+        detailMap.get(field) ?? {
+          field,
+          diff_type: diffType,
+          local: "-",
+          remote: "-",
+        },
     );
-    return fields.map((field) => detailMap.get(field) ?? {
-      field,
-      diff_type: diffType,
-      local: "-",
-      remote: "-",
-    });
   }
 
   async function saveTVChanges() {
@@ -1414,8 +1428,8 @@ export function useTVDetailPage() {
         return;
       }
       await loadData({ force: true });
-    } catch (err: any) {
-      saveError.value = err.message ?? "保存失败";
+    } catch (err: unknown) {
+      saveError.value = resolveErrorMessage(err, "保存失败");
     } finally {
       saving.value = false;
     }

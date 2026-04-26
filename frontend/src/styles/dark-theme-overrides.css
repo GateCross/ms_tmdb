@@ -1,0 +1,125 @@
+[data-theme="msdark"] .text-ink,
+[data-theme="msdark"] .text-black {
+  color: #f1f7ff;
+}
+
+[data-theme="msdark"] .text-black\/40,
+[data-theme="msdark"] .text-black\/45,
+[data-theme="msdark"] .text-black\/50,
+[data-theme="msdark"] .text-black\/55,
+[data-theme="msdark"] .text-black\/60,
+[data-theme="msdark"] .text-black\/65,
+[data-theme="msdark"] .text-black\/70,
+[data-theme="msdark"] .text-black\/75,
+[data-theme="msdark"] .text-gray-500,
+[data-theme="msdark"] .text-gray-600,
+[data-theme="msdark"] .text-slate-500,
+[data-theme="msdark"] .text-slate-800 {
+  color: rgba(226, 232, 240, 0.82);
+}
+
+[data-theme="msdark"] .text-black\/80,
+[data-theme="msdark"] .text-black\/85,
+[data-theme="msdark"] .text-slate-700,
+[data-theme="msdark"] .text-slate-900,
+[data-theme="msdark"] .text-gray-700,
+[data-theme="msdark"] .text-gray-800,
+[data-theme="msdark"] .text-gray-900 {
+  color: rgba(241, 247, 255, 0.92);
+}
+
+[data-theme="msdark"] .text-amber-700,
+[data-theme="msdark"] .text-amber-800,
+[data-theme="msdark"] .text-amber-900 {
+  color: #fde68a;
+}
+
+[data-theme="msdark"] .text-red-600,
+[data-theme="msdark"] .text-red-700 {
+  color: #fca5a5;
+}
+
+[data-theme="msdark"] .text-green-700 {
+  color: #86efac;
+}
+
+[data-theme="msdark"] .bg-white,
+[data-theme="msdark"] .bg-white\/55,
+[data-theme="msdark"] .bg-white\/60,
+[data-theme="msdark"] .bg-white\/62,
+[data-theme="msdark"] .bg-white\/70,
+[data-theme="msdark"] .bg-white\/95,
+[data-theme="msdark"] .bg-sand\/60,
+[data-theme="msdark"] .bg-haze {
+  background-color: rgba(27, 40, 64, 0.78);
+}
+
+[data-theme="msdark"] .bg-amber-50,
+[data-theme="msdark"] .bg-amber-50\/70,
+[data-theme="msdark"] .bg-amber-50\/80 {
+  background-color: rgba(120, 53, 15, 0.28);
+}
+
+[data-theme="msdark"] .bg-red-50 {
+  background-color: rgba(127, 29, 29, 0.28);
+}
+
+[data-theme="msdark"] .bg-green-50 {
+  background-color: rgba(20, 83, 45, 0.28);
+}
+
+[data-theme="msdark"] .bg-gray-50 {
+  background-color: rgba(35, 50, 78, 0.78);
+}
+
+[data-theme="msdark"] .hover\:bg-white\/70:hover,
+[data-theme="msdark"] .hover\:bg-sand\/50:hover,
+[data-theme="msdark"] .hover\:bg-amber-100:hover,
+[data-theme="msdark"] .hover\:bg-red-50:hover,
+[data-theme="msdark"] .hover\:bg-red-100:hover {
+  background-color: rgba(30, 41, 59, 0.84);
+}
+
+[data-theme="msdark"] .border-white\/40,
+[data-theme="msdark"] .border-white\/70,
+[data-theme="msdark"] .border-black\/10,
+[data-theme="msdark"] .border-gray-200 {
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+[data-theme="msdark"] .border-amber-200,
+[data-theme="msdark"] .border-amber-300 {
+  border-color: rgba(251, 191, 36, 0.34);
+}
+
+[data-theme="msdark"] .border-red-200,
+[data-theme="msdark"] .border-red-300 {
+  border-color: rgba(248, 113, 113, 0.34);
+}
+
+[data-theme="msdark"] .border-green-200 {
+  border-color: rgba(74, 222, 128, 0.34);
+}
+
+[data-theme="msdark"] .ring-pine\/25 {
+  --tw-ring-color: rgba(1, 180, 228, 0.26);
+}
+
+[data-theme="msdark"] input[type="file"] {
+  color: rgba(203, 213, 225, 0.76);
+}
+
+[data-theme="msdark"] input[type="file"]::file-selector-button {
+  margin-right: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 9999px;
+  background: rgba(30, 41, 59, 0.78);
+  color: rgba(226, 232, 240, 0.92);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+[data-theme="msdark"] input[type="file"]::file-selector-button:hover {
+  background: rgba(51, 65, 85, 0.86);
+}

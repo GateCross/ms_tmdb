@@ -58,12 +58,7 @@ export function getTVCredits(id: number, language = "zh-CN", options: DetailOpti
   );
 }
 
-export function getTVSeasonDetail(
-  id: number,
-  seasonNumber: number,
-  language = "zh-CN",
-  append = "",
-) {
+export function getTVSeasonDetail(id: number, seasonNumber: number, language = "zh-CN", append = "") {
   const params = append ? { language, append_to_response: append } : { language };
   return http.get<Record<string, unknown>>(`/api/v3/tv/${id}/season/${seasonNumber}`, {
     params,

@@ -1,0 +1,79 @@
+@media (max-width: 767px) {
+  .page-shell {
+    @apply px-3;
+  }
+
+  .app-header-inner {
+    @apply gap-3;
+  }
+
+  .app-nav {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .app-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-nav-link {
+    @apply px-3 py-1.5 text-xs;
+    white-space: nowrap;
+  }
+
+  .app-content {
+    @apply pt-40;
+  }
+
+  .card {
+    @apply p-4;
+  }
+
+  .hero-overlay {
+    @apply p-4;
+  }
+
+  .home-hero {
+    min-height: 360px;
+  }
+
+  .home-hero-overlay {
+    @apply p-4;
+  }
+
+  .home-search-row {
+    @apply rounded-2xl;
+  }
+
+  .home-search-btn {
+    width: 100%;
+  }
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+  .app-header,
+  .app-nav,
+  .card,
+  .poster-card,
+  .glass-pill,
+  .panel-glass,
+  .table-shell {
+    backdrop-filter: none;
+  }
+}

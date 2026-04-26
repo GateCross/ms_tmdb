@@ -9,11 +9,7 @@ export function prefetchMediaDetail(mediaType: PrefetchMediaType, id: number) {
     return;
   }
 
-  const task = mediaType === "movie"
-    ? getMovieDetail(id)
-    : mediaType === "tv"
-      ? getTVDetail(id)
-      : getPersonDetail(id);
+  const task = mediaType === "movie" ? getMovieDetail(id) : mediaType === "tv" ? getTVDetail(id) : getPersonDetail(id);
 
   void task.catch(() => {
     // Prefetch failures should not affect navigation or UI state.

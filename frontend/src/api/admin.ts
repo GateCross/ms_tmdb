@@ -274,7 +274,7 @@ export function deleteMovie(id: number) {
 }
 
 export function updateTV(id: number, payload: Record<string, unknown>) {
-	return http.put(`/api/admin/tv/${id}`, payload);
+  return http.put(`/api/admin/tv/${id}`, payload);
 }
 
 export function listMovies(page = 1, pageSize = 20, keyword = "", searchMode = "contains") {
@@ -284,9 +284,9 @@ export function listMovies(page = 1, pageSize = 20, keyword = "", searchMode = "
 }
 
 export function listTV(page = 1, pageSize = 20, keyword = "", searchMode = "contains") {
-	return http.get<AdminListResp<AdminTVListItem>>("/api/admin/tv-series", {
-		params: { page, page_size: pageSize, keyword, search_mode: searchMode },
-	});
+  return http.get<AdminListResp<AdminTVListItem>>("/api/admin/tv-series", {
+    params: { page, page_size: pageSize, keyword, search_mode: searchMode },
+  });
 }
 
 export function createTV(payload: AdminCreateTVPayload) {

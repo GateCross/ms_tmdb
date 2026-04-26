@@ -4,7 +4,8 @@ import { getPopularMovies } from "@/api/movie";
 import { prefetchMediaDetail } from "@/api/prefetch";
 import { searchByType, type SearchType } from "@/api/search";
 import { getPopularTV } from "@/api/tv";
-import { profileImg, tmdbImg } from "@/api/tmdb";
+import { tmdbImg } from "@/api/tmdb";
+import SearchResultList from "@/components/SearchResultList.vue";
 import type { ApiErrorLike, MediaSummary, SearchResultItem } from "@/types/media";
 
 const loading = ref(false);
@@ -42,10 +43,7 @@ async function loadData() {
   loading.value = true;
   error.value = "";
   try {
-    const [movieResp, tvResp] = await Promise.all([
-      getPopularMovies(1),
-      getPopularTV(1),
-    ]);
+    const [movieResp, tvResp] = await Promise.all([getPopularMovies(1), getPopularTV(1)]);
     movies.value = movieResp.data?.results ?? [];
     tvSeries.value = tvResp.data?.results ?? [];
   } catch (err: unknown) {
@@ -79,39 +77,6 @@ async function handleHomeSearch() {
   }
 }
 
-function routeByItem(item: SearchResultItem) {
-  const mediaType = item.media_type ?? searchType.value;
-  if (mediaType === "movie") return `/movie/${item.id}`;
-  if (mediaType === "tv") return `/tv/${item.id}`;
-  if (mediaType === "person") return `/person/${item.id}`;
-  return "/search";
-}
-
-function thumbByItem(item: SearchResultItem) {
-  const mediaType = item.media_type ?? searchType.value;
-  if (mediaType === "person") return profileImg(item.profile_path, "w92");
-  return tmdbImg(item.poster_path, "w92");
-}
-
-function titleByItem(item: SearchResultItem) {
-  return item.title || item.name || item.original_title || `ID ${item.id}`;
-}
-
-function subtitleByItem(item: SearchResultItem) {
-  const mediaType = item.media_type ?? searchType.value;
-  const labels: Record<string, string> = { movie: "电影", tv: "剧集", person: "人物" };
-  const tag = labels[mediaType] ?? mediaType;
-  const date = item.release_date || item.first_air_date || "";
-  return date ? `${tag} · ${date}` : tag;
-}
-
-function prefetchSearchItem(item: SearchResultItem) {
-  const mediaType = item.media_type ?? searchType.value;
-  if (mediaType === "movie" || mediaType === "tv" || mediaType === "person") {
-    prefetchMediaDetail(mediaType, Number(item.id));
-  }
-}
-
 function prefetchListItem(mediaType: "movie" | "tv", id: number | undefined) {
   prefetchMediaDetail(mediaType, Number(id));
 }
@@ -120,10 +85,7 @@ onMounted(loadData);
 </script>
 
 <template>
-  <section
-    class="home-hero hero-banner"
-    :style="heroStyle"
-  >
+  <section class="home-hero hero-banner" :style="heroStyle">
     <div class="home-hero-overlay">
       <p class="home-hero-tag">欢迎。</p>
       <h2 class="home-hero-title">电影、剧集、人物一站式搜索</h2>
@@ -171,44 +133,12 @@ onMounted(loadData);
         {{ searchResults.length ? `展示前 ${searchResults.length} 条` : "没有匹配结果" }}
       </span>
     </div>
-    <ul v-if="searchResults.length" class="grid gap-2 md:grid-cols-2">
-      <li v-for="item in searchResults" :key="`${item.media_type ?? searchType}-${item.id}`" class="search-item">
-        <RouterLink
-          :to="routeByItem(item)"
-          class="flex h-full items-center gap-3"
-          @mouseenter="prefetchSearchItem(item)"
-          @focus="prefetchSearchItem(item)"
-          @touchstart.passive="prefetchSearchItem(item)"
-        >
-          <img
-            :src="thumbByItem(item)"
-            :alt="titleByItem(item)"
-            class="search-thumb"
-            loading="lazy"
-          />
-          <div class="min-w-0 flex-1">
-            <p class="truncate font-medium text-slate-800">{{ titleByItem(item) }}</p>
-            <p class="text-xs text-black/55">{{ subtitleByItem(item) }}</p>
-            <p v-if="item.overview" class="mt-0.5 text-xs text-black/50 line-clamp-1">
-              {{ item.overview }}
-            </p>
-          </div>
-          <span v-if="typeof item.vote_average === 'number'" class="search-score-badge">
-            ⭐ {{ item.vote_average.toFixed(1) }}
-          </span>
-        </RouterLink>
-      </li>
-    </ul>
-    <p v-else class="empty-state">未找到结果，请尝试更换关键词。</p>
+    <SearchResultList :items="searchResults" :fallback-type="searchType" empty-text="未找到结果，请尝试更换关键词。" />
   </section>
 
   <section class="mt-4 flex items-center justify-between">
     <p class="section-label">今日看点</p>
-    <button
-      class="btn-primary"
-      :disabled="loading"
-      @click="loadData"
-    >
+    <button class="btn-primary" :disabled="loading" @click="loadData">
       {{ loading ? "刷新中..." : "刷新数据" }}
     </button>
   </section>
@@ -227,12 +157,7 @@ onMounted(loadData);
         @focus="prefetchListItem('movie', item.id)"
         @touchstart.passive="prefetchListItem('movie', item.id)"
       >
-        <img
-          :src="tmdbImg(item.poster_path, 'w185')"
-          :alt="item.title"
-          class="poster-img"
-          loading="lazy"
-        />
+        <img :src="tmdbImg(item.poster_path, 'w185')" :alt="item.title" class="poster-img" loading="lazy" />
         <div class="poster-info">
           <p class="truncate text-sm font-medium">{{ item.title || item.original_title }}</p>
           <p class="poster-meta">
@@ -257,12 +182,7 @@ onMounted(loadData);
         @focus="prefetchListItem('tv', item.id)"
         @touchstart.passive="prefetchListItem('tv', item.id)"
       >
-        <img
-          :src="tmdbImg(item.poster_path, 'w185')"
-          :alt="item.name"
-          class="poster-img"
-          loading="lazy"
-        />
+        <img :src="tmdbImg(item.poster_path, 'w185')" :alt="item.name" class="poster-img" loading="lazy" />
         <div class="poster-info">
           <p class="truncate text-sm font-medium">{{ item.name || item.original_name }}</p>
           <p class="poster-meta">

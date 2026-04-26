@@ -1,0 +1,268 @@
+.btn-primary {
+  @apply rounded-xl px-4 py-2 text-sm font-medium text-white transition;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  box-shadow: 0 12px 24px rgba(1, 180, 228, 0.22);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+}
+
+.btn-primary-compact {
+  @apply px-3.5 py-1.5 text-xs;
+}
+
+.btn-primary-xs {
+  @apply rounded-lg px-3 py-1.5 text-xs font-medium text-white transition;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  box-shadow: 0 10px 18px rgba(1, 180, 228, 0.2);
+}
+
+.btn-soft {
+  @apply rounded-xl px-4 py-2 text-sm font-medium transition;
+  color: rgba(226, 232, 240, 0.9);
+  background: rgba(30, 41, 59, 0.66);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.btn-soft:hover {
+  background: rgba(51, 65, 85, 0.78);
+}
+
+.btn-soft-xs {
+  @apply rounded-lg px-3 py-1.5 text-xs font-medium transition;
+  color: rgba(226, 232, 240, 0.9);
+  background: rgba(30, 41, 59, 0.66);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.btn-soft-xs:hover {
+  background: rgba(51, 65, 85, 0.78);
+}
+
+.btn-danger-soft {
+  @apply rounded-xl px-4 py-2 text-sm font-medium transition;
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.34);
+  border: 1px solid rgba(248, 113, 113, 0.34);
+}
+
+.btn-danger-soft:hover {
+  background: rgba(153, 27, 27, 0.42);
+}
+
+.btn-danger-soft-xs {
+  @apply rounded-lg px-3 py-1.5 text-xs font-medium transition;
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.34);
+  border: 1px solid rgba(248, 113, 113, 0.34);
+}
+
+.btn-danger-soft-xs:hover {
+  background: rgba(153, 27, 27, 0.42);
+}
+
+.field-control {
+  @apply rounded-xl px-3 py-2;
+  background: var(--field-bg);
+  border: 1px solid var(--field-border);
+  color: var(--text-main);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.field-control::placeholder,
+.field-control-xs::placeholder {
+  color: rgba(199, 210, 227, 0.62);
+}
+
+.field-control:focus {
+  outline: none;
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.14);
+}
+
+select.field-control {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 2.25rem;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%2394A3B8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position:
+    0 0,
+    right 0.7rem center;
+  background-size:
+    100% 100%,
+    1rem 1rem;
+  cursor: pointer;
+}
+
+select.field-control:disabled {
+  cursor: not-allowed;
+  opacity: 0.78;
+}
+
+select.field-control option {
+  color: #e5eef7;
+  background: #0f172a;
+}
+
+select.field-control option:checked {
+  color: #f8fafc;
+  background: #1e3a5f;
+}
+
+.field-control-xs {
+  @apply rounded-lg px-2.5 py-1.5 text-xs;
+  background: var(--field-bg);
+  border: 1px solid var(--field-border);
+  color: var(--text-main);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.field-control-xs:focus {
+  outline: none;
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.14);
+}
+
+.check-control,
+.radio-control {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  border: 1.5px solid var(--field-border);
+  background: rgba(15, 23, 42, 0.9);
+  display: inline-grid;
+  place-content: center;
+  transition:
+    border-color 0.14s ease,
+    background-color 0.14s ease,
+    box-shadow 0.14s ease;
+}
+
+.check-control {
+  border-radius: 0.3rem;
+}
+
+.radio-control {
+  border-radius: 9999px;
+}
+
+.check-control::after {
+  content: "";
+  width: 0.58rem;
+  height: 0.58rem;
+  transform: scale(0);
+  transition: transform 0.14s ease;
+  clip-path: polygon(14% 53%, 0 67%, 40% 100%, 100% 26%, 84% 12%, 39% 70%);
+  background: #fff;
+}
+
+.radio-control::after {
+  content: "";
+  width: 0.46rem;
+  height: 0.46rem;
+  border-radius: 9999px;
+  transform: scale(0);
+  transition: transform 0.14s ease;
+  background: #fff;
+}
+
+.check-control:checked,
+.radio-control:checked {
+  border-color: var(--accent-strong);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+}
+
+.check-control:checked::after,
+.radio-control:checked::after {
+  transform: scale(1);
+}
+
+.check-control:focus-visible,
+.radio-control:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.16);
+}
+
+.section-label {
+  @apply text-xs uppercase;
+  letter-spacing: 0.24em;
+  color: rgba(56, 189, 248, 0.78);
+}
+
+.section-title {
+  @apply mb-3 text-base font-semibold;
+  color: #eef7ff;
+}
+
+.glass-pill {
+  @apply flex items-center gap-1 rounded-full p-1;
+  background: rgba(27, 40, 64, 0.74);
+  border: 1px solid rgba(191, 219, 254, 0.16);
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(14px) saturate(155%);
+}
+
+.glass-pill-btn {
+  @apply rounded-full px-4 py-2 text-sm transition;
+  color: rgba(226, 232, 240, 0.88);
+}
+
+.glass-pill-btn:hover {
+  background: rgba(30, 41, 59, 0.72);
+}
+
+.glass-pill-btn-active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  box-shadow: 0 8px 18px rgba(43, 83, 104, 0.28);
+}
+
+.panel-glass {
+  border: 1px solid var(--glass-border);
+  background: linear-gradient(150deg, rgba(27, 40, 64, 0.88) 0%, rgba(24, 36, 58, 0.7) 100%);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(16px) saturate(145%);
+}
+
+.content-auto {
+  content-visibility: auto;
+  contain: layout paint style;
+  contain-intrinsic-size: 420px;
+}
+
+.content-auto-heavy {
+  content-visibility: auto;
+  contain: layout paint style;
+  contain-intrinsic-size: 960px;
+}
+
+.chip-local-new {
+  @apply inline-block rounded px-2 py-0.5 text-[11px];
+  color: #bae6fd;
+  background: rgba(2, 132, 199, 0.24);
+}
+
+.chip-modified {
+  @apply inline-block rounded px-2 py-0.5 text-[11px];
+  color: #fed7aa;
+  background: rgba(194, 65, 12, 0.24);
+}
+
+.table-shell {
+  @apply mt-4 overflow-x-auto rounded-2xl p-0;
+  border: 1px solid var(--glass-border);
+  background: linear-gradient(150deg, rgba(27, 40, 64, 0.82) 0%, rgba(24, 36, 58, 0.62) 100%);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(14px) saturate(145%);
+}
+
+.table-head {
+  background: rgba(35, 50, 78, 0.74);
+}

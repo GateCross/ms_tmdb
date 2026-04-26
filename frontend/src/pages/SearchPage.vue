@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import GlassSelect from "@/components/GlassSelect.vue";
-import { prefetchMediaDetail } from "@/api/prefetch";
 import { searchByType, type SearchType } from "@/api/search";
-import { tmdbImg, profileImg } from "@/api/tmdb";
+import SearchResultList from "@/components/SearchResultList.vue";
 import type { ApiErrorLike, SearchResultItem } from "@/types/media";
 
 const query = ref("");
@@ -11,6 +10,7 @@ const type = ref<SearchType>("multi");
 const loading = ref(false);
 const error = ref("");
 const results = ref<SearchResultItem[]>([]);
+let searchReqSeq = 0;
 
 function resolveErrorMessage(err: unknown, fallback: string): string {
   if (err && typeof err === "object" && "message" in err) {
@@ -28,52 +28,32 @@ const typeOptions = [
 ] as const;
 
 async function handleSearch() {
-  if (!query.value.trim()) {
+  const trimmedQuery = query.value.trim();
+  const targetType = type.value;
+  if (!trimmedQuery) {
+    searchReqSeq++;
     error.value = "请输入关键词";
+    results.value = [];
+    loading.value = false;
     return;
   }
+  const requestSeq = ++searchReqSeq;
   loading.value = true;
   error.value = "";
   try {
-    const resp = await searchByType(type.value, query.value.trim(), 1);
+    const resp = await searchByType(targetType, trimmedQuery, 1);
+    if (requestSeq !== searchReqSeq) {
+      return;
+    }
     results.value = resp.data?.results ?? [];
   } catch (err: unknown) {
-    error.value = resolveErrorMessage(err, "搜索失败");
+    if (requestSeq === searchReqSeq) {
+      error.value = resolveErrorMessage(err, "搜索失败");
+    }
   } finally {
-    loading.value = false;
-  }
-}
-
-function routeByItem(item: SearchResultItem) {
-  const mt = item.media_type ?? type.value;
-  if (mt === "movie") return `/movie/${item.id}`;
-  if (mt === "tv") return `/tv/${item.id}`;
-  if (mt === "person") return `/person/${item.id}`;
-  return "";
-}
-
-function thumbByItem(item: SearchResultItem) {
-  const mt = item.media_type ?? type.value;
-  if (mt === "person") return profileImg(item.profile_path, "w92");
-  return tmdbImg(item.poster_path, "w92");
-}
-
-function titleByItem(item: SearchResultItem) {
-  return item.title || item.name || item.original_title || `ID ${item.id}`;
-}
-
-function subtitleByItem(item: SearchResultItem) {
-  const mt = item.media_type ?? type.value;
-  const labels: Record<string, string> = { movie: "电影", tv: "剧集", person: "人物" };
-  const tag = labels[mt] ?? mt;
-  const date = item.release_date || item.first_air_date || "";
-  return date ? `${tag} · ${date}` : tag;
-}
-
-function prefetchSearchItem(item: SearchResultItem) {
-  const mt = item.media_type ?? type.value;
-  if (mt === "movie" || mt === "tv" || mt === "person") {
-    prefetchMediaDetail(mt, Number(item.id));
+    if (requestSeq === searchReqSeq) {
+      loading.value = false;
+    }
   }
 }
 </script>
@@ -94,10 +74,7 @@ function prefetchSearchItem(item: SearchResultItem) {
         placeholder="输入关键词，例如：Fight Club"
         @keyup.enter="handleSearch"
       />
-      <button
-        class="btn-primary"
-        @click="handleSearch"
-      >
+      <button class="btn-primary" @click="handleSearch">
         {{ loading ? "搜索中..." : "搜索" }}
       </button>
     </div>
@@ -109,31 +86,6 @@ function prefetchSearchItem(item: SearchResultItem) {
       <h3 class="section-title !mb-0">结果</h3>
       <span class="badge">{{ results.length }} 条匹配</span>
     </div>
-    <ul class="grid gap-2 md:grid-cols-2">
-      <li v-for="item in results.slice(0, 20)" :key="item.id" class="search-item">
-        <RouterLink
-          :to="routeByItem(item)"
-          class="flex h-full items-center gap-3"
-          @mouseenter="prefetchSearchItem(item)"
-          @focus="prefetchSearchItem(item)"
-          @touchstart.passive="prefetchSearchItem(item)"
-        >
-          <img
-            :src="thumbByItem(item)"
-            :alt="titleByItem(item)"
-            class="search-thumb"
-            loading="lazy"
-          />
-          <div class="min-w-0 flex-1">
-            <p class="truncate font-medium text-slate-800">{{ titleByItem(item) }}</p>
-            <p class="text-xs text-black/55">{{ subtitleByItem(item) }}</p>
-            <p v-if="item.overview" class="mt-0.5 text-xs text-black/50 line-clamp-1">
-              {{ item.overview }}
-            </p>
-          </div>
-          <span v-if="typeof item.vote_average === 'number'" class="search-score-badge">⭐ {{ item.vote_average.toFixed(1) }}</span>
-        </RouterLink>
-      </li>
-    </ul>
+    <SearchResultList :items="results" :fallback-type="type" :limit="20" />
   </section>
 </template>

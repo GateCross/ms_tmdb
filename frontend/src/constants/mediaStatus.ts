@@ -40,9 +40,7 @@ export function formatStatusLabel(status: string | null | undefined): string {
   return statusLabelMap.get(raw) ?? raw;
 }
 
-const typeLabelMap = new Map<string, string>(
-  tvTypeOptions.map((item) => [item.value, item.label]),
-);
+const typeLabelMap = new Map<string, string>(tvTypeOptions.map((item) => [item.value, item.label]));
 
 export function formatTvTypeLabel(tvType: string | null | undefined): string {
   const raw = String(tvType ?? "").trim();

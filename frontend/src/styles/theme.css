@@ -1,0 +1,60 @@
+:root {
+  color-scheme: dark;
+  --bg-main:
+    radial-gradient(circle at 16% 12%, rgba(1, 180, 228, 0.22) 0%, transparent 34%),
+    radial-gradient(circle at 84% 18%, rgba(144, 206, 161, 0.16) 0%, transparent 36%),
+    linear-gradient(165deg, #101827 0%, #121e31 46%, #18243a 100%);
+  --text-main: #f1f7ff;
+  --text-muted: #c7d2e3;
+  --glass-bg: rgba(24, 36, 58, 0.68);
+  --glass-bg-strong: rgba(27, 40, 64, 0.88);
+  --glass-border: rgba(191, 219, 254, 0.16);
+  --glass-shadow: 0 20px 44px rgba(0, 0, 0, 0.24);
+  --glass-shadow-soft: 0 12px 26px rgba(0, 0, 0, 0.18);
+  --accent: #01b4e4;
+  --accent-strong: #0284c7;
+  --accent-soft: #90cea1;
+  --field-bg: rgba(20, 32, 53, 0.94);
+  --field-border: rgba(191, 219, 254, 0.22);
+  --field-border-focus: rgba(56, 189, 248, 0.72);
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--text-main);
+  background: var(--bg-main);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Source Han Sans CN", "Microsoft YaHei", sans-serif;
+  letter-spacing: 0.01em;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  border-radius: 9999px;
+  filter: blur(52px);
+  pointer-events: none;
+}
+
+body::before {
+  top: -120px;
+  left: -80px;
+  width: 320px;
+  height: 320px;
+  background: rgba(1, 180, 228, 0.22);
+}
+
+body::after {
+  right: -100px;
+  bottom: -130px;
+  width: 360px;
+  height: 360px;
+  background: rgba(144, 206, 161, 0.16);
+}

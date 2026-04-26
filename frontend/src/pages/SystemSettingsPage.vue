@@ -15,6 +15,7 @@ import {
   type AdminAutoSyncLogItem,
   type AdminAutoSyncMode,
 } from "@/api/admin";
+import { resolveErrorMessage } from "@/utils/errors";
 
 const loading = ref(false);
 
@@ -68,14 +69,24 @@ const logStatusOptions: Array<{ label: string; value: string }> = [
   { label: "异常", value: "panic" },
 ];
 
-const settingsBusy = computed(() => loading.value || proxySaving.value || syncSaving.value || syncTriggering.value || logsLoading.value || logsClearing.value);
+const settingsBusy = computed(
+  () =>
+    loading.value ||
+    proxySaving.value ||
+    syncSaving.value ||
+    syncTriggering.value ||
+    logsLoading.value ||
+    logsClearing.value,
+);
 const proxyStatusText = computed(() => (proxyEnabled.value ? "已启用" : "直连"));
 const proxyLocalWriteStatusText = computed(() => (proxyLocalWriteEnabled.value ? "自动写入本地" : "仅读已有本地"));
 const syncStatusText = computed(() => (syncEnabled.value ? "已启用" : "已关闭"));
 const taskRunStatusText = computed(() => (syncRunning.value ? "执行中" : "空闲"));
 const latestLog = computed(() => logsItems.value[0] ?? null);
 const latestLogStatusText = computed(() => (latestLog.value ? formatStatus(latestLog.value.status) : "暂无记录"));
-const latestLogTimeText = computed(() => (latestLog.value ? formatDateTime(latestLog.value.triggered_at) : "等待首次执行"));
+const latestLogTimeText = computed(() =>
+  latestLog.value ? formatDateTime(latestLog.value.triggered_at) : "等待首次执行",
+);
 
 function normalizeProxyURL(raw: string) {
   return raw.trim();
@@ -177,7 +188,9 @@ function formatFieldList(fields: string[] | undefined) {
   return fields.join("、");
 }
 
-function formatFieldChanges(changes: Array<{ field: string; diff_type: string; before: string; after: string }> | undefined) {
+function formatFieldChanges(
+  changes: Array<{ field: string; diff_type: string; before: string; after: string }> | undefined,
+) {
   if (!Array.isArray(changes) || changes.length === 0) {
     return "-";
   }
@@ -219,8 +232,8 @@ async function loadAutoSyncLogs(page = logsPage.value) {
     logsItems.value = Array.isArray(data.results) ? data.results : [];
     logsTotal.value = Math.max(0, Number(data.total) || 0);
     logsPage.value = normalizeNumber(Number(data.page), 1, logsTotalPages());
-  } catch (err: any) {
-    logsError.value = err.message ?? "读取执行日志失败";
+  } catch (err: unknown) {
+    logsError.value = resolveErrorMessage(err, "读取执行日志失败");
   } finally {
     logsLoading.value = false;
   }
@@ -253,8 +266,8 @@ async function clearLogs() {
     logsPage.value = 1;
     await loadAutoSyncLogs(1);
     clearLogsConfirmVisible.value = false;
-  } catch (err: any) {
-    logsError.value = err.message ?? "清空执行日志失败";
+  } catch (err: unknown) {
+    logsError.value = resolveErrorMessage(err, "清空执行日志失败");
   } finally {
     logsClearing.value = false;
   }
@@ -289,10 +302,18 @@ async function loadLogDetail(id: number, params: AdminAutoSyncLogDetailParams = 
     activeLogDetail.value = data;
     detailSyncedPageSize.value = normalizeNumber(Number(data.synced_page_size) || detailSyncedPageSize.value, 1, 100);
     detailFailedPageSize.value = normalizeNumber(Number(data.failed_page_size) || detailFailedPageSize.value, 1, 100);
-    detailSyncedPage.value = normalizeNumber(Number(data.synced_page) || 1, 1, detailTotalPages(data.synced, detailSyncedPageSize.value));
-    detailFailedPage.value = normalizeNumber(Number(data.failed_page) || 1, 1, detailTotalPages(data.failed, detailFailedPageSize.value));
-  } catch (err: any) {
-    detailError.value = err.message ?? "读取日志明细失败";
+    detailSyncedPage.value = normalizeNumber(
+      Number(data.synced_page) || 1,
+      1,
+      detailTotalPages(data.synced, detailSyncedPageSize.value),
+    );
+    detailFailedPage.value = normalizeNumber(
+      Number(data.failed_page) || 1,
+      1,
+      detailTotalPages(data.failed, detailFailedPageSize.value),
+    );
+  } catch (err: unknown) {
+    detailError.value = resolveErrorMessage(err, "读取日志明细失败");
   } finally {
     detailLoading.value = false;
   }
@@ -367,8 +388,8 @@ async function loadSettings() {
     syncBatchSize.value = normalizeNumber(Number(syncData.batch_size), 1, 500);
     syncStartDelaySecond.value = normalizeNumber(Number(syncData.start_delay_second), 0, 3600);
     syncRunning.value = !!syncData.running;
-  } catch (err: any) {
-    const text = err.message ?? "读取系统设置失败";
+  } catch (err: unknown) {
+    const text = resolveErrorMessage(err, "读取系统设置失败");
     proxyError.value = text;
     syncError.value = text;
   } finally {
@@ -391,8 +412,8 @@ async function saveProxySettings() {
     proxyEnabled.value = !!data.enabled;
     proxyLocalWriteEnabled.value = data.local_write_enabled !== false;
     proxyMessage.value = proxyEnabled.value ? "代理配置已保存" : "代理已关闭，当前为直连";
-  } catch (err: any) {
-    proxyError.value = err.message ?? "保存代理设置失败";
+  } catch (err: unknown) {
+    proxyError.value = resolveErrorMessage(err, "保存代理设置失败");
   } finally {
     proxySaving.value = false;
   }
@@ -419,8 +440,8 @@ async function saveAutoSyncSettings() {
     syncStartDelaySecond.value = normalizeNumber(Number(data.start_delay_second), 0, 3600);
     syncRunning.value = !!data.running;
     syncMessage.value = syncEnabled.value ? "自动同步配置已保存并生效" : "自动同步已关闭";
-  } catch (err: any) {
-    syncError.value = err.message ?? "保存自动同步设置失败";
+  } catch (err: unknown) {
+    syncError.value = resolveErrorMessage(err, "保存自动同步设置失败");
   } finally {
     syncSaving.value = false;
   }
@@ -437,8 +458,8 @@ async function triggerAutoSyncNow() {
     syncRunning.value = !!data.running;
     syncMessage.value = data.message || "已触发一次立即同步任务";
     await loadAutoSyncLogs(1);
-  } catch (err: any) {
-    syncError.value = err.message ?? "触发立即同步失败";
+  } catch (err: unknown) {
+    syncError.value = resolveErrorMessage(err, "触发立即同步失败");
   } finally {
     syncTriggering.value = false;
   }
@@ -462,11 +483,7 @@ onMounted(reloadAll);
 
       <div class="library-toolbar-actions">
         <span class="badge">{{ taskRunStatusText }}</span>
-        <button
-          class="btn-soft disabled:opacity-60"
-          :disabled="settingsBusy"
-          @click="reloadAll"
-        >
+        <button class="btn-soft disabled:opacity-60" :disabled="settingsBusy" @click="reloadAll">
           {{ loading || logsLoading ? "读取中..." : "重新读取" }}
         </button>
       </div>
@@ -476,7 +493,9 @@ onMounted(reloadAll);
       <article class="settings-summary-card">
         <span class="settings-summary-label">代理访问</span>
         <strong>{{ proxyStatusText }}</strong>
-        <p>{{ proxyEnabled ? proxyURL || "已启用，等待代理地址" : "后端直连 TMDB" }} · {{ proxyLocalWriteStatusText }}</p>
+        <p>
+          {{ proxyEnabled ? proxyURL || "已启用，等待代理地址" : "后端直连 TMDB" }} · {{ proxyLocalWriteStatusText }}
+        </p>
       </article>
       <article class="settings-summary-card">
         <span class="settings-summary-label">自动同步</span>
@@ -535,11 +554,7 @@ onMounted(reloadAll);
         <p class="settings-help-text">支持格式示例：http://127.0.0.1:7890、socks5://127.0.0.1:1080</p>
 
         <div class="settings-card-actions">
-          <button
-            class="btn-primary disabled:opacity-60"
-            :disabled="proxySaving"
-            @click="saveProxySettings"
-          >
+          <button class="btn-primary disabled:opacity-60" :disabled="proxySaving" @click="saveProxySettings">
             {{ proxySaving ? "保存中..." : "保存代理设置" }}
           </button>
         </div>
@@ -650,11 +665,7 @@ onMounted(reloadAll);
             />
           </label>
 
-          <button
-            class="btn-soft disabled:opacity-60"
-            :disabled="logsLoading || logsClearing"
-            @click="refreshLogs"
-          >
+          <button class="btn-soft disabled:opacity-60" :disabled="logsLoading || logsClearing" @click="refreshLogs">
             {{ logsLoading ? "刷新中..." : "刷新日志" }}
           </button>
           <button
@@ -684,11 +695,7 @@ onMounted(reloadAll);
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="item in logsItems"
-              :key="item.id"
-              class="table-row-hover"
-            >
+            <tr v-for="item in logsItems" :key="item.id" class="table-row-hover">
               <td class="px-3 py-2">
                 <p class="settings-table-primary">{{ formatDateTime(item.triggered_at) }}</p>
                 <p class="mt-1 text-xs text-black/45">{{ item.cron_expr || "-" }}</p>
@@ -712,12 +719,7 @@ onMounted(reloadAll);
                 <span class="settings-log-summary">{{ summarizeMessage(item.message) }}</span>
               </td>
               <td class="px-3 py-2">
-                <button
-                  class="btn-soft-xs px-2.5 py-1"
-                  @click="openLogDetail(item)"
-                >
-                  详情
-                </button>
+                <button class="btn-soft-xs px-2.5 py-1" @click="openLogDetail(item)">详情</button>
               </td>
             </tr>
             <tr v-if="!logsLoading && logsItems.length === 0">
@@ -749,10 +751,13 @@ onMounted(reloadAll);
           </button>
         </div>
       </div>
-
     </div>
 
-    <div v-if="detailModalVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 sm:p-4" @click.self="closeLogDetail">
+    <div
+      v-if="detailModalVisible"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 sm:p-4"
+      @click.self="closeLogDetail"
+    >
       <div class="panel-glass settings-detail-modal max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-2xl">
         <div class="modal-header-dark">
           <div>
@@ -762,12 +767,7 @@ onMounted(reloadAll);
               <span v-if="activeLogDetail" class="text-sm text-black/55">#{{ activeLogDetail.id }}</span>
             </h4>
           </div>
-          <button
-            class="btn-soft px-3 py-1.5"
-            @click="closeLogDetail"
-          >
-            关闭
-          </button>
+          <button class="btn-soft px-3 py-1.5" @click="closeLogDetail">关闭</button>
         </div>
 
         <div class="max-h-[calc(92vh-72px)] overflow-y-auto px-4 py-4 sm:px-5">
@@ -794,7 +794,9 @@ onMounted(reloadAll);
               </article>
               <article class="settings-detail-summary-item">
                 <span>检查 / 同步 / 失败</span>
-                <strong>{{ activeLogDetail.checked }} / {{ activeLogDetail.synced }} / {{ activeLogDetail.failed }}</strong>
+                <strong
+                  >{{ activeLogDetail.checked }} / {{ activeLogDetail.synced }} / {{ activeLogDetail.failed }}</strong
+                >
                 <small>{{ activeLogDetail.message || "-" }}</small>
               </article>
             </div>
@@ -853,7 +855,9 @@ onMounted(reloadAll);
                 </table>
               </div>
               <div class="settings-pagination-row settings-pagination-row-sm">
-                <p>共 {{ activeLogDetail.synced }} 条，当前第 {{ detailSyncedPage }} / {{ detailSyncedTotalPages() }} 页</p>
+                <p>
+                  共 {{ activeLogDetail.synced }} 条，当前第 {{ detailSyncedPage }} / {{ detailSyncedTotalPages() }} 页
+                </p>
                 <div class="flex items-center gap-2">
                   <button
                     class="btn-soft px-3 py-1.5 disabled:opacity-60"
@@ -911,7 +915,9 @@ onMounted(reloadAll);
                 </table>
               </div>
               <div class="settings-pagination-row settings-pagination-row-sm">
-                <p>共 {{ activeLogDetail.failed }} 条，当前第 {{ detailFailedPage }} / {{ detailFailedTotalPages() }} 页</p>
+                <p>
+                  共 {{ activeLogDetail.failed }} 条，当前第 {{ detailFailedPage }} / {{ detailFailedTotalPages() }} 页
+                </p>
                 <div class="flex items-center gap-2">
                   <button
                     class="btn-soft px-3 py-1.5 disabled:opacity-60"
@@ -935,26 +941,20 @@ onMounted(reloadAll);
       </div>
     </div>
 
-    <div v-if="clearLogsConfirmVisible" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4" @click.self="closeClearLogsConfirm">
+    <div
+      v-if="clearLogsConfirmVisible"
+      class="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4"
+      @click.self="closeClearLogsConfirm"
+    >
       <div class="panel-glass w-full max-w-md rounded-2xl p-5">
         <h4 class="text-base font-semibold text-red-700">确认清空执行日志</h4>
-        <p class="mt-2 text-sm text-black/70">
-          确认要清空所有执行日志吗？清空后无法恢复。
-        </p>
+        <p class="mt-2 text-sm text-black/70">确认要清空所有执行日志吗？清空后无法恢复。</p>
 
         <div class="mt-5 flex items-center justify-end gap-2">
-          <button
-            class="btn-soft disabled:opacity-60"
-            :disabled="logsClearing"
-            @click="closeClearLogsConfirm"
-          >
+          <button class="btn-soft disabled:opacity-60" :disabled="logsClearing" @click="closeClearLogsConfirm">
             取消
           </button>
-          <button
-            class="btn-danger-soft disabled:opacity-60"
-            :disabled="logsClearing"
-            @click="clearLogs"
-          >
+          <button class="btn-danger-soft disabled:opacity-60" :disabled="logsClearing" @click="clearLogs">
             {{ logsClearing ? "清空中..." : "确认清空" }}
           </button>
         </div>

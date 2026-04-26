@@ -6,11 +6,7 @@ type CacheEntry<T> = {
 const responseCache = new Map<string, CacheEntry<unknown>>();
 const inflightCache = new Map<string, Promise<unknown>>();
 
-export async function withRequestCache<T>(
-  key: string,
-  loader: () => Promise<T>,
-  ttlMs = 10 * 60 * 1000,
-): Promise<T> {
+export async function withRequestCache<T>(key: string, loader: () => Promise<T>, ttlMs = 10 * 60 * 1000): Promise<T> {
   const now = Date.now();
   const cached = responseCache.get(key);
   if (cached && cached.expiresAt > now) {

@@ -1,0 +1,111 @@
+.page-shell {
+  @apply mx-auto w-full max-w-6xl px-4 md:px-8;
+}
+
+.app-shell {
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+.app-header {
+  @apply fixed inset-x-0 top-0 z-50;
+  background: linear-gradient(180deg, rgba(13, 23, 39, 0.92) 0%, rgba(13, 23, 39, 0.68) 100%);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(18px) saturate(140%);
+}
+
+.app-header-inner {
+  @apply flex flex-wrap items-center justify-between gap-4 py-3;
+}
+
+.app-content {
+  @apply pb-12 pt-32 md:pt-36;
+}
+
+.back-top-btn {
+  @apply fixed bottom-6 right-6 z-40 rounded-full px-4 py-2 text-xs font-medium text-white transition;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  box-shadow: 0 14px 30px rgba(39, 90, 83, 0.28);
+}
+
+.back-top-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 32px rgba(39, 90, 83, 0.34);
+}
+
+.app-brand-tag {
+  @apply text-xs uppercase;
+  letter-spacing: 0.24em;
+  color: rgba(56, 189, 248, 0.9);
+}
+
+.app-brand-title {
+  @apply text-2xl font-bold md:text-3xl;
+  color: #eef7ff;
+}
+
+.app-nav {
+  @apply flex items-center gap-1 rounded-full p-1;
+  background: rgba(27, 40, 64, 0.74);
+  border: 1px solid rgba(191, 219, 254, 0.16);
+  box-shadow: var(--glass-shadow-soft);
+  backdrop-filter: blur(14px) saturate(160%);
+}
+
+.app-nav-link {
+  @apply rounded-full px-4 py-2 text-sm transition;
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.app-nav-link:hover {
+  background: rgba(30, 41, 59, 0.72);
+  color: #f8fafc;
+}
+
+.app-nav-link-active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  box-shadow: 0 8px 18px rgba(43, 83, 104, 0.3);
+}
+
+.card {
+  @apply rounded-2xl p-5;
+  background: linear-gradient(150deg, var(--glass-bg-strong) 0%, var(--glass-bg) 100%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(16px) saturate(145%);
+}
+
+.hero-banner {
+  @apply relative overflow-hidden rounded-2xl bg-cover bg-center;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  box-shadow: var(--glass-shadow);
+  min-height: 220px;
+}
+
+.hero-banner-detail {
+  min-height: 220px;
+  background: #121e31;
+}
+
+.hero-banner-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+@media (min-width: 768px) {
+  .hero-banner-media {
+    object-fit: cover;
+    object-position: center 28%;
+  }
+}
+
+.hero-overlay {
+  @apply absolute inset-0 flex flex-col justify-end p-6;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, transparent 60%);
+}

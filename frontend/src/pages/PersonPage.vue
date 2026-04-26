@@ -4,6 +4,7 @@ import { prefetchMediaDetail } from "@/api/prefetch";
 import { useRoute, useRouter } from "vue-router";
 import { getPersonCombinedCredits, getPersonDetail, getPersonImages } from "@/api/person";
 import { profileImg, tmdbImg } from "@/api/tmdb";
+import { resolveErrorMessage } from "@/utils/errors";
 import { scheduleAfterPaint } from "@/utils/schedule";
 
 type PersonCreditItem = {
@@ -21,11 +22,25 @@ type PersonImageItem = {
   file_path: string;
 };
 
+type PersonDetail = {
+  name?: string;
+  profile_path?: string;
+  known_for_department?: string;
+  birthday?: string;
+  place_of_birth?: string;
+  popularity?: number;
+  biography?: string;
+};
+
+function toRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+}
+
 const route = useRoute();
 const router = useRouter();
 const loading = ref(false);
 const error = ref("");
-const detail = ref<any>(null);
+const detail = ref<PersonDetail | null>(null);
 const topCreditItems = ref<PersonCreditItem[]>([]);
 const photoProfiles = ref<PersonImageItem[]>([]);
 const creditsLoading = ref(false);
@@ -41,7 +56,9 @@ let cancelDeferredLoads: (() => void) | null = null;
 
 const personId = computed(() => Number(route.params.id));
 const sourceType = computed(() => {
-  const value = String(route.query.fromType ?? "").trim().toLowerCase();
+  const value = String(route.query.fromType ?? "")
+    .trim()
+    .toLowerCase();
   if (value === "movie" || value === "tv") {
     return value;
   }
@@ -52,9 +69,7 @@ const sourceId = computed(() => {
   return Number.isFinite(value) && value > 0 ? value : 0;
 });
 const topCredits = computed(() => {
-  return [...topCreditItems.value]
-    .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
-    .slice(0, 12);
+  return [...topCreditItems.value].sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0)).slice(0, 12);
 });
 
 function goBack() {
@@ -94,16 +109,19 @@ function normalizeCreditItems(raw: unknown): PersonCreditItem[] {
     ? ((raw as Record<string, unknown>).cast as unknown[])
     : [];
   return cast
-    .map((item: any) => ({
-      id: Number(item?.id) || 0,
-      media_type: String(item?.media_type ?? ""),
-      title: typeof item?.title === "string" ? item.title : undefined,
-      name: typeof item?.name === "string" ? item.name : undefined,
-      character: typeof item?.character === "string" ? item.character : undefined,
-      job: typeof item?.job === "string" ? item.job : undefined,
-      poster_path: typeof item?.poster_path === "string" ? item.poster_path : undefined,
-      popularity: Number.isFinite(Number(item?.popularity)) ? Number(item.popularity) : 0,
-    }))
+    .map((item) => {
+      const value = toRecord(item);
+      return {
+        id: Number(value.id) || 0,
+        media_type: String(value.media_type ?? ""),
+        title: typeof value.title === "string" ? value.title : undefined,
+        name: typeof value.name === "string" ? value.name : undefined,
+        character: typeof value.character === "string" ? value.character : undefined,
+        job: typeof value.job === "string" ? value.job : undefined,
+        poster_path: typeof value.poster_path === "string" ? value.poster_path : undefined,
+        popularity: Number.isFinite(Number(value.popularity)) ? Number(value.popularity) : 0,
+      };
+    })
     .filter((item) => item.id > 0);
 }
 
@@ -112,8 +130,8 @@ function normalizeImageItems(raw: unknown): PersonImageItem[] {
     ? ((raw as Record<string, unknown>).profiles as unknown[])
     : [];
   return profiles
-    .map((item: any) => ({
-      file_path: String(item?.file_path ?? "").trim(),
+    .map((item) => ({
+      file_path: String(toRecord(item).file_path ?? "").trim(),
     }))
     .filter((item) => item.file_path);
 }
@@ -147,11 +165,11 @@ async function loadPersonCombinedCredits(force = false) {
     }
     topCreditItems.value = normalizeCreditItems(resp.data);
     creditsLoaded.value = true;
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (requestSeq !== creditsReqSeq || targetId !== personId.value) {
       return;
     }
-    creditsError.value = err.message ?? "加载代表作品失败";
+    creditsError.value = resolveErrorMessage(err, "加载代表作品失败");
   } finally {
     if (requestSeq === creditsReqSeq) {
       creditsLoading.value = false;
@@ -175,11 +193,11 @@ async function loadPersonImages(force = false) {
     }
     photoProfiles.value = normalizeImageItems(resp.data).slice(0, 6);
     photosLoaded.value = true;
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (requestSeq !== photosReqSeq || targetId !== personId.value) {
       return;
     }
-    photosError.value = err.message ?? "加载照片失败";
+    photosError.value = resolveErrorMessage(err, "加载照片失败");
   } finally {
     if (requestSeq === photosReqSeq) {
       photosLoading.value = false;
@@ -205,9 +223,9 @@ async function loadData() {
     }
     detail.value = resp.data;
     scheduleDeferredLoadsForDetail();
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (requestSeq === detailReqSeq) {
-      error.value = err.message ?? "加载失败";
+      error.value = resolveErrorMessage(err, "加载失败");
     }
   } finally {
     if (requestSeq === detailReqSeq) {
@@ -236,20 +254,11 @@ onBeforeUnmount(() => {
   <template v-else-if="detail">
     <section class="card">
       <div class="mb-4">
-        <button
-          class="btn-soft-xs px-3 py-1.5"
-          @click="goBack"
-        >
-          返回上一页
-        </button>
+        <button class="btn-soft-xs px-3 py-1.5" @click="goBack">返回上一页</button>
       </div>
       <div class="detail-layout">
         <div class="detail-poster">
-          <img
-            :src="profileImg(detail.profile_path, 'w342')"
-            :alt="detail.name"
-            class="detail-poster-img"
-          />
+          <img :src="profileImg(detail.profile_path, 'w342')" :alt="detail.name" class="detail-poster-img" />
         </div>
 
         <div class="detail-info">
@@ -276,7 +285,7 @@ onBeforeUnmount(() => {
                 :disabled="photosLoading"
                 @click="loadPersonImages(true)"
               >
-                {{ photosLoading ? "加载中..." : (photosLoaded ? "刷新照片" : "加载照片") }}
+                {{ photosLoading ? "加载中..." : photosLoaded ? "刷新照片" : "加载照片" }}
               </button>
             </div>
             <p v-if="photosLoading" class="text-xs text-black/55">正在加载照片...</p>
@@ -302,7 +311,7 @@ onBeforeUnmount(() => {
                 :disabled="creditsLoading"
                 @click="loadPersonCombinedCredits(true)"
               >
-                {{ creditsLoading ? "加载中..." : (creditsLoaded ? "刷新作品" : "加载作品") }}
+                {{ creditsLoading ? "加载中..." : creditsLoaded ? "刷新作品" : "加载作品" }}
               </button>
             </div>
             <p v-if="creditsLoading" class="text-xs text-black/55">正在加载代表作品...</p>
@@ -316,12 +325,7 @@ onBeforeUnmount(() => {
                   @focus="prefetchCreditItem(c)"
                   @touchstart.passive="prefetchCreditItem(c)"
                 >
-                  <img
-                    :src="tmdbImg(c.poster_path, 'w185')"
-                    :alt="c.title || c.name"
-                    class="cast-img"
-                    loading="lazy"
-                  />
+                  <img :src="tmdbImg(c.poster_path, 'w185')" :alt="c.title || c.name" class="cast-img" loading="lazy" />
                 </RouterLink>
                 <p class="mt-1 truncate text-xs font-medium">{{ c.title || c.name }}</p>
                 <p class="truncate text-xs text-black/50">{{ c.character ?? c.job ?? "" }}</p>

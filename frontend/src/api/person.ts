@@ -18,11 +18,7 @@ export function getPersonDetail(id: number, language = "zh-CN", append = "", opt
   if (options.force) {
     clearRequestCache(key);
   }
-  return withRequestCache(
-    key,
-    () => http.get(`/api/v3/person/${id}`, { params }),
-    DETAIL_CACHE_TTL,
-  );
+  return withRequestCache(key, () => http.get(`/api/v3/person/${id}`, { params }), DETAIL_CACHE_TTL);
 }
 
 export function getPersonCombinedCredits(id: number, language = "zh-CN", options: DetailOptions = {}) {
@@ -42,9 +38,5 @@ export function getPersonImages(id: number, options: DetailOptions = {}) {
   if (options.force) {
     clearRequestCache(key);
   }
-  return withRequestCache(
-    key,
-    () => http.get(`/api/v3/person/${id}/images`),
-    AUXILIARY_CACHE_TTL,
-  );
+  return withRequestCache(key, () => http.get(`/api/v3/person/${id}/images`), AUXILIARY_CACHE_TTL);
 }

@@ -1,0 +1,132 @@
+.modal-header-dark {
+  @apply flex items-center justify-between px-5 py-3;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.56);
+}
+
+.empty-state {
+  @apply rounded-2xl px-4 py-10 text-center text-sm;
+  color: rgba(226, 232, 240, 0.84);
+  background: linear-gradient(150deg, rgba(27, 40, 64, 0.74) 0%, rgba(24, 36, 58, 0.58) 100%);
+  border: 1px dashed rgba(191, 219, 254, 0.24);
+}
+
+.library-toolbar {
+  @apply flex flex-col justify-between gap-4 md:flex-row md:items-center;
+}
+
+.library-toolbar-title {
+  @apply mt-1 text-2xl font-bold md:text-3xl;
+  color: #eef7ff;
+}
+
+.library-toolbar-actions {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.library-filter-card {
+  position: relative;
+  overflow: visible;
+}
+
+.library-list-summary {
+  @apply flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3 text-sm;
+  color: rgba(226, 232, 240, 0.86);
+  background: rgba(27, 40, 64, 0.58);
+  border: 1px solid rgba(191, 219, 254, 0.14);
+}
+
+.library-delete-btn {
+  @apply flex h-8 w-8 items-center justify-center rounded-full text-sm shadow-sm transition-all duration-200 disabled:cursor-not-allowed;
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.72);
+  border: 1px solid rgba(248, 113, 113, 0.42);
+}
+
+.library-delete-btn:hover {
+  background: rgba(153, 27, 27, 0.82);
+}
+
+.table-row-hover {
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  transition: background-color 0.16s ease;
+}
+
+.table-row-hover:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.table-action-btn {
+  @apply relative inline-flex h-7 w-7 items-center justify-center rounded-lg transition disabled:opacity-60;
+}
+
+.table-action-btn::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 0.45rem);
+  left: 50%;
+  z-index: 30;
+  transform: translateX(-50%) translateY(2px);
+  white-space: nowrap;
+  border-radius: 9999px;
+  padding: 0.25rem 0.55rem;
+  color: #f8fbff;
+  background: rgba(15, 23, 42, 0.94);
+  border: 1px solid rgba(191, 219, 254, 0.2);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.26);
+  font-size: 0.68rem;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.14s ease,
+    transform 0.14s ease;
+}
+
+.table-action-btn::before {
+  content: "";
+  position: absolute;
+  bottom: calc(100% + 0.18rem);
+  left: 50%;
+  z-index: 31;
+  width: 0.45rem;
+  height: 0.45rem;
+  transform: translateX(-50%) rotate(45deg);
+  background: rgba(15, 23, 42, 0.94);
+  border-bottom: 1px solid rgba(191, 219, 254, 0.18);
+  border-right: 1px solid rgba(191, 219, 254, 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.14s ease;
+}
+
+.table-action-btn:hover::after,
+.table-action-btn:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.table-action-btn:hover::before,
+.table-action-btn:focus-visible::before {
+  opacity: 1;
+}
+
+.table-action-btn-soft {
+  color: rgba(226, 232, 240, 0.9);
+  background: rgba(30, 41, 59, 0.52);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.table-action-btn-soft:hover {
+  background: rgba(51, 65, 85, 0.7);
+}
+
+.table-action-btn-danger {
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.24);
+  border: 1px solid rgba(248, 113, 113, 0.28);
+}
+
+.table-action-btn-danger:hover {
+  background: rgba(153, 27, 27, 0.34);
+}

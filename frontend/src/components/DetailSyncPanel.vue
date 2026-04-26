@@ -42,7 +42,7 @@ const visibleModeOptions = computed(() => {
 });
 const panelClass = computed(() => {
   if (props.embedded) {
-    return "mt-3 rounded-lg border border-amber-200 bg-white/85 p-3";
+    return "mt-3 rounded-lg border border-amber-200 bg-gray-50 p-3";
   }
   return "mt-6 rounded-xl border border-black/10 bg-white/70 p-4";
 });
@@ -99,6 +99,16 @@ function resolveFieldLabel(field: string) {
   return map[field] ?? field;
 }
 
+function resolveErrorMessage(err: unknown, fallback: string) {
+  if (err && typeof err === "object" && "message" in err) {
+    const message = (err as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim()) {
+      return message;
+    }
+  }
+  return fallback;
+}
+
 async function executeSync(payload: AdminSyncPayload) {
   const targetId = Number(props.targetId);
   if (!Number.isFinite(targetId) || targetId <= 0) {
@@ -128,8 +138,8 @@ async function loadChangedFields() {
     changedFields.value = Array.isArray(data.changed_fields) ? data.changed_fields : [];
     selectedOverwriteFields.value = [...changedFields.value];
     syncMessage.value = data.message || `检测到 ${changedFields.value.length} 个变化字段`;
-  } catch (err: any) {
-    syncError.value = err.message ?? "检测变化字段失败";
+  } catch (err: unknown) {
+    syncError.value = resolveErrorMessage(err, "检测变化字段失败");
   } finally {
     diffChecking.value = false;
   }
@@ -155,8 +165,8 @@ async function applySync() {
     selectedOverwriteFields.value = changedFields.value.filter((field) => !data.overwritten_fields?.includes(field));
     syncMessage.value = data.message || "同步完成";
     emit("synced");
-  } catch (err: any) {
-    syncError.value = err.message ?? "同步失败";
+  } catch (err: unknown) {
+    syncError.value = resolveErrorMessage(err, "同步失败");
   } finally {
     syncing.value = false;
   }
@@ -203,11 +213,7 @@ watch(
     </p>
 
     <div class="mt-3 grid gap-2">
-      <label
-        v-for="option in visibleModeOptions"
-        :key="option.value"
-        class="sync-option-card"
-      >
+      <label v-for="option in visibleModeOptions" :key="option.value" class="sync-option-card">
         <div class="flex items-center gap-2">
           <input v-model="syncMode" type="radio" class="radio-control" :value="option.value" />
           <span class="font-medium">{{ option.label }}</span>
@@ -233,17 +239,11 @@ watch(
       </p>
 
       <div class="mt-2 flex flex-wrap gap-2">
-        <label
-          v-for="field in changedFields"
-          :key="field"
-          class="field-choice-pill"
-        >
+        <label v-for="field in changedFields" :key="field" class="field-choice-pill">
           <input v-model="selectedOverwriteFields" type="checkbox" class="check-control" :value="field" />
           <span>{{ resolveFieldLabel(field) }}</span>
         </label>
-        <span v-if="!changedFields.length" class="text-xs text-black/50">
-          暂未检测到变化字段
-        </span>
+        <span v-if="!changedFields.length" class="text-xs text-black/50"> 暂未检测到变化字段 </span>
       </div>
     </div>
 

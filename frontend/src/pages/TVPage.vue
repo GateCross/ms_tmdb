@@ -75,7 +75,6 @@ const {
   closeTmdbRiskModal,
   closeDeleteConfirmModal,
   closeLocalDeleteConfirmModal,
-  checkRemoteDiffAndPrompt,
   keepLocalData,
   handleSynced,
   deleteCurrentTV,
@@ -118,12 +117,7 @@ const {
         class="hero-banner-media"
       />
       <div class="absolute left-4 top-4 z-10">
-        <button
-          class="detail-back-btn"
-          @click="goBack"
-        >
-          返回上一页
-        </button>
+        <button class="detail-back-btn" @click="goBack">返回上一页</button>
       </div>
       <div class="hero-overlay">
         <h1 class="text-2xl font-bold text-white md:text-3xl">{{ detail.name || detail.original_name }}</h1>
@@ -134,11 +128,7 @@ const {
     <section class="card mt-4">
       <div class="detail-layout">
         <div class="detail-poster">
-          <img
-            :src="tmdbImg(detail.poster_path, 'w342')"
-            :alt="detail.name"
-            class="detail-poster-img"
-          />
+          <img :src="tmdbImg(detail.poster_path, 'w342')" :alt="detail.name" class="detail-poster-img" />
         </div>
 
         <div class="detail-info">
@@ -174,11 +164,7 @@ const {
           </div>
 
           <div v-if="detail.genres?.length" class="mt-3 flex flex-wrap gap-1.5">
-            <span
-              v-for="g in detail.genres"
-              :key="g.id"
-              class="genre-pill"
-            >
+            <span v-for="g in detail.genres" :key="g.id" class="genre-pill">
               {{ g.name }}
             </span>
           </div>

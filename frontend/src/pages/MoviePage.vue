@@ -7,39 +7,37 @@ import type { AdminCompareFieldDetail, AdminSyncMode } from "@/api/admin";
 import { getMovieCredits, getMovieDetail, getMovieGenreList } from "@/api/movie";
 import { tmdbImg } from "@/api/tmdb";
 import { formatStatusLabel, movieStatusOptions } from "@/constants/mediaStatus";
+import { resolveErrorMessage } from "@/utils/errors";
+import {
+  normalizeCastMembers,
+  normalizeGenreOptions,
+  normalizeMovieEditForm,
+  type CastMember,
+  type GenreOption,
+  type MovieEditFormData,
+} from "@/utils/mediaNormalizers";
 import { scheduleAfterPaint } from "@/utils/schedule";
 
 const DetailSyncPanel = defineAsyncComponent(() => import("@/components/DetailSyncPanel.vue"));
 const GlassSelect = defineAsyncComponent(() => import("@/components/GlassSelect.vue"));
 
-type GenreOption = {
-  id: number;
-  name: string;
-};
+type MovieCastMember = CastMember;
+type MovieEditForm = MovieEditFormData;
 
-type MovieCastMember = {
-  id: number;
-  name: string;
-  character: string;
-  profile_path: string;
-};
-
-type MovieEditForm = {
-  tmdb_id: string;
-  title: string;
-  original_title: string;
-  genre_names: string[];
-  tagline: string;
-  release_date: string;
-  status: string;
-  runtime: string;
-  original_language: string;
-  homepage: string;
-  poster_path: string;
-  backdrop_path: string;
-  vote_average: string;
-  popularity: string;
-  overview: string;
+type MovieDetail = {
+  id?: number;
+  sync_tmdb_id?: number;
+  title?: string;
+  original_title?: string;
+  tagline?: string;
+  poster_path?: string;
+  backdrop_path?: string;
+  vote_average?: number;
+  release_date?: string;
+  runtime?: number;
+  status?: string;
+  overview?: string;
+  genres?: GenreOption[];
 };
 
 type RemoteDiffNotice = {
@@ -57,7 +55,7 @@ const route = useRoute();
 const router = useRouter();
 const loading = ref(false);
 const error = ref("");
-const detail = ref<any>(null);
+const detail = ref<MovieDetail | null>(null);
 const castMembers = ref<MovieCastMember[]>([]);
 const creditsLoading = ref(false);
 const creditsLoaded = ref(false);
@@ -169,49 +167,8 @@ function prefetchPerson(personId: number) {
   prefetchMediaDetail("person", personId);
 }
 
-function resetEditForm(data: any) {
-  editForm.value = {
-    tmdb_id: data?.id != null ? String(data.id) : String(movieId.value || ""),
-    title: data?.title ?? "",
-    original_title: data?.original_title ?? "",
-    genre_names: Array.isArray(data?.genres) ? data.genres.map((g: any) => String(g?.name ?? "").trim()).filter(Boolean) : [],
-    tagline: data?.tagline ?? "",
-    release_date: data?.release_date ?? "",
-    status: data?.status ?? "",
-    runtime: data?.runtime != null ? String(data.runtime) : "",
-    original_language: data?.original_language ?? "",
-    homepage: data?.homepage ?? "",
-    poster_path: data?.poster_path ?? "",
-    backdrop_path: data?.backdrop_path ?? "",
-    vote_average: data?.vote_average != null ? String(data.vote_average) : "",
-    popularity: data?.popularity != null ? String(data.popularity) : "",
-    overview: data?.overview ?? "",
-  };
-}
-
-function normalizeGenreOptions(raw: any): GenreOption[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((item: any, idx: number) => ({
-      id: Number(item?.id) || idx + 1,
-      name: String(item?.name ?? "").trim(),
-    }))
-    .filter((item: GenreOption) => !!item.name);
-}
-
-function normalizeCastMembers(raw: unknown): MovieCastMember[] {
-  const cast = Array.isArray((raw as Record<string, unknown> | null)?.cast)
-    ? ((raw as Record<string, unknown>).cast as unknown[])
-    : [];
-  return cast
-    .map((item: any) => ({
-      id: Number(item?.id) || 0,
-      name: String(item?.name ?? "").trim(),
-      character: String(item?.character ?? "").trim(),
-      profile_path: String(item?.profile_path ?? ""),
-    }))
-    .filter((item) => item.id > 0 && item.name)
-    .slice(0, 8);
+function resetEditForm(data: unknown) {
+  editForm.value = normalizeMovieEditForm(data, movieId.value);
 }
 
 function resetRemoteDiffState() {
@@ -335,8 +292,8 @@ async function confirmDeleteCurrentMovie() {
       path: "/library",
       query: { tab: "movie" },
     });
-  } catch (err: any) {
-    deleteError.value = err.message ?? "删除失败";
+  } catch (err: unknown) {
+    deleteError.value = resolveErrorMessage(err, "删除失败");
   } finally {
     deleting.value = false;
   }
@@ -358,11 +315,11 @@ async function loadMovieCredits(force = false) {
     }
     castMembers.value = normalizeCastMembers(resp.data);
     creditsLoaded.value = true;
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (requestSeq !== creditsReqSeq || targetId !== movieId.value) {
       return;
     }
-    creditsError.value = err.message ?? "加载演员失败";
+    creditsError.value = resolveErrorMessage(err, "加载演员失败");
   } finally {
     if (requestSeq === creditsReqSeq) {
       creditsLoading.value = false;
@@ -389,7 +346,9 @@ async function checkRemoteDiffAndPrompt(force = false) {
   try {
     const resp = await compareMovieRemote(movieId.value);
     const remoteFields = Array.isArray(resp.data?.diff_fields) ? resp.data.diff_fields : [];
-    const localOverrideFields = Array.isArray(resp.data?.local_override_diff_fields) ? resp.data.local_override_diff_fields : [];
+    const localOverrideFields = Array.isArray(resp.data?.local_override_diff_fields)
+      ? resp.data.local_override_diff_fields
+      : [];
     const hasDiff = Boolean(resp.data?.has_diff) && (remoteFields.length > 0 || localOverrideFields.length > 0);
     if (!hasDiff) {
       remoteDiffNotice.value = null;
@@ -402,17 +361,19 @@ async function checkRemoteDiffAndPrompt(force = false) {
     }
 
     const remoteFieldPreview = remoteFields.slice(0, 6).join("、");
-    const remoteSummary = remoteFields.length === 0
-      ? "无"
-      : remoteFields.length > 6
-        ? `${remoteFieldPreview} 等 ${remoteFields.length} 项`
-        : `${remoteFieldPreview}（共 ${remoteFields.length} 项）`;
+    const remoteSummary =
+      remoteFields.length === 0
+        ? "无"
+        : remoteFields.length > 6
+          ? `${remoteFieldPreview} 等 ${remoteFields.length} 项`
+          : `${remoteFieldPreview}（共 ${remoteFields.length} 项）`;
     const localOverridePreview = localOverrideFields.slice(0, 6).join("、");
-    const localOverrideSummary = localOverrideFields.length === 0
-      ? "无"
-      : localOverrideFields.length > 6
-        ? `${localOverridePreview} 等 ${localOverrideFields.length} 项`
-        : `${localOverridePreview}（共 ${localOverrideFields.length} 项）`;
+    const localOverrideSummary =
+      localOverrideFields.length === 0
+        ? "无"
+        : localOverrideFields.length > 6
+          ? `${localOverridePreview} 等 ${localOverrideFields.length} 项`
+          : `${localOverridePreview}（共 ${localOverrideFields.length} 项）`;
     const detailItems = normalizeDiffDetails(resp.data?.diff_details);
     const remoteDetails = buildDiffDetailsByFields(remoteFields, detailItems, "remote");
     const localOverrideDetails = buildDiffDetailsByFields(localOverrideFields, detailItems, "local_override");
@@ -429,8 +390,8 @@ async function checkRemoteDiffAndPrompt(force = false) {
     remoteDiffMessage.value = "";
     remoteDiffDecision.value = "has_diff_pending";
     comparedRemoteId.value = movieId.value;
-  } catch (err: any) {
-    remoteDiffError.value = err.message ?? "远程差异检测失败";
+  } catch (err: unknown) {
+    remoteDiffError.value = resolveErrorMessage(err, "远程差异检测失败");
   } finally {
     checkingRemoteDiff.value = false;
   }
@@ -477,9 +438,9 @@ async function loadData(options: { force?: boolean; checkRemoteDiff?: boolean } 
       await checkRemoteDiffAndPrompt();
     }
     scheduleDeferredLoadsForDetail();
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (requestSeq === loadReqSeq) {
-      error.value = err.message ?? "加载失败";
+      error.value = resolveErrorMessage(err, "加载失败");
     }
   } finally {
     if (requestSeq === loadReqSeq) {
@@ -507,12 +468,15 @@ function parseOptionalFloat(raw: string): number | undefined {
 function normalizeDiffDetails(raw: unknown): AdminCompareFieldDetail[] {
   if (!Array.isArray(raw)) return [];
   return raw
-    .map((item: any) => ({
-      field: String(item?.field ?? "").trim(),
-      diff_type: String(item?.diff_type ?? "remote").trim() || "remote",
-      local: String(item?.local ?? "-"),
-      remote: String(item?.remote ?? "-"),
-    }))
+    .map((item) => {
+      const value = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+      return {
+        field: String(value.field ?? "").trim(),
+        diff_type: String(value.diff_type ?? "remote").trim() || "remote",
+        local: String(value.local ?? "-"),
+        remote: String(value.remote ?? "-"),
+      };
+    })
     .filter((item) => item.field.length > 0);
 }
 
@@ -521,17 +485,16 @@ function buildDiffDetailsByFields(
   details: AdminCompareFieldDetail[],
   diffType: "remote" | "local_override",
 ): AdminCompareFieldDetail[] {
-  const detailMap = new Map(
-    details
-      .filter((item) => item.diff_type === diffType)
-      .map((item) => [item.field, item]),
+  const detailMap = new Map(details.filter((item) => item.diff_type === diffType).map((item) => [item.field, item]));
+  return fields.map(
+    (field) =>
+      detailMap.get(field) ?? {
+        field,
+        diff_type: diffType,
+        local: "-",
+        remote: "-",
+      },
   );
-  return fields.map((field) => detailMap.get(field) ?? {
-    field,
-    diff_type: diffType,
-    local: "-",
-    remote: "-",
-  });
 }
 
 async function saveMovieChanges() {
@@ -608,8 +571,8 @@ async function saveMovieChanges() {
       return;
     }
     await loadData({ force: true });
-  } catch (err: any) {
-    saveError.value = err.message ?? "保存失败";
+  } catch (err: unknown) {
+    saveError.value = resolveErrorMessage(err, "保存失败");
   } finally {
     saving.value = false;
   }
@@ -640,12 +603,7 @@ onBeforeUnmount(() => {
         class="hero-banner-media"
       />
       <div class="absolute left-4 top-4 z-10">
-        <button
-          class="detail-back-btn"
-          @click="goBack"
-        >
-          返回上一页
-        </button>
+        <button class="detail-back-btn" @click="goBack">返回上一页</button>
       </div>
       <div class="hero-overlay">
         <h1 class="text-2xl font-bold text-white md:text-3xl">{{ detail.title || detail.original_title }}</h1>
@@ -660,11 +618,7 @@ onBeforeUnmount(() => {
       <div class="detail-layout">
         <!-- 海报 -->
         <div class="detail-poster">
-          <img
-            :src="tmdbImg(detail.poster_path, 'w342')"
-            :alt="detail.title"
-            class="detail-poster-img"
-          />
+          <img :src="tmdbImg(detail.poster_path, 'w342')" :alt="detail.title" class="detail-poster-img" />
         </div>
 
         <!-- 信息面板 -->
@@ -699,11 +653,7 @@ onBeforeUnmount(() => {
 
           <!-- 类型标签 -->
           <div v-if="detail.genres?.length" class="mt-3 flex flex-wrap gap-1.5">
-            <span
-              v-for="g in detail.genres"
-              :key="g.id"
-              class="genre-pill"
-            >
+            <span v-for="g in detail.genres" :key="g.id" class="genre-pill">
               {{ g.name }}
             </span>
           </div>
@@ -713,23 +663,21 @@ onBeforeUnmount(() => {
           </p>
 
           <div
-            v-if="checkingRemoteDiff || remoteDiffNotice || remoteDiffMessage || remoteDiffError || remoteDiffDecision === 'no_diff'"
+            v-if="
+              checkingRemoteDiff ||
+              remoteDiffNotice ||
+              remoteDiffMessage ||
+              remoteDiffError ||
+              remoteDiffDecision === 'no_diff'
+            "
             class="detail-alert"
           >
-            <p v-if="checkingRemoteDiff" class="text-xs text-amber-700">
-              正在检测远程数据差异...
-            </p>
+            <p v-if="checkingRemoteDiff" class="text-xs text-amber-700">正在检测远程数据差异...</p>
 
             <template v-else-if="remoteDiffNotice">
-              <p class="detail-alert-title">
-                检测到远程电影数据与本地不一致
-              </p>
-              <p class="detail-alert-text">
-                远程变化字段：{{ remoteDiffNotice.remoteSummary }}
-              </p>
-              <p class="detail-alert-text">
-                本地修改字段：{{ remoteDiffNotice.localOverrideSummary }}
-              </p>
+              <p class="detail-alert-title">检测到远程电影数据与本地不一致</p>
+              <p class="detail-alert-text">远程变化字段：{{ remoteDiffNotice.remoteSummary }}</p>
+              <p class="detail-alert-text">本地修改字段：{{ remoteDiffNotice.localOverrideSummary }}</p>
               <div class="mt-2 flex flex-wrap items-center gap-2">
                 <button
                   v-if="remoteDiffNotice.remoteDetails.length"
@@ -745,18 +693,12 @@ onBeforeUnmount(() => {
                 >
                   {{ showLocalOverrideDiffDetails ? "收起本地修改明细" : "查看本地修改明细" }}
                 </button>
-                <button
-                  class="detail-alert-action disabled:opacity-60"
-                  @click="keepLocalData"
-                >
+                <button class="detail-alert-action disabled:opacity-60" @click="keepLocalData">
                   暂不处理，保留本地
                 </button>
               </div>
 
-              <div
-                v-if="showRemoteDiffDetails && remoteDiffNotice.remoteDetails.length"
-                class="detail-diff-list"
-              >
+              <div v-if="showRemoteDiffDetails && remoteDiffNotice.remoteDetails.length" class="detail-diff-list">
                 <div
                   v-for="item in remoteDiffNotice.remoteDetails"
                   :key="`remote-${item.field}`"
@@ -794,7 +736,10 @@ onBeforeUnmount(() => {
               @synced="handleSynced"
             />
 
-            <p v-if="!checkingRemoteDiff && !remoteDiffNotice && remoteDiffDecision === 'no_diff'" class="mt-3 text-xs text-green-700">
+            <p
+              v-if="!checkingRemoteDiff && !remoteDiffNotice && remoteDiffDecision === 'no_diff'"
+              class="mt-3 text-xs text-green-700"
+            >
               已完成检查，当前未发现远程差异。
             </p>
             <p v-if="!checkingRemoteDiff && !remoteDiffNotice && remoteDiffMessage" class="mt-3 text-xs text-green-700">
@@ -816,13 +761,7 @@ onBeforeUnmount(() => {
                 >
                   {{ deleting ? "删除中..." : "删除本地数据" }}
                 </button>
-                <button
-                  v-if="!isEditing"
-                  class="btn-soft-xs"
-                  @click="enterEditMode"
-                >
-                  编辑
-                </button>
+                <button v-if="!isEditing" class="btn-soft-xs" @click="enterEditMode">编辑</button>
               </div>
             </div>
 
@@ -834,22 +773,14 @@ onBeforeUnmount(() => {
               <div class="grid gap-3 md:grid-cols-2">
                 <label class="text-xs text-black/60">
                   TMDB ID
-                  <input
-                    v-model="editForm.tmdb_id"
-                    class="field-control mt-1 w-full text-sm"
-                    placeholder="例如：550"
-                  />
+                  <input v-model="editForm.tmdb_id" class="field-control mt-1 w-full text-sm" placeholder="例如：550" />
                   <p class="mt-1 text-[11px] text-amber-700">
                     高风险：改动后，后续同步仍使用旧 TMDB ID 拉取；对外返回与访问使用新 TMDB ID。
                   </p>
                 </label>
                 <label class="text-xs text-black/60">
                   片名
-                  <input
-                    v-model="editForm.title"
-                    class="field-control mt-1 w-full text-sm"
-                    placeholder="电影标题"
-                  />
+                  <input v-model="editForm.title" class="field-control mt-1 w-full text-sm" placeholder="电影标题" />
                 </label>
                 <label class="text-xs text-black/60">
                   原始片名
@@ -862,27 +793,12 @@ onBeforeUnmount(() => {
                 <label class="text-xs text-black/60 md:col-span-2">
                   类型（多选）
                   <div class="field-group-box">
-                    <input
-                      v-model="genreKeyword"
-                      class="field-control-xs w-full"
-                      placeholder="筛选类型"
-                    />
-                    <label
-                      v-for="genre in filteredGenreOptions"
-                      :key="genre.id"
-                      class="field-choice-pill"
-                    >
-                      <input
-                        v-model="editForm.genre_names"
-                        type="checkbox"
-                        class="check-control"
-                        :value="genre.name"
-                      />
+                    <input v-model="genreKeyword" class="field-control-xs w-full" placeholder="筛选类型" />
+                    <label v-for="genre in filteredGenreOptions" :key="genre.id" class="field-choice-pill">
+                      <input v-model="editForm.genre_names" type="checkbox" class="check-control" :value="genre.name" />
                       <span>{{ genre.name }}</span>
                     </label>
-                    <span v-if="!genreOptions.length" class="px-1 py-1 text-xs text-black/50">
-                      暂无可选类型
-                    </span>
+                    <span v-if="!genreOptions.length" class="px-1 py-1 text-xs text-black/50"> 暂无可选类型 </span>
                     <span v-else-if="!filteredGenreOptions.length" class="px-1 py-1 text-xs text-black/50">
                       无匹配类型
                     </span>
@@ -902,19 +818,11 @@ onBeforeUnmount(() => {
                 </label>
                 <label class="text-xs text-black/60">
                   标语
-                  <input
-                    v-model="editForm.tagline"
-                    class="field-control mt-1 w-full text-sm"
-                    placeholder="Tagline"
-                  />
+                  <input v-model="editForm.tagline" class="field-control mt-1 w-full text-sm" placeholder="Tagline" />
                 </label>
                 <label class="text-xs text-black/60">
                   时长(分钟)
-                  <input
-                    v-model="editForm.runtime"
-                    class="field-control mt-1 w-full text-sm"
-                    placeholder="Runtime"
-                  />
+                  <input v-model="editForm.runtime" class="field-control mt-1 w-full text-sm" placeholder="Runtime" />
                 </label>
                 <label class="text-xs text-black/60">
                   原始语言
@@ -950,19 +858,11 @@ onBeforeUnmount(() => {
                 </label>
                 <label class="text-xs text-black/60">
                   评分
-                  <input
-                    v-model="editForm.vote_average"
-                    class="field-control mt-1 w-full text-sm"
-                    placeholder="7.8"
-                  />
+                  <input v-model="editForm.vote_average" class="field-control mt-1 w-full text-sm" placeholder="7.8" />
                 </label>
                 <label class="text-xs text-black/60">
                   热度
-                  <input
-                    v-model="editForm.popularity"
-                    class="field-control mt-1 w-full text-sm"
-                    placeholder="123.45"
-                  />
+                  <input v-model="editForm.popularity" class="field-control mt-1 w-full text-sm" placeholder="123.45" />
                 </label>
                 <label class="text-xs text-black/60 md:col-span-2">
                   简介
@@ -976,20 +876,10 @@ onBeforeUnmount(() => {
               </div>
 
               <div class="mt-3 flex items-center gap-3">
-                <button
-                  class="btn-primary disabled:opacity-60"
-                  :disabled="saving"
-                  @click="saveMovieChanges"
-                >
+                <button class="btn-primary disabled:opacity-60" :disabled="saving" @click="saveMovieChanges">
                   {{ saving ? "保存中..." : "保存到本地数据库" }}
                 </button>
-                <button
-                  class="btn-soft disabled:opacity-60"
-                  :disabled="saving"
-                  @click="cancelEditMode"
-                >
-                  取消
-                </button>
+                <button class="btn-soft disabled:opacity-60" :disabled="saving" @click="cancelEditMode">取消</button>
               </div>
             </div>
 
@@ -1009,7 +899,7 @@ onBeforeUnmount(() => {
                 :disabled="creditsLoading"
                 @click="loadMovieCredits(true)"
               >
-                {{ creditsLoading ? "加载中..." : (creditsLoaded ? "刷新演员" : "加载演员") }}
+                {{ creditsLoading ? "加载中..." : creditsLoaded ? "刷新演员" : "加载演员" }}
               </button>
             </div>
             <p v-if="creditsLoading" class="text-xs text-black/55">正在加载演员信息...</p>
@@ -1023,12 +913,7 @@ onBeforeUnmount(() => {
                   @focus="prefetchPerson(c.id)"
                   @touchstart.passive="prefetchPerson(c.id)"
                 >
-                  <img
-                    :src="tmdbImg(c.profile_path, 'w185')"
-                    :alt="c.name"
-                    class="cast-img"
-                    loading="lazy"
-                  />
+                  <img :src="tmdbImg(c.profile_path, 'w185')" :alt="c.name" class="cast-img" loading="lazy" />
                 </RouterLink>
                 <p class="mt-1 truncate text-xs font-medium">{{ c.name }}</p>
                 <p class="truncate text-xs text-black/50">{{ c.character }}</p>

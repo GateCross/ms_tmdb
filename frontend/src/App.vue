@@ -52,12 +52,6 @@ onBeforeUnmount(() => {
       <RouterView />
     </main>
 
-    <button
-      v-if="showBackToTop"
-      class="back-top-btn"
-      @click="scrollToTop"
-    >
-      返回顶部
-    </button>
+    <button v-if="showBackToTop" class="back-top-btn" @click="scrollToTop">返回顶部</button>
   </div>
 </template>
