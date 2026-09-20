@@ -406,11 +406,23 @@ func formatBytes(size int64) string {
 	return fmt.Sprintf("%.1f %cB", float64(size)/float64(div), "KMGTPE"[exp])
 }
 
-// StartRetentionCleaner 启动每日一次的日志保留期清理。
+// StartRetentionCleaner 启动后台日志保留期清理（启动后异步执行一次，随后每 24 小时执行一次）。
 func (s *RequestLogService) StartRetentionCleaner(ctx context.Context) func() {
 	cleanerCtx, cancel := context.WithCancel(withoutCancel(ctx))
 
 	go func() {
+		// 启动后稍微延迟（例如 10 秒），等待 HTTP 服务完全就绪并对外提供服务后再开始初次清理
+		initialTimer := time.NewTimer(10 * time.Second)
+		select {
+		case <-cleanerCtx.Done():
+			initialTimer.Stop()
+			return
+		case <-initialTimer.C:
+			if err := s.CleanupExpired(cleanerCtx); err != nil {
+				logx.Errorf("启动后清理请求日志失败: %v", err)
+			}
+		}
+
 		ticker := time.NewTicker(24 * time.Hour)
 		defer ticker.Stop()
 		for {
@@ -419,7 +431,7 @@ func (s *RequestLogService) StartRetentionCleaner(ctx context.Context) func() {
 				return
 			case <-ticker.C:
 				if err := s.CleanupExpired(cleanerCtx); err != nil {
-					logx.Errorf("清理请求日志失败: %v", err)
+					logx.Errorf("定时清理请求日志失败: %v", err)
 				}
 			}
 		}

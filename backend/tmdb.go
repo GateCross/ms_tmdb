@@ -40,17 +40,6 @@ func main() {
 	server := rest.MustNewServer(c.RestConf, rest.WithRouter(proxyRouter), rest.WithNotFoundHandler(nil))
 	defer server.Stop()
 
-	if err := ctx.LogService.CleanupExpired(context.Background()); err != nil {
-		logx.Errorf("启动时清理请求日志失败: %v", err)
-	}
-	stopLogCleaner := ctx.LogService.StartRetentionCleaner(context.Background())
-	defer stopLogCleaner()
-
-	autoSyncScheduler := adminlogic.NewLibraryAutoSyncScheduler(ctx)
-	adminlogic.SetLibraryAutoSyncScheduler(autoSyncScheduler)
-	autoSyncScheduler.Start()
-	defer autoSyncScheduler.Stop()
-
 	handler.RegisterHandlers(server, ctx)
 
 	// 文件访问不在 tmdb.api 中声明，保留入口层的静态上传文件读取路由。
@@ -60,6 +49,15 @@ func main() {
 		},
 		rest.WithPrefix("/uploads"),
 	)
+
+	// 日志保留期清理移至后台异步执行，避免在启动时阻塞 HTTP 端口监听导致 502。
+	stopLogCleaner := ctx.LogService.StartRetentionCleaner(context.Background())
+	defer stopLogCleaner()
+
+	autoSyncScheduler := adminlogic.NewLibraryAutoSyncScheduler(ctx)
+	adminlogic.SetLibraryAutoSyncScheduler(autoSyncScheduler)
+	autoSyncScheduler.Start()
+	defer autoSyncScheduler.Stop()
 
 	logx.Infof("服务启动: %s:%d", c.Host, c.Port)
 	server.Start()
