@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import BaseDialog from "@/components/common/BaseDialog.vue";
+import { cn } from "@/lib/utils";
 
 const props = withDefaults(
   defineProps<{
@@ -24,28 +25,37 @@ const emit = defineEmits<{
 }>();
 
 const panelClass = computed(() =>
-  props.variant === "vben" ? "vben-modal-shell" : "panel-glass",
+  props.variant === "vben"
+    ? "bg-[var(--surface)] text-[var(--text-main)] border border-[var(--border-muted)] shadow-[0_12px_28px_rgba(0,0,0,0.24),0_24px_56px_rgba(0,0,0,0.28)]"
+    : "panel-glass",
 );
 
 const headerClass = computed(() =>
   props.variant === "vben"
-    ? "vben-modal-header"
+    ? "sticky top-0 z-10 flex min-h-[48px] items-center justify-between border-b border-[var(--border-muted)] bg-[var(--surface)] px-5 py-0"
     : "sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-black/35 px-4 py-3 backdrop-blur sm:px-6",
 );
 
 const resolvedFooterClass = computed(() => {
   if (props.variant === "vben") {
-    return ["vben-modal-footer", props.footerClass].filter(Boolean).join(" ");
+    return cn(
+      "flex items-center justify-end gap-2 border-t border-[var(--border-muted)] bg-[var(--surface)] px-5 py-3",
+      props.footerClass,
+    );
   }
   return props.footerClass;
 });
 
 const titleClass = computed(() =>
-  props.variant === "vben" ? "vben-modal-title" : "text-sm font-semibold",
+  props.variant === "vben"
+    ? "text-[15px] font-semibold leading-[1.4] text-[var(--text-main)]"
+    : "text-sm font-semibold",
 );
 
 const closeButtonClass = computed(() =>
-  props.variant === "vben" ? "vben-modal-close" : "btn-soft px-3 py-1.5 text-xs disabled:opacity-60",
+  props.variant === "vben"
+    ? "inline-flex h-[30px] w-[30px] items-center justify-center rounded-md border-0 bg-transparent text-[22px] leading-none text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--text-main)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-ring)] disabled:opacity-60"
+    : "btn-soft px-3 py-1.5 text-xs disabled:opacity-60",
 );
 
 const closeButtonText = computed(() => (props.variant === "vben" ? "×" : "关闭"));
@@ -75,76 +85,3 @@ const closeButtonText = computed(() => (props.variant === "vben" ? "×" : "关�
     </template>
   </BaseDialog>
 </template>
-
-<!-- 样式需穿透 BaseDialog + Teleport，不可使用 scoped -->
-<style>
-.vben-modal-shell {
-  color: var(--text-main);
-  background: var(--surface);
-  border: 1px solid var(--border-muted);
-  box-shadow:
-    0 12px 28px rgba(0, 0, 0, 0.24),
-    0 24px 56px rgba(0, 0, 0, 0.28);
-}
-
-.vben-modal-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 48px;
-  padding: 0 16px 0 20px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border-muted);
-}
-
-.vben-modal-title {
-  color: var(--text-main);
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.vben-modal-close {
-  display: inline-flex;
-  width: 30px;
-  height: 30px;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 6px;
-  color: var(--text-muted);
-  background: transparent;
-  font-size: 22px;
-  line-height: 1;
-  transition:
-    color 0.16s ease,
-    background-color 0.16s ease;
-}
-
-.vben-modal-close:hover {
-  color: var(--text-main);
-  background: var(--surface-muted);
-}
-
-.vben-modal-close:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--accent-ring);
-}
-
-.vben-modal-close:disabled {
-  opacity: 0.6;
-}
-
-.vben-modal-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 20px;
-  background: var(--surface);
-  border-top: 1px solid var(--border-muted);
-}
-</style>

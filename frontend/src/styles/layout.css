@@ -923,6 +923,8 @@
   justify-content: center;
   overflow: hidden;
   background-color: #f4f7f9;
+  /* 纯视觉反馈层，放行点击，避免转场异常时残留全屏透明遮挡 */
+  pointer-events: none;
 }
 
 .admin-global-loading-loader {

@@ -101,14 +101,15 @@ const detailFailedPageSize = ref(10);
 const clearConfirmVisible = ref(false);
 const { toastVisible, toastText, toastTone, showToastNotice, closeToastNotice } = useToastNotice();
 
+// radix-vue 不接受空字符串选项值，「全部」用 all 哨兵，由 LogsToolbar 映射回空串
 const requestStatusOptions = [
-  { label: "全部状态", value: "" },
+  { label: "全部状态", value: "all" },
   { label: "成功", value: "success" },
   { label: "失败", value: "error" },
 ];
 
 const autoSyncStatusOptions = [
-  { label: "全部状态", value: "" },
+  { label: "全部状态", value: "all" },
   { label: "成功", value: "success" },
   { label: "部分失败", value: "partial_failed" },
   { label: "异常", value: "panic" },
@@ -143,7 +144,9 @@ const currentTotalPages = computed(() => totalPages(currentTotal.value, currentP
 const accessTotalText = computed(() => (accessLoaded.value ? formatRequestLogTotal(accessTotal.value) : "—"));
 const tmdbTotalText = computed(() => (tmdbLoaded.value ? formatRequestLogTotal(tmdbTotal.value) : "—"));
 const autoSyncTotalText = computed(() => (autoSyncLoaded.value ? formatRequestLogTotal(autoSyncTotal.value) : "—"));
-const activeDetail = computed<RequestLogDetail | null>(() => (detailType.value === "access" ? accessDetail.value : tmdbDetail.value));
+const activeDetail = computed<RequestLogDetail | null>(() =>
+  detailType.value === "access" ? accessDetail.value : tmdbDetail.value,
+);
 const currentKeyword = computed(() => {
   if (activeTab.value === "access") return accessKeyword.value.trim();
   if (activeTab.value === "tmdb") return tmdbKeyword.value.trim();
@@ -479,10 +482,7 @@ async function changePageSize(pageSize: number) {
 
 function isCurrentRequestDetail(requestSeq: number, type: RequestLogTab, id: number) {
   return (
-    requestSeq === detailRequestSeq &&
-    detailVisible.value &&
-    detailType.value === type &&
-    detailTargetId.value === id
+    requestSeq === detailRequestSeq && detailVisible.value && detailType.value === type && detailTargetId.value === id
   );
 }
 
@@ -562,11 +562,7 @@ async function loadAutoSyncLogDetail(id: number, params: AdminAutoSyncLogDetailP
       failed_page: params.failed_page ?? detailFailedPage.value,
       failed_page_size: params.failed_page_size ?? detailFailedPageSize.value,
     });
-    if (
-      requestSeq !== autoSyncDetailRequestSeq ||
-      !autoSyncDetailVisible.value ||
-      activeAutoSyncLogId.value !== id
-    ) {
+    if (requestSeq !== autoSyncDetailRequestSeq || !autoSyncDetailVisible.value || activeAutoSyncLogId.value !== id) {
       return;
     }
     const data = resp.data;
@@ -584,11 +580,7 @@ async function loadAutoSyncLogDetail(id: number, params: AdminAutoSyncLogDetailP
       detailTotalPages(data.failed, detailFailedPageSize.value),
     );
   } catch {
-    if (
-      requestSeq !== autoSyncDetailRequestSeq ||
-      !autoSyncDetailVisible.value ||
-      activeAutoSyncLogId.value !== id
-    ) {
+    if (requestSeq !== autoSyncDetailRequestSeq || !autoSyncDetailVisible.value || activeAutoSyncLogId.value !== id) {
       return;
     }
     // 错误已由全局请求拦截器提示，这里只关闭详情加载态。
@@ -791,12 +783,7 @@ onMounted(() => {
           :loading="tmdbLoading"
           @open-detail="openTmdbDetail"
         />
-        <AutoSyncLogList
-          v-else
-          :items="autoSyncItems"
-          :loading="autoSyncLoading"
-          @open-detail="openAutoSyncDetail"
-        />
+        <AutoSyncLogList v-else :items="autoSyncItems" :loading="autoSyncLoading" @open-detail="openAutoSyncDetail" />
       </LoadState>
 
       <LogsPagination

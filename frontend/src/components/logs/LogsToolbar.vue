@@ -36,6 +36,13 @@ const emit = defineEmits<{
   clear: [];
 }>();
 
+// 「全部」选项的哨兵值，对应查询参数的空串
+const ALL_STATUS = "all";
+
+function toSelectValue(status: string) {
+  return status || ALL_STATUS;
+}
+
 function updateAccessKeyword(event: Event) {
   emit("update:accessKeyword", (event.target as HTMLInputElement).value.trim());
 }
@@ -45,12 +52,13 @@ function updateTmdbKeyword(event: Event) {
 }
 
 function updateStatus(tab: LogTab, value: string) {
+  const status = value === ALL_STATUS ? "" : value;
   if (tab === "access") {
-    emit("update:accessStatus", value);
+    emit("update:accessStatus", status);
   } else if (tab === "tmdb") {
-    emit("update:tmdbStatus", value);
+    emit("update:tmdbStatus", status);
   } else {
-    emit("update:autoSyncStatus", value);
+    emit("update:autoSyncStatus", status);
   }
   emit("status-change");
 }
@@ -103,7 +111,7 @@ function updateStatus(tab: LogTab, value: string) {
         状态
         <GlassSelect
           v-if="activeTab === 'access'"
-          :model-value="accessStatus"
+          :model-value="toSelectValue(accessStatus)"
           :options="requestStatusOptions"
           :disabled="busy"
           class="min-w-[136px]"
@@ -111,7 +119,7 @@ function updateStatus(tab: LogTab, value: string) {
         />
         <GlassSelect
           v-else-if="activeTab === 'tmdb'"
-          :model-value="tmdbStatus"
+          :model-value="toSelectValue(tmdbStatus)"
           :options="requestStatusOptions"
           :disabled="busy"
           class="min-w-[136px]"
@@ -119,7 +127,7 @@ function updateStatus(tab: LogTab, value: string) {
         />
         <GlassSelect
           v-else
-          :model-value="autoSyncStatus"
+          :model-value="toSelectValue(autoSyncStatus)"
           :options="autoSyncStatusOptions"
           :disabled="busy"
           class="min-w-[136px]"

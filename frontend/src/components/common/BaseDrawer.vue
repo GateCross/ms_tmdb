@@ -1,11 +1,7 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
-import {
-  createOverlayId,
-  useFocusTrap,
-  useOverlayStack,
-} from "@/composables/useFocusTrap";
-import { useScrollLock } from "@/composables/useScrollLock";
+import { computed } from "vue";
+import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "radix-vue";
+import { cn } from "@/lib/utils";
 
 const props = withDefaults(
   defineProps<{
@@ -16,7 +12,6 @@ const props = withDefaults(
     busy?: boolean;
     closeOnOverlay?: boolean;
     closeOnEscape?: boolean;
-    initialFocus?: "close" | "primary" | "first";
     showCloseButton?: boolean;
     side?: "right" | "left";
     panelClass?: string;
@@ -31,7 +26,6 @@ const props = withDefaults(
     busy: false,
     closeOnOverlay: true,
     closeOnEscape: true,
-    initialFocus: "first",
     showCloseButton: true,
     side: "right",
     panelClass: "admin-preference-drawer",
@@ -47,229 +41,83 @@ const emit = defineEmits<{
   close: [];
 }>();
 
-const overlayId = createOverlayId("drawer");
-const titleId = `${overlayId}-title`;
-const descriptionId = `${overlayId}-description`;
-
-const containerRef = ref<HTMLElement | null>(null);
-const closeButtonRef = ref<HTMLElement | null>(null);
-const initialFocusRef = ref<HTMLElement | null | undefined>(null);
-const isTopOverlay = ref(false);
-/** 焦点会话：与 visible 解耦，确保关闭时先出栈再恢复焦点 */
-const sessionOpen = ref(false);
-let scrollLocked = false;
-
-const { register, unregister, isTop, subscribe } = useOverlayStack();
-const { lock, unlock } = useScrollLock();
-
-const hasDescription = computed(() => Boolean(props.description));
-const trapEnabled = computed(() => sessionOpen.value && isTopOverlay.value);
-const panelSideClass = computed(() =>
-  props.side === "left" ? "base-drawer-panel-left" : "base-drawer-panel-right",
-);
-
-useFocusTrap({
-  containerRef,
-  enabled: trapEnabled,
-  open: sessionOpen,
-  initialFocusRef,
+const open = computed({
+  get: () => props.visible,
+  set: (val: boolean) => {
+    if (!val && !props.busy) {
+      emit("close");
+    }
+  },
 });
 
-function lockScroll() {
-  if (scrollLocked) {
-    return;
+const panelSideClass = computed(() =>
+  props.side === "left"
+    ? "inset-y-0 left-0 right-auto border-l-0 border-r border-[var(--border-muted)] shadow-[10px_0_28px_rgba(15,23,42,0.14)]"
+    : "inset-y-0 right-0 left-auto",
+);
+
+function handleInteractOutside(event: Event) {
+  if (props.busy || !props.closeOnOverlay) {
+    event.preventDefault();
   }
-  lock();
-  scrollLocked = true;
 }
 
-function unlockScroll() {
-  if (!scrollLocked) {
-    return;
+function handleEscapeKeyDown(event: KeyboardEvent) {
+  if (props.busy || !props.closeOnEscape) {
+    event.preventDefault();
   }
-  unlock();
-  scrollLocked = false;
-}
-
-function syncTopState() {
-  isTopOverlay.value = sessionOpen.value && isTop(overlayId);
-}
-
-function resolveInitialFocus() {
-  if (props.initialFocus === "close") {
-    initialFocusRef.value = closeButtonRef.value;
-    return;
-  }
-  if (props.initialFocus === "primary") {
-    initialFocusRef.value =
-      containerRef.value?.querySelector<HTMLElement>("[data-dialog-primary]") ?? null;
-    return;
-  }
-  initialFocusRef.value = null;
-}
-
-function canClose(): boolean {
-  return !props.busy;
 }
 
 function requestClose() {
-  if (!canClose()) {
-    return;
-  }
+  if (props.busy) return;
   emit("close");
 }
-
-function onOverlayClick() {
-  if (!canClose() || !props.closeOnOverlay) {
-    return;
-  }
-  emit("close");
-}
-
-function onDocumentKeyDown(event: KeyboardEvent) {
-  if (event.key !== "Escape") {
-    return;
-  }
-  if (!sessionOpen.value || !isTopOverlay.value) {
-    return;
-  }
-  // busy 禁止关闭优先于 closeOnEscape
-  if (!canClose() || !props.closeOnEscape) {
-    return;
-  }
-  event.preventDefault();
-  event.stopPropagation();
-  emit("close");
-}
-
-function teardownOverlay() {
-  unregister(overlayId);
-  unlockScroll();
-  isTopOverlay.value = false;
-  // 出栈后再结束焦点会话，restoreFocus 才能落到新栈顶或触发元素
-  sessionOpen.value = false;
-}
-
-// 关闭时同步出栈，保证焦点恢复前新栈顶已隔离就绪
-watch(
-  () => props.visible,
-  (visible, wasVisible) => {
-    if (!visible && wasVisible) {
-      teardownOverlay();
-    }
-  },
-  { flush: "sync" },
-);
-
-watch(
-  () => props.visible,
-  async (visible) => {
-    if (!visible) {
-      return;
-    }
-    lockScroll();
-    await nextTick();
-    if (!props.visible || !containerRef.value) {
-      unlockScroll();
-      return;
-    }
-    resolveInitialFocus();
-    register(overlayId, containerRef.value);
-    sessionOpen.value = true;
-    syncTopState();
-  },
-);
-
-watch(trapEnabled, (enabled) => {
-  if (enabled) {
-    document.addEventListener("keydown", onDocumentKeyDown, true);
-  } else {
-    document.removeEventListener("keydown", onDocumentKeyDown, true);
-  }
-});
-
-const unsubscribeStack = subscribe(() => {
-  syncTopState();
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener("keydown", onDocumentKeyDown, true);
-  unsubscribeStack();
-  teardownOverlay();
-});
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="visible"
-      :id="overlayId"
-      ref="containerRef"
-      :class="rootClass"
-      role="dialog"
-      aria-modal="true"
-      :aria-labelledby="titleId"
-      :aria-describedby="hasDescription ? descriptionId : undefined"
-      tabindex="-1"
-    >
-      <div :class="overlayClass" aria-hidden="true" @click="onOverlayClick" />
+  <DialogRoot v-model:open="open">
+    <!-- radix 的 Portal 不随 open 卸载，须手动门控，否则全屏容器关闭后残留挡住页面点击 -->
+    <DialogPortal v-if="open">
+      <div :class="rootClass">
+        <DialogOverlay :class="['fixed inset-0 bg-black/45 backdrop-blur-[2px] transition-opacity', overlayClass]" />
 
-      <aside :class="[panelClass, panelSideClass]">
-        <header :class="headerClass">
-          <div class="min-w-0">
-            <h2 :id="titleId">
-              <slot name="title">{{ title }}</slot>
-            </h2>
-            <p
-              v-if="hasDescription"
-              :id="descriptionId"
-              class="mt-0.5 text-xs text-black/55"
-            >
-              {{ description }}
-            </p>
+        <DialogContent
+          :class="cn('fixed z-10 flex flex-col outline-none transition-transform', panelClass, panelSideClass)"
+          @pointer-down-outside="handleInteractOutside"
+          @focus-outside="handleInteractOutside"
+          @escape-key-down="handleEscapeKeyDown"
+        >
+          <header :class="headerClass">
+            <div class="min-w-0">
+              <DialogTitle as-child>
+                <slot name="title">
+                  <h2>{{ title }}</h2>
+                </slot>
+              </DialogTitle>
+              <DialogDescription v-if="description" class="mt-0.5 text-xs text-black/55 dark:text-slate-400">
+                {{ description }}
+              </DialogDescription>
+            </div>
+
+            <button
+              v-if="showCloseButton"
+              type="button"
+              class="admin-drawer-close"
+              :disabled="busy"
+              aria-label="关闭"
+              @click="requestClose"
+            />
+          </header>
+
+          <div :class="contentClass">
+            <slot />
           </div>
-          <button
-            v-if="showCloseButton"
-            ref="closeButtonRef"
-            type="button"
-            class="admin-drawer-close"
-            :disabled="busy"
-            aria-label="关闭"
-            @click="requestClose"
-          />
-        </header>
 
-        <div :class="contentClass">
-          <slot />
-        </div>
-
-        <div v-if="$slots.footer" :class="footerClass">
-          <slot name="footer" />
-        </div>
-      </aside>
-    </div>
-  </Teleport>
+          <div v-if="$slots.footer" :class="footerClass">
+            <slot name="footer" />
+          </div>
+        </DialogContent>
+      </div>
+    </DialogPortal>
+  </DialogRoot>
 </template>
-
-<style scoped>
-.base-drawer-panel-right {
-  inset: 0 0 0 auto;
-}
-
-.base-drawer-panel-left {
-  inset: 0 auto 0 0;
-  border-left: 0;
-  border-right: 1px solid var(--border-muted);
-  box-shadow: 10px 0 28px rgba(15, 23, 42, 0.14);
-}
-
-/* 遮罩改为根容器内 absolute，便于随 Teleport 根节点一并隔离 */
-.admin-preference-mask {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border: 0;
-  background: rgba(0, 0, 0, 0.42);
-  cursor: pointer;
-}
-</style>

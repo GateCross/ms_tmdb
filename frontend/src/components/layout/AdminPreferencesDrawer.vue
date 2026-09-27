@@ -49,13 +49,7 @@ function setSidebarColor(value: AdminSidebarColor) {
 </script>
 
 <template>
-  <BaseDrawer
-    :visible="visible"
-    title="偏好设置"
-    initial-focus="close"
-    footer-class="mt-auto"
-    @close="emit('close')"
-  >
+  <BaseDrawer :visible="visible" title="偏好设置" footer-class="mt-auto" @close="emit('close')">
     <section class="admin-preference-group" aria-label="布局">
       <p class="admin-preference-section-title">布局</p>
       <label class="admin-preference-option">
@@ -120,9 +114,7 @@ function setSidebarColor(value: AdminSidebarColor) {
     </label>
 
     <template #footer>
-      <button class="btn-soft admin-preference-reset" type="button" @click="emit('reset')">
-        恢复默认
-      </button>
+      <button class="btn-soft admin-preference-reset" type="button" @click="emit('reset')">恢复默认</button>
     </template>
   </BaseDrawer>
 </template>

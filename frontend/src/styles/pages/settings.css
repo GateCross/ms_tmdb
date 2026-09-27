@@ -911,24 +911,6 @@
   min-width: 5.8rem;
 }
 
-.settings-pagination-size-select .glass-select-trigger {
-  min-height: 2rem;
-  padding: 0.35rem 0.65rem;
-  border-radius: 0.5rem;
-  font-size: 0.8rem;
-}
-
-.settings-pagination-size-select .glass-select-menu {
-  top: auto !important;
-  bottom: calc(100% + 0.35rem);
-  min-width: 5.8rem;
-}
-
-.settings-pagination-size-select .glass-select-option {
-  padding: 0.45rem 0.65rem;
-  font-size: 0.8rem;
-}
-
 .settings-pagination-input {
   width: 4.6rem;
   text-align: center;

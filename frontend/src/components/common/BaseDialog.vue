@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { computed } from "vue";
 import {
-  createOverlayId,
-  useFocusTrap,
-  useOverlayStack,
-} from "@/composables/useFocusTrap";
-import { useScrollLock } from "@/composables/useScrollLock";
+  DialogRoot,
+  DialogPortal,
+  DialogOverlay,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "radix-vue";
 
 const props = withDefaults(
   defineProps<{
@@ -43,7 +46,7 @@ const props = withDefaults(
       "sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-black/35 px-4 py-3 backdrop-blur sm:px-6",
     contentClass: "modal-scroll-content max-h-[calc(88vh-120px)] overflow-y-auto px-4 py-4 sm:px-6",
     footerClass: "",
-    overlayClass: "absolute inset-0 bg-black/60 backdrop-blur-[2px]",
+    overlayClass: "fixed inset-0 z-[1300] bg-black/60 backdrop-blur-[2px]",
     rootClass: "fixed inset-0 z-[1300] flex items-center justify-center p-3 sm:p-6",
   },
 );
@@ -52,213 +55,84 @@ const emit = defineEmits<{
   close: [];
 }>();
 
-const overlayId = createOverlayId("dialog");
-const titleId = `${overlayId}-title`;
-const descriptionId = `${overlayId}-description`;
-
-const containerRef = ref<HTMLElement | null>(null);
-const closeButtonRef = ref<HTMLElement | null>(null);
-const initialFocusRef = ref<HTMLElement | null | undefined>(null);
-const isTopOverlay = ref(false);
-/** 焦点会话：与 visible 解耦，确保关闭时先出栈再恢复焦点 */
-const sessionOpen = ref(false);
-let scrollLocked = false;
-
-const { register, unregister, isTop, subscribe } = useOverlayStack();
-const { lock, unlock } = useScrollLock();
-
-const hasDescription = computed(() => Boolean(props.description));
-const trapEnabled = computed(() => sessionOpen.value && isTopOverlay.value);
-
-useFocusTrap({
-  containerRef,
-  enabled: trapEnabled,
-  open: sessionOpen,
-  initialFocusRef,
-});
-
-function lockScroll() {
-  if (scrollLocked) {
-    return;
-  }
-  lock();
-  scrollLocked = true;
-}
-
-function unlockScroll() {
-  if (!scrollLocked) {
-    return;
-  }
-  unlock();
-  scrollLocked = false;
-}
-
-function syncTopState() {
-  isTopOverlay.value = sessionOpen.value && isTop(overlayId);
-}
-
-function resolveInitialFocus() {
-  if (props.initialFocus === "close") {
-    initialFocusRef.value = closeButtonRef.value;
-    return;
-  }
-  if (props.initialFocus === "primary") {
-    initialFocusRef.value =
-      containerRef.value?.querySelector<HTMLElement>("[data-dialog-primary]") ?? null;
-    return;
-  }
-  initialFocusRef.value = null;
-}
-
-function canClose(): boolean {
-  return !props.busy;
-}
-
-function requestClose() {
-  if (!canClose()) {
-    return;
-  }
-  emit("close");
-}
-
-function onOverlayClick() {
-  if (!canClose() || !props.closeOnOverlay) {
-    return;
-  }
-  emit("close");
-}
-
-function onDocumentKeyDown(event: KeyboardEvent) {
-  if (event.key !== "Escape") {
-    return;
-  }
-  if (!sessionOpen.value || !isTopOverlay.value) {
-    return;
-  }
-  // busy 禁止关闭优先于 closeOnEscape
-  if (!canClose() || !props.closeOnEscape) {
-    return;
-  }
-  event.preventDefault();
-  event.stopPropagation();
-  emit("close");
-}
-
-function teardownOverlay() {
-  unregister(overlayId);
-  unlockScroll();
-  isTopOverlay.value = false;
-  // 出栈后再结束焦点会话，restoreFocus 才能落到新栈顶或触发元素
-  sessionOpen.value = false;
-}
-
-// 关闭时同步出栈，保证焦点恢复前新栈顶已隔离就绪
-watch(
-  () => props.visible,
-  (visible, wasVisible) => {
-    if (!visible && wasVisible) {
-      teardownOverlay();
+const open = computed({
+  get: () => props.visible,
+  set: (val: boolean) => {
+    if (!val && !props.busy) {
+      emit("close");
     }
   },
-  { flush: "sync" },
-);
+});
 
-watch(
-  () => props.visible,
-  async (visible) => {
-    if (!visible) {
-      return;
-    }
-    lockScroll();
-    await nextTick();
-    if (!props.visible || !containerRef.value) {
-      unlockScroll();
-      return;
-    }
-    resolveInitialFocus();
-    register(overlayId, containerRef.value);
-    sessionOpen.value = true;
-    syncTopState();
-  },
-);
-
-watch(trapEnabled, (enabled) => {
-  if (enabled) {
-    document.addEventListener("keydown", onDocumentKeyDown, true);
-  } else {
-    document.removeEventListener("keydown", onDocumentKeyDown, true);
+function handleInteractOutside(event: Event) {
+  if (props.busy || !props.closeOnOverlay) {
+    event.preventDefault();
   }
-});
+}
 
-const unsubscribeStack = subscribe(() => {
-  syncTopState();
-});
+function handleEscapeKeyDown(event: KeyboardEvent) {
+  if (props.busy || !props.closeOnEscape) {
+    event.preventDefault();
+  }
+}
 
-onBeforeUnmount(() => {
-  document.removeEventListener("keydown", onDocumentKeyDown, true);
-  unsubscribeStack();
-  teardownOverlay();
-});
+function handleOpenAutoFocus(event: Event) {
+  if (props.initialFocus !== "primary") {
+    // close / first 交给 radix 默认初始焦点
+    return;
+  }
+  // 查询限定在当前弹窗容器内，避免叠开弹窗时命中下层弹窗的按钮
+  const el = (event.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>("[data-dialog-primary]") ?? null;
+  if (el) {
+    event.preventDefault();
+    el.focus();
+  }
+}
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-if="visible"
-      :id="overlayId"
-      ref="containerRef"
-      :class="rootClass"
-      role="dialog"
-      aria-modal="true"
-      :aria-labelledby="titleId"
-      :aria-describedby="hasDescription ? descriptionId : undefined"
-      tabindex="-1"
-    >
-      <div :class="overlayClass" aria-hidden="true" @click="onOverlayClick" />
+  <DialogRoot v-model:open="open">
+    <!-- radix 的 Portal 不随 open 卸载，须手动门控，否则全屏容器关闭后残留挡住页面点击 -->
+    <DialogPortal v-if="open">
+      <DialogOverlay :class="overlayClass" />
+      <div :class="rootClass">
+        <DialogContent
+          :class="[panelClass, 'relative z-10 w-full overflow-hidden rounded-lg outline-none', maxWidthClass]"
+          @pointer-down-outside="handleInteractOutside"
+          @focus-outside="handleInteractOutside"
+          @escape-key-down="handleEscapeKeyDown"
+          @open-auto-focus="handleOpenAutoFocus"
+        >
+          <header :class="headerClass">
+            <div class="min-w-0">
+              <DialogTitle as-child>
+                <slot name="title">
+                  <h3 class="min-w-0 truncate text-sm font-semibold">
+                    {{ title }}
+                  </h3>
+                </slot>
+              </DialogTitle>
+              <DialogDescription v-if="description" class="mt-0.5 text-xs text-black/60 dark:text-slate-400">
+                {{ description }}
+              </DialogDescription>
+            </div>
 
-      <section
-        :class="[
-          panelClass,
-          'relative z-10 w-full overflow-hidden rounded-lg',
-          maxWidthClass,
-        ]"
-      >
-        <header :class="headerClass">
-          <div class="min-w-0">
-            <h3 :id="titleId" class="min-w-0">
-              <slot name="title">
-                <span class="block truncate text-sm font-semibold">{{ title }}</span>
-              </slot>
-            </h3>
-            <p
-              v-if="hasDescription"
-              :id="descriptionId"
-              class="mt-0.5 text-xs text-black/60"
-            >
-              {{ description }}
-            </p>
+            <DialogClose v-if="showCloseButton" as-child :disabled="busy">
+              <button type="button" :class="closeButtonClass" :disabled="busy" aria-label="关闭">
+                {{ closeButtonText }}
+              </button>
+            </DialogClose>
+          </header>
+
+          <div :class="contentClass">
+            <slot />
           </div>
-          <button
-            v-if="showCloseButton"
-            ref="closeButtonRef"
-            type="button"
-            :class="closeButtonClass"
-            :disabled="busy"
-            aria-label="关闭"
-            @click="requestClose"
-          >
-            {{ closeButtonText }}
-          </button>
-        </header>
 
-        <div :class="contentClass">
-          <slot />
-        </div>
-
-        <div v-if="$slots.footer" :class="footerClass">
-          <slot name="footer" />
-        </div>
-      </section>
-    </div>
-  </Teleport>
+          <div v-if="$slots.footer" :class="footerClass">
+            <slot name="footer" />
+          </div>
+        </DialogContent>
+      </div>
+    </DialogPortal>
+  </DialogRoot>
 </template>
