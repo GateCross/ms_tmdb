@@ -20,6 +20,8 @@ export default defineConfig({
     },
   },
   server: {
+    // 监听 0.0.0.0，允许局域网设备通过本机 IP 访问开发服务
+    host: true,
     port: 5173,
     proxy: {
       // 后端原生兼容多前缀，开发代理只做原样转发。
