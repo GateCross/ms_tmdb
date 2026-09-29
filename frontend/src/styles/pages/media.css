@@ -66,14 +66,56 @@
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  border: 1px solid rgba(245, 158, 11, 0.22);
-  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(148, 163, 184, 0.1);
   padding: 2px 7px;
-  color: #fbbf24;
+  color: rgba(226, 232, 240, 0.88);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.25;
   white-space: nowrap;
+}
+
+/* 评分分档配色：高分绿、及格黄、低分红，空分值保持中性灰 */
+.rating-badge--high {
+  border-color: rgba(74, 222, 128, 0.3);
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+}
+
+.rating-badge--mid {
+  border-color: rgba(250, 204, 21, 0.3);
+  background: rgba(250, 204, 21, 0.12);
+  color: #facc15;
+}
+
+.rating-badge--low {
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+}
+
+/* 浅色主题字色加深，白底上保持可读；暗色沿用上方亮色 */
+[data-theme="mslight"] .rating-badge {
+  color: #475569;
+}
+
+[data-theme="mslight"] .rating-badge--high {
+  border-color: rgba(21, 128, 61, 0.32);
+  background: rgba(21, 128, 61, 0.1);
+  color: #15803d;
+}
+
+[data-theme="mslight"] .rating-badge--mid {
+  border-color: rgba(180, 83, 9, 0.32);
+  background: rgba(180, 83, 9, 0.1);
+  color: #b45309;
+}
+
+[data-theme="mslight"] .rating-badge--low {
+  border-color: rgba(185, 28, 28, 0.32);
+  background: rgba(185, 28, 28, 0.1);
+  color: #b91c1c;
 }
 
 .detail-layout {

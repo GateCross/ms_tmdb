@@ -7,6 +7,7 @@ import ToastNotice from "@/components/common/ToastNotice.vue";
 import { formatStatusLabel, formatTvTypeLabel, tvStatusOptions, tvTypeOptions } from "@/constants/mediaStatus";
 import { useToastNotice } from "@/composables/useToastNotice";
 import { useTVDetailPage } from "@/composables/useTVDetailPage";
+import { ratingTierClass } from "@/utils/ratingTier";
 
 const TVRemoteDiffCard = defineAsyncComponent(() => import("@/components/tv/TVRemoteDiffCard.vue"));
 const TVLocalEditorCard = defineAsyncComponent(() => import("@/components/tv/TVLocalEditorCard.vue"));
@@ -183,7 +184,7 @@ watch(seasonLocalMessage, (message) => {
           </div>
 
           <div class="mt-3 flex flex-wrap gap-2">
-            <span class="rating-badge">
+            <span class="rating-badge" :class="ratingTierClass(detail.vote_average)">
               {{ detail.vote_average == null ? "-" : `${detail.vote_average.toFixed(1)} 分` }}
             </span>
             <span class="badge">首播 {{ detail.first_air_date ?? "-" }}</span>

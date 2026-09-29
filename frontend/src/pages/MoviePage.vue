@@ -7,6 +7,7 @@ import MovieConfirmDialogs from "@/components/movie/MovieConfirmDialogs.vue";
 import { formatStatusLabel, movieStatusOptions } from "@/constants/mediaStatus";
 import { useMovieDetail } from "@/composables/useMovieDetail";
 import { useToastNotice } from "@/composables/useToastNotice";
+import { ratingTierClass } from "@/utils/ratingTier";
 
 const MovieRemoteDiffCard = defineAsyncComponent(() => import("@/components/movie/MovieRemoteDiffCard.vue"));
 const MovieLocalEditor = defineAsyncComponent(() => import("@/components/movie/MovieLocalEditor.vue"));
@@ -146,7 +147,7 @@ watch(saveMessage, (message) => {
           </div>
 
           <div class="mt-3 flex flex-wrap gap-2">
-            <span class="rating-badge">
+            <span class="rating-badge" :class="ratingTierClass(detail.vote_average)">
               {{ detail.vote_average == null ? "-" : `${detail.vote_average.toFixed(1)} 分` }}
             </span>
             <span class="badge">上映 {{ detail.release_date ?? "-" }}</span>

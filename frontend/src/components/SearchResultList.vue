@@ -9,6 +9,7 @@ import {
   getSearchResultThumb,
   getSearchResultTitle,
 } from "@/utils/searchResult";
+import { ratingTierClass } from "@/utils/ratingTier";
 
 const props = withDefaults(
   defineProps<{
@@ -46,7 +47,10 @@ const visibleItems = computed(() => {
             {{ item.overview }}
           </p>
         </div>
-        <span v-if="typeof item.vote_average === 'number'" class="rating-badge"
+        <span
+          v-if="typeof item.vote_average === 'number'"
+          class="rating-badge"
+          :class="ratingTierClass(item.vote_average)"
           >{{ item.vote_average.toFixed(1) }} 分</span
         >
       </RouterLink>

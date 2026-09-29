@@ -10,6 +10,7 @@ import LoadState from "@/components/common/LoadState.vue";
 import SearchResultList from "@/components/SearchResultList.vue";
 import type { SearchResultItem } from "@/types/media";
 import { resolveErrorMessage } from "@/utils/errors";
+import { ratingTierClass } from "@/utils/ratingTier";
 import { buildSearchQuery, normalizeSearchType, readQueryString, searchTypeOptions } from "@/utils/routeSearch";
 import { isSameQuery } from "@/utils/routeQuery";
 
@@ -386,7 +387,7 @@ onBeforeUnmount(() => {
               <p class="home-media-title">{{ displayTitle(item) }}</p>
               <p class="home-media-meta">
                 <span class="home-media-stat-group">
-                  <span class="rating-badge">{{ ratingText(item) }}</span>
+                  <span class="rating-badge" :class="ratingTierClass(item.vote_average)">{{ ratingText(item) }}</span>
                   <span class="home-media-type">{{ mediaTypeLabel(item.media_type) }} {{ yearText(item.air_date) }}</span>
                 </span>
                 <span v-if="section.key === 'hot'" class="home-media-metric">{{ visitText(item) }}</span>

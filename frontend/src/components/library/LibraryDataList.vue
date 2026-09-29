@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import DataListShell from "@/components/common/DataListShell.vue";
 import type { LibraryListItem } from "@/components/library/types";
+import { ratingTierClass } from "@/utils/ratingTier";
 
 defineProps<{
   items: LibraryListItem[];
@@ -44,7 +45,7 @@ const columns = ["TMDB ID", "名称", "评分", "日期", "类型", "状态", "�
       </div>
 
       <div>
-        <span class="rating-badge">{{ (item.vote_average ?? 0).toFixed(1) }} 分</span>
+        <span class="rating-badge" :class="ratingTierClass(item.vote_average)">{{ (item.vote_average ?? 0).toFixed(1) }} 分</span>
       </div>
 
       <span class="logs-duration library-list-date">

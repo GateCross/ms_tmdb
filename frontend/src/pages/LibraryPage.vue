@@ -10,6 +10,7 @@ import type { MediaTab } from "@/components/library/types";
 import { tmdbImg } from "@/api/tmdb";
 import { useLibraryList } from "@/composables/useLibraryList";
 import { useLocalMediaCreate } from "@/composables/useLocalMediaCreate";
+import { ratingTierClass } from "@/utils/ratingTier";
 
 let handleExternalTabChange: ((tab: MediaTab) => void) | undefined;
 
@@ -202,7 +203,7 @@ handleExternalTabChange = onExternalTabChange;
               <div class="poster-info">
                 <p class="truncate text-sm font-medium">{{ item.title || item.name }}</p>
                 <p class="poster-meta">
-                  <span class="rating-badge">{{ (item.vote_average ?? 0).toFixed(1) }} 分</span>
+                  <span class="rating-badge" :class="ratingTierClass(item.vote_average)">{{ (item.vote_average ?? 0).toFixed(1) }} 分</span>
                   <span>{{ (item.release_date || item.first_air_date || "").slice(0, 4) }}</span>
                 </p>
                 <span v-if="item.tmdb_id < 0" class="chip-local-new mt-1 text-[10px]"> 本地新建 </span>

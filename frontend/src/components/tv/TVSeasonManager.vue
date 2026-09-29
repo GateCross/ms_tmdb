@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { tmdbImg } from "@/api/tmdb";
+import { ratingTierClass } from "@/utils/ratingTier";
 import type { TVEpisodeForm, TVEpisodeItem, TVSeasonDetail, TVSeasonForm, TVSeasonSummary } from "./types";
 
 defineProps<{
@@ -309,7 +310,9 @@ defineProps<{
             <span class="badge">{{ formatEpisodeCode(ep.episode_number) }}</span>
             <span class="badge">播出 {{ ep.air_date || "-" }}</span>
             <span class="badge">片长 {{ formatEpisodeRuntime(ep.runtime) }}</span>
-            <span class="rating-badge">{{ formatEpisodeRating(ep.vote_average) }}</span>
+            <span class="rating-badge" :class="ratingTierClass(ep.vote_average)">{{
+              formatEpisodeRating(ep.vote_average)
+            }}</span>
           </div>
           <template v-if="seasonLocalSaved && editingEpisodeNumber === ep.episode_number">
             <p class="mt-2 text-xs" :class="episodeEditChangedCount > 0 ? 'text-amber-700' : 'text-black/55'">
