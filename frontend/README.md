@@ -2,6 +2,8 @@
 
 MS-TMDB 前端项目（Vue 3 + TypeScript + Vite + TailwindCSS）。
 
+> 前端技术栈、目录分层与编码细则见仓库根目录 [AGENTS.md](../AGENTS.md)（AI 编码必读，改代码前先读）。
+
 ## 开发
 
 ```bash
