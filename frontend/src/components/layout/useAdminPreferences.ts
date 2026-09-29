@@ -100,6 +100,8 @@ export function useAdminPreferences() {
     if (typeof document === "undefined") return;
 
     const root = document.documentElement;
+    // dark: 变体由根元素 .dark 类驱动；挂在根上，Teleport 到 body 的弹层也能命中
+    root.classList.toggle("dark", currentThemeOption.value.colorScheme === "dark");
     root.setAttribute("data-theme", currentThemeOption.value.dataTheme);
     for (const [property, value] of Object.entries(style)) {
       root.style.setProperty(property, value);
