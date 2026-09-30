@@ -340,6 +340,23 @@ select.field-control option {
   transform: rotate(-45deg);
 }
 
+/* 深色主题下的局部 Toast 适配 */
+html.dark .toast-notice {
+  border-color: rgba(208, 216, 228, 0.14);
+  background: var(--surface-muted);
+  color: var(--text-main);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
+html.dark .toast-notice-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .toast-notice-close::before,
+html.dark .toast-notice-close::after {
+  background: rgba(237, 242, 247, 0.7);
+}
+
 .global-toast-overlay {
   position: fixed;
   inset: 0;

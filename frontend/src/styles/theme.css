@@ -1,7 +1,7 @@
 /*
  * 主题令牌单一事实来源：
  * - :root 提供浅色默认值，html.dark 覆盖为深色（.dark 类由偏好/系统外观驱动）。
- * - 主题色（accent 系）由 useAdminPreferences 按主题预设写入内联样式，CSS 只保留默认值。
+ * - 主题色（accent 系）由 useAdminPreferences 按主题预设写入内联样式，CSS 只保留默认预设（blue）的兜底值。
  * - 组件样式只允许引用这些语义变量，禁止按主题写死颜色。
  */
 :root {
@@ -12,7 +12,7 @@
   --surface-strong: #ffffff;
   --surface-elevated: #ffffff;
   --surface-hover: #f7f8fa;
-  --surface-active: rgba(14, 165, 164, 0.14);
+  --surface-active: rgba(22, 119, 255, 0.14);
   --control-bg: #f2f3f5;
   --control-hover-bg: #f2f3f5;
   --control-text: #1f2329;
@@ -53,16 +53,16 @@
   --info-fg: #0369a1;
   --info-bg: rgba(2, 132, 199, 0.08);
   --info-border: rgba(2, 132, 199, 0.28);
-  --accent: #0ea5a4;
-  --accent-soft: #90cea1;
-  --accent-strong: #0d7c8a;
-  --accent-active-bg: rgba(14, 165, 164, 0.14);
-  --accent-active-border: rgba(14, 165, 164, 0.32);
-  --accent-hover-border: rgba(14, 165, 164, 0.34);
-  --accent-ring: rgba(14, 165, 164, 0.12);
+  --accent: #1677ff;
+  --accent-soft: #69b1ff;
+  --accent-strong: #0958d9;
+  --accent-active-bg: rgba(22, 119, 255, 0.14);
+  --accent-active-border: rgba(22, 119, 255, 0.32);
+  --accent-hover-border: rgba(22, 119, 255, 0.34);
+  --accent-ring: rgba(22, 119, 255, 0.12);
   --field-bg: #ffffff;
   --field-border: rgba(15, 23, 42, 0.14);
-  --field-border-focus: rgba(14, 165, 164, 0.68);
+  --field-border-focus: rgba(22, 119, 255, 0.68);
   --scrollbar-track: transparent;
   --scrollbar-thumb: rgba(100, 116, 139, 0.38);
   --scrollbar-thumb-hover: rgba(71, 85, 105, 0.58);
@@ -76,7 +76,7 @@ html.dark {
   --surface-strong: #101317;
   --surface-elevated: #1d232b;
   --surface-hover: rgba(255, 255, 255, 0.06);
-  --surface-active: rgba(14, 165, 164, 0.2);
+  --surface-active: rgba(22, 119, 255, 0.2);
   --control-bg: rgba(255, 255, 255, 0.06);
   --control-hover-bg: rgba(255, 255, 255, 0.1);
   --control-text: #edf2f7;

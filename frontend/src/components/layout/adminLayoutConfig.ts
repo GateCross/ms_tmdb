@@ -33,6 +33,7 @@ export interface AdminPreferences {
  * 的 :root 与 html.dark 令牌里，这里不再携带整套颜色值。
  */
 export interface AdminThemeOption {
+  /** accent 须为 6 位 hex：派生变量在尾部直接拼接两位 hex alpha */
   accent: string;
   accentSoft: string;
   accentStrong: string;
