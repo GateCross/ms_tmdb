@@ -94,9 +94,9 @@ const activeAutoSyncDetail = ref<AdminAutoSyncLogDetailResp | null>(null);
 const activeAutoSyncLogId = ref<number | null>(null);
 let autoSyncDetailRequestSeq = 0;
 const detailSyncedPage = ref(1);
-const detailSyncedPageSize = ref(10);
+const detailSyncedPageSize = ref(20);
 const detailFailedPage = ref(1);
-const detailFailedPageSize = ref(10);
+const detailFailedPageSize = ref(20);
 
 const clearConfirmVisible = ref(false);
 const { toastVisible, toastText, toastTone, showToastNotice, closeToastNotice } = useToastNotice();

@@ -805,30 +805,26 @@
   table-layout: fixed;
 }
 
-/* 桌面按比例铺满；小屏保留最小宽度，允许壳内横向滚动 */
+/* 桌面按比例铺满；小屏保留最小宽度，允许壳内横向滚动。信息列并入失败原因，成功表三列 */
 .settings-detail-col-media {
-  width: 22%;
+  width: 24%;
 }
 
 .settings-detail-col-remote {
-  width: 28%;
+  width: 38%;
 }
 
 .settings-detail-col-local {
-  width: 28%;
-}
-
-.settings-detail-col-message {
-  width: 22%;
+  width: 38%;
 }
 
 .settings-detail-col-failure {
-  width: 78%;
+  width: 76%;
 }
 
 @media (max-width: 767px) {
   .settings-detail-success-table {
-    min-width: 75rem;
+    min-width: 65rem;
   }
 
   .settings-detail-failed-table {
@@ -841,11 +837,7 @@
 
   .settings-detail-col-remote,
   .settings-detail-col-local {
-    width: 20rem;
-  }
-
-  .settings-detail-col-message {
-    width: 18rem;
+    width: 24rem;
   }
 
   .settings-detail-col-failure {
@@ -856,6 +848,7 @@
 .settings-table-primary {
   color: var(--text-main);
   font-weight: 500;
+  line-height: 1.5;
 }
 
 .settings-table-meta {
@@ -1020,7 +1013,7 @@
 }
 
 .settings-field-stack span {
-  @apply inline-flex min-w-8 justify-center rounded-md px-1.5 py-0.5 text-[11px];
+  @apply inline-flex min-w-8 justify-center rounded-md px-1.5 py-0.5 text-xs;
   color: var(--accent);
   background: var(--accent-active-bg);
 }
@@ -1035,6 +1028,12 @@
   line-height: 1.45;
 }
 
+/* 失败原因为多行技术报错，并入 12px 次级档；1.43 行距偏挤，放开到 1.65 */
+.settings-detail-message {
+  @apply text-xs;
+  line-height: 1.65;
+}
+
 .settings-diff-pre {
   @apply max-h-36 overflow-auto whitespace-pre-wrap rounded-lg px-3 py-2 text-xs leading-relaxed;
   color: var(--text-main);
@@ -1043,9 +1042,9 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
 
+/* 字段差异 pre 并入 12px 次级档并保持等宽（代码语义）；旧版 11.5px 杂档已移除 */
 .settings-diff-pre-compact {
   max-height: 12rem;
-  font-size: 0.72rem;
 }
 
 .settings-diff-pre.logs-detail-request-body {
