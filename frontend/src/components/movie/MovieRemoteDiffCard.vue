@@ -58,7 +58,7 @@ defineProps<{
           class="detail-diff-item"
         >
           <p class="text-xs font-semibold text-warn">{{ item.field }}</p>
-          <p class="mt-1 text-xs text-warn">本地：{{ item.local }}</p>
+          <p class="mt-1 text-xs text-muted">本地：{{ item.local }}</p>
           <p class="mt-1 text-xs text-warn">远程：{{ item.remote }}</p>
         </div>
       </div>
@@ -73,7 +73,7 @@ defineProps<{
           class="detail-diff-item"
         >
           <p class="text-xs font-semibold text-warn">{{ item.field }}</p>
-          <p class="mt-1 text-xs text-warn">本地：{{ item.local }}</p>
+          <p class="mt-1 text-xs text-muted">本地：{{ item.local }}</p>
           <p class="mt-1 text-xs text-warn">远程：{{ item.remote }}</p>
         </div>
       </div>

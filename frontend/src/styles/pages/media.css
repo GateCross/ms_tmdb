@@ -134,8 +134,8 @@
 
 .detail-alert {
   @apply mt-4 rounded-xl p-4;
-  border: 1px solid var(--warn-border);
-  background: var(--warn-bg);
+  border: 1px solid var(--border-muted);
+  background: var(--surface);
 }
 
 .detail-alert-title {
@@ -145,24 +145,24 @@
 
 .detail-alert-text {
   @apply mt-1 text-xs;
-  color: var(--warn-fg);
+  color: var(--text-muted);
 }
 
 .detail-alert-action {
   @apply rounded-lg px-3 py-1.5 text-xs font-medium transition disabled:opacity-60;
-  color: var(--warn-fg);
-  background: var(--warn-bg);
-  border: 1px solid var(--warn-border);
+  color: var(--soft-btn-fg);
+  background: var(--soft-btn-bg);
+  border: 1px solid var(--soft-btn-border);
 }
 
 .detail-alert-action:hover {
-  background: var(--warn-bg-hover);
+  background: var(--soft-btn-bg-hover);
 }
 
 .detail-diff-list {
   @apply mt-2 space-y-2 rounded-lg p-2;
-  border: 1px solid var(--warn-border);
-  background: var(--surface);
+  border: 1px solid var(--border-muted);
+  background: var(--surface-muted);
 }
 
 .detail-diff-item {
