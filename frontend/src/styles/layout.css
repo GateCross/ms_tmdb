@@ -73,7 +73,7 @@
 }
 
 .admin-brand-copy strong {
-  color: #1f2329;
+  color: var(--sidebar-text);
   font-size: 18px;
   font-weight: 700;
   line-height: 1.1;
@@ -722,8 +722,13 @@
 
 .admin-theme-grid {
   display: grid;
-  grid-template-columns: repeat(6, 30px);
+  grid-template-columns: repeat(5, 30px);
   gap: 12px;
+}
+
+/* 界面模式（浅色/深色/跟随系统）三段切换，按钮复用 admin-sidebar-control-btn */
+.admin-sidebar-control.admin-appearance-switch {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .admin-theme-swatch {
@@ -922,7 +927,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-color: #f4f7f9;
+  background-color: var(--bg-main);
   /* 纯视觉反馈层，放行点击，避免转场异常时残留全屏透明遮挡 */
   pointer-events: none;
 }
@@ -940,7 +945,8 @@
   width: 48px;
   height: 5px;
   content: "";
-  background: hsl(var(--primary, 210 100% 50%) / 50%);
+  background: var(--accent);
+  opacity: 0.5;
   border-radius: 50%;
   animation: admin-global-loading-shadow 0.5s linear infinite;
 }
@@ -952,7 +958,7 @@
   width: 100%;
   height: 100%;
   content: "";
-  background: hsl(var(--primary, 210 100% 50%));
+  background: var(--accent);
   border-radius: 4px;
   animation: admin-global-loading-jump 0.5s linear infinite;
 }

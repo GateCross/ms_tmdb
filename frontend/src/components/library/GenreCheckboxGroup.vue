@@ -23,7 +23,7 @@ function toggleGenre(name: string, checked: boolean) {
 </script>
 
 <template>
-  <div class="genre-checkbox-list mt-1 max-h-32 overflow-y-auto rounded-lg border border-white/70 bg-white/55 p-2 backdrop-blur">
+  <div class="genre-checkbox-list mt-1 max-h-32 overflow-y-auto rounded-lg border border-line bg-card p-2 backdrop-blur">
     <label v-for="genre in options" :key="genre.id" class="mr-3 inline-flex items-center gap-1.5 py-1 text-xs">
       <input
         type="checkbox"
@@ -34,6 +34,6 @@ function toggleGenre(name: string, checked: boolean) {
       />
       <span>{{ genre.name }}</span>
     </label>
-    <span v-if="!options.length" class="text-xs text-black/50">暂无可选类型</span>
+    <span v-if="!options.length" class="text-xs text-muted">暂无可选类型</span>
   </div>
 </template>

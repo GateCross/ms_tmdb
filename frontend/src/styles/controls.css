@@ -20,46 +20,46 @@
 
 .btn-soft {
   @apply rounded-lg px-4 py-2 text-sm font-medium transition;
-  color: rgba(226, 232, 240, 0.9);
-  background: rgba(30, 41, 59, 0.66);
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  color: var(--soft-btn-fg);
+  background: var(--soft-btn-bg);
+  border: 1px solid var(--soft-btn-border);
 }
 
 .btn-soft:hover {
-  background: rgba(51, 65, 85, 0.78);
+  background: var(--soft-btn-bg-hover);
 }
 
 .btn-soft-xs {
   @apply rounded-md px-3 py-1.5 text-xs font-medium transition;
-  color: rgba(226, 232, 240, 0.9);
-  background: rgba(30, 41, 59, 0.66);
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  color: var(--soft-btn-fg);
+  background: var(--soft-btn-bg);
+  border: 1px solid var(--soft-btn-border);
 }
 
 .btn-soft-xs:hover {
-  background: rgba(51, 65, 85, 0.78);
+  background: var(--soft-btn-bg-hover);
 }
 
 .btn-danger-soft {
   @apply rounded-lg px-4 py-2 text-sm font-medium transition;
-  color: #fecaca;
-  background: rgba(127, 29, 29, 0.34);
-  border: 1px solid rgba(248, 113, 113, 0.34);
+  color: var(--danger-fg);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
 }
 
 .btn-danger-soft:hover {
-  background: rgba(153, 27, 27, 0.42);
+  background: var(--danger-bg-hover);
 }
 
 .btn-danger-soft-xs {
   @apply rounded-md px-3 py-1.5 text-xs font-medium transition;
-  color: #fecaca;
-  background: rgba(127, 29, 29, 0.34);
-  border: 1px solid rgba(248, 113, 113, 0.34);
+  color: var(--danger-fg);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
 }
 
 .btn-danger-soft-xs:hover {
-  background: rgba(153, 27, 27, 0.42);
+  background: var(--danger-bg-hover);
 }
 
 .field-control {
@@ -72,13 +72,13 @@
 
 .field-control::placeholder,
 .field-control-xs::placeholder {
-  color: rgba(199, 210, 227, 0.62);
+  color: var(--text-placeholder);
 }
 
 .field-control:focus {
   outline: none;
   border-color: var(--field-border-focus);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.14);
+  box-shadow: 0 0 0 3px var(--accent-ring);
 }
 
 select.field-control {
@@ -105,13 +105,8 @@ select.field-control:disabled {
 }
 
 select.field-control option {
-  color: #e5eef7;
-  background: #0f172a;
-}
-
-select.field-control option:checked {
-  color: #f8fafc;
-  background: #1e3a5f;
+  color: var(--text-main);
+  background: var(--field-bg);
 }
 
 .field-control-xs {
@@ -125,7 +120,7 @@ select.field-control option:checked {
 .field-control-xs:focus {
   outline: none;
   border-color: var(--field-border-focus);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.14);
+  box-shadow: 0 0 0 3px var(--accent-ring);
 }
 
 .check-control,
@@ -136,7 +131,7 @@ select.field-control option:checked {
   height: 1rem;
   margin: 0;
   border: 1.5px solid var(--field-border);
-  background: rgba(15, 23, 42, 0.9);
+  background: var(--field-bg);
   display: inline-grid;
   place-content: center;
   transition:
@@ -187,7 +182,7 @@ select.field-control option:checked {
 .check-control:focus-visible,
 .radio-control:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.16);
+  box-shadow: 0 0 0 3px var(--accent-ring);
 }
 
 .section-label {
@@ -228,9 +223,9 @@ select.field-control option:checked {
 
 .panel-glass {
   border: 1px solid var(--glass-border);
-  background: linear-gradient(150deg, rgba(27, 40, 64, 0.88) 0%, rgba(24, 36, 58, 0.7) 100%);
+  background: var(--panel-bg);
   box-shadow: var(--glass-shadow);
-  backdrop-filter: blur(16px) saturate(145%);
+  backdrop-filter: var(--panel-blur);
 }
 
 .toast-notice {
@@ -548,14 +543,16 @@ select.field-control option:checked {
 
 .chip-local-new {
   @apply inline-block rounded px-2 py-0.5 text-[11px];
-  color: #bae6fd;
-  background: rgba(2, 132, 199, 0.24);
+  color: var(--info-fg);
+  background: var(--info-bg);
+  border: 1px solid var(--info-border);
 }
 
 .chip-modified {
   @apply inline-block rounded px-2 py-0.5 text-[11px];
-  color: #fed7aa;
-  background: rgba(194, 65, 12, 0.24);
+  color: var(--warn-fg);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
 }
 
 .table-shell {
@@ -578,4 +575,48 @@ select.field-control option:checked {
 
 .table-head {
   background: var(--surface-muted);
+}
+
+/* 深色主题下的全局 Toast 适配 */
+html.dark .global-toast {
+  border-color: rgba(208, 216, 228, 0.14);
+  background: var(--surface-muted);
+  color: var(--text-main);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
+html.dark .global-toast-error {
+  border-color: rgba(248, 113, 113, 0.28);
+  background: #261d22;
+}
+
+html.dark .global-toast-success {
+  border-color: rgba(52, 211, 153, 0.26);
+  background: #1a2522;
+}
+
+html.dark .global-toast-info {
+  border-color: rgba(148, 163, 184, 0.2);
+  background: var(--surface-muted);
+}
+
+html.dark .global-toast-text {
+  color: var(--text-main);
+}
+
+html.dark .global-toast-error .global-toast-text {
+  color: #fca5a5;
+}
+
+html.dark .global-toast-success .global-toast-text {
+  color: #6ee7b7;
+}
+
+html.dark .global-toast-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .global-toast-close::before,
+html.dark .global-toast-close::after {
+  background: rgba(237, 242, 247, 0.7);
 }

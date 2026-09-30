@@ -33,7 +33,7 @@ const panelClass = computed(() =>
 const headerClass = computed(() =>
   props.variant === "vben"
     ? "sticky top-0 z-10 flex min-h-[48px] items-center justify-between border-b border-[var(--border-muted)] bg-[var(--surface)] px-5 py-0"
-    : "sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-black/35 px-4 py-3 backdrop-blur sm:px-6",
+    : "sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-card px-4 py-3 sm:px-6",
 );
 
 const resolvedFooterClass = computed(() => {

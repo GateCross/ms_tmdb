@@ -86,7 +86,7 @@ handleExternalTabChange = onExternalTabChange;
         <div class="library-toolbar-copy">
           <p class="section-label">本地库</p>
           <h2 class="library-toolbar-title">{{ activeTab === "movie" ? "电影库" : "剧集库" }}</h2>
-          <p class="mt-1 text-sm text-black/55">管理本地缓存、手动新建条目，并快速进入详情页处理字段覆盖。</p>
+          <p class="mt-1 text-sm text-muted">管理本地缓存、手动新建条目，并快速进入详情页处理字段覆盖。</p>
         </div>
       </div>
 
@@ -130,7 +130,7 @@ handleExternalTabChange = onExternalTabChange;
     <!-- 卡片视图：保持原来的整页自然滚动布局 -->
     <template v-if="viewMode === 'grid'">
       <section class="library-list-summary mt-4">
-        <p class="text-sm text-black/60">
+        <p class="text-sm text-muted">
           共 <strong>{{ total }}</strong> 条记录 · 第 {{ page }}/{{ totalPages() }} 页
         </p>
         <div class="library-list-controls">
@@ -221,7 +221,7 @@ handleExternalTabChange = onExternalTabChange;
           <button class="btn-soft px-3 py-1.5 disabled:opacity-40" :disabled="page <= 1" @click="gotoPage(page - 1)">
             上一页
           </button>
-          <span class="px-3 text-sm text-black/60">{{ page }} / {{ totalPages() }}</span>
+          <span class="px-3 text-sm text-muted">{{ page }} / {{ totalPages() }}</span>
           <button
             class="btn-soft px-3 py-1.5 disabled:opacity-40"
             :disabled="page >= totalPages()"

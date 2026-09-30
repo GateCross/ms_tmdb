@@ -54,7 +54,7 @@
 
 .poster-meta {
   @apply mt-1 flex items-center justify-between gap-2 text-xs;
-  color: rgba(203, 213, 225, 0.72);
+  color: var(--text-muted);
 }
 
 .rating-badge,
@@ -66,10 +66,10 @@
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid var(--border-muted);
+  background: var(--surface-muted);
   padding: 2px 7px;
-  color: rgba(226, 232, 240, 0.88);
+  color: var(--text-muted);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.25;
@@ -78,44 +78,21 @@
 
 /* 评分分档配色：高分绿、及格黄、低分红，空分值保持中性灰 */
 .rating-badge--high {
-  border-color: rgba(74, 222, 128, 0.3);
-  background: rgba(74, 222, 128, 0.12);
-  color: #4ade80;
+  border-color: var(--success-border);
+  background: var(--success-bg);
+  color: var(--success-fg);
 }
 
 .rating-badge--mid {
-  border-color: rgba(250, 204, 21, 0.3);
-  background: rgba(250, 204, 21, 0.12);
-  color: #facc15;
+  border-color: var(--warn-border);
+  background: var(--warn-bg);
+  color: var(--warn-fg);
 }
 
 .rating-badge--low {
-  border-color: rgba(248, 113, 113, 0.3);
-  background: rgba(248, 113, 113, 0.12);
-  color: #f87171;
-}
-
-/* 浅色主题字色加深，白底上保持可读；暗色沿用上方亮色 */
-[data-theme="mslight"] .rating-badge {
-  color: #475569;
-}
-
-[data-theme="mslight"] .rating-badge--high {
-  border-color: rgba(21, 128, 61, 0.32);
-  background: rgba(21, 128, 61, 0.1);
-  color: #15803d;
-}
-
-[data-theme="mslight"] .rating-badge--mid {
-  border-color: rgba(180, 83, 9, 0.32);
-  background: rgba(180, 83, 9, 0.1);
-  color: #b45309;
-}
-
-[data-theme="mslight"] .rating-badge--low {
-  border-color: rgba(185, 28, 28, 0.32);
-  background: rgba(185, 28, 28, 0.1);
-  color: #b91c1c;
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+  color: var(--danger-fg);
 }
 
 .detail-layout {
@@ -128,7 +105,7 @@
 
 .detail-poster-img {
   @apply w-full rounded-lg;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--border-muted);
   box-shadow: 0 22px 44px rgba(0, 0, 0, 0.34);
 }
 
@@ -137,60 +114,60 @@
 }
 
 .detail-back-btn {
-  @apply rounded-md px-3 py-1.5 text-xs font-medium text-white transition;
-  background: rgba(15, 23, 42, 0.62);
-  border: 1px solid rgba(226, 232, 240, 0.22);
+  @apply rounded-md px-3 py-1.5 text-xs font-medium transition;
+  color: var(--soft-btn-fg);
+  background: var(--soft-btn-bg);
+  border: 1px solid var(--soft-btn-border);
   backdrop-filter: blur(12px) saturate(140%);
 }
 
 .detail-back-btn:hover {
-  background: rgba(30, 41, 59, 0.78);
-  border-color: rgba(56, 189, 248, 0.32);
+  background: var(--soft-btn-bg-hover);
 }
 
 .genre-pill {
   @apply rounded-md px-3 py-1 text-xs font-medium;
-  color: #bae6fd;
-  background: rgba(2, 132, 199, 0.18);
-  border: 1px solid rgba(56, 189, 248, 0.22);
+  color: var(--accent);
+  background: var(--accent-active-bg);
+  border: 1px solid var(--accent-active-border);
 }
 
 .detail-alert {
   @apply mt-4 rounded-xl p-4;
-  border: 1px solid rgba(251, 191, 36, 0.28);
-  background: linear-gradient(150deg, rgba(120, 53, 15, 0.26) 0%, rgba(15, 23, 42, 0.58) 100%);
+  border: 1px solid var(--warn-border);
+  background: var(--warn-bg);
 }
 
 .detail-alert-title {
   @apply text-sm font-semibold;
-  color: #fde68a;
+  color: var(--warn-fg);
 }
 
 .detail-alert-text {
   @apply mt-1 text-xs;
-  color: rgba(253, 230, 138, 0.86);
+  color: var(--warn-fg);
 }
 
 .detail-alert-action {
   @apply rounded-lg px-3 py-1.5 text-xs font-medium transition disabled:opacity-60;
-  color: #fde68a;
-  background: rgba(120, 53, 15, 0.32);
-  border: 1px solid rgba(251, 191, 36, 0.32);
+  color: var(--warn-fg);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
 }
 
 .detail-alert-action:hover {
-  background: rgba(146, 64, 14, 0.42);
+  background: var(--warn-bg-hover);
 }
 
 .detail-diff-list {
   @apply mt-2 space-y-2 rounded-lg p-2;
-  border: 1px solid rgba(251, 191, 36, 0.22);
-  background: rgba(15, 23, 42, 0.48);
+  border: 1px solid var(--warn-border);
+  background: var(--surface);
 }
 
 .detail-diff-item {
   @apply rounded-md p-2;
-  background: rgba(120, 53, 15, 0.22);
+  background: var(--warn-bg);
 }
 
 .local-editor-panel {
@@ -203,7 +180,7 @@
   position: absolute;
   inset: 0 0 auto;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.46), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 46%, transparent), transparent);
 }
 
 .local-editor-header {
@@ -212,21 +189,21 @@
 
 .field-group-box {
   @apply mt-1 flex flex-wrap gap-2 rounded-lg p-2;
-  border: 1px solid rgba(14, 165, 164, 0.2);
-  background: rgba(14, 165, 164, 0.06);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
 
 .field-choice-pill {
   @apply inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition;
-  color: rgba(226, 232, 240, 0.9);
-  border: 1px solid rgba(14, 165, 164, 0.22);
-  background: rgba(14, 165, 164, 0.08);
+  color: var(--soft-btn-fg);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .field-choice-pill:hover {
   color: var(--text-main);
-  background: rgba(14, 165, 164, 0.14);
-  border-color: rgba(14, 165, 164, 0.34);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 34%, transparent);
 }
 
 .field-choice-pill:has(.check-control:checked) {
@@ -242,34 +219,35 @@
 }
 
 .season-card:hover {
-  background: rgba(30, 41, 59, 0.64);
-  border-color: rgba(148, 163, 184, 0.2);
+  background: var(--surface-hover);
+  border-color: var(--border-muted);
 }
 
 .season-card-active {
-  background: rgba(2, 132, 199, 0.2);
-  border-color: rgba(56, 189, 248, 0.36);
-  box-shadow: 0 0 0 2px rgba(1, 180, 228, 0.16);
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  border-color: var(--accent-active-border);
+  box-shadow: 0 8px 18px var(--accent-ring);
 }
 
 .season-empty,
 .season-inline-note {
   @apply rounded-xl px-4 py-3 text-xs leading-relaxed;
-  color: rgba(203, 213, 225, 0.72);
-  background: rgba(15, 23, 42, 0.52);
-  border: 1px dashed rgba(148, 163, 184, 0.24);
+  color: var(--text-muted);
+  background: var(--surface-muted);
+  border: 1px dashed var(--border-muted);
 }
 
 .season-editor-box {
   @apply mt-3 rounded-xl p-4;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: rgba(15, 23, 42, 0.56);
+  border: 1px solid var(--border-muted);
+  background: var(--surface-muted);
 }
 
 .episode-card {
   @apply rounded-xl p-3 md:flex md:gap-3;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: rgba(15, 23, 42, 0.58);
+  border: 1px solid var(--border-muted);
+  background: var(--surface);
   transition:
     border-color 0.16s ease,
     background-color 0.16s ease,
@@ -277,22 +255,22 @@
 }
 
 .episode-card:hover {
-  border-color: rgba(56, 189, 248, 0.26);
-  background: rgba(30, 41, 59, 0.62);
+  border-color: var(--accent-hover-border);
+  background: var(--surface-muted);
   transform: translateY(-1px);
 }
 
 .episode-still {
   @apply aspect-video w-full rounded-lg object-contain md:w-48;
-  background: rgba(2, 6, 23, 0.54);
-  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: var(--surface-muted);
+  border: 1px solid var(--border-muted);
 }
 
 .badge {
   @apply rounded px-3 py-1 text-xs;
-  color: rgba(226, 232, 240, 0.9);
-  background: rgba(30, 41, 59, 0.72);
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  color: var(--soft-btn-fg);
+  background: var(--soft-btn-bg);
+  border: 1px solid var(--soft-btn-border);
 }
 
 .cast-grid {
@@ -323,13 +301,13 @@
 
 .search-item {
   @apply rounded-lg p-3 transition;
-  background: rgba(27, 40, 64, 0.72);
-  border: 1px solid rgba(191, 219, 254, 0.16);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+  background: var(--surface);
+  border: 1px solid var(--border-muted);
+  box-shadow: var(--glass-shadow-soft);
 }
 
 .search-item:hover {
-  background: rgba(35, 50, 78, 0.82);
+  background: var(--surface-muted);
 }
 
 .search-thumb {
@@ -342,7 +320,7 @@
 
 .search-page-title {
   @apply mt-1 text-2xl font-bold md:text-3xl;
-  color: #eef7ff;
+  color: var(--text-strong);
 }
 
 @media (min-width: 768px) {
@@ -357,18 +335,18 @@
 
 .person-photo-img {
   @apply h-32 w-auto flex-shrink-0 rounded-lg object-cover;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--border-muted);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
 }
 
 .sync-option-card {
   @apply rounded-lg px-3 py-2 text-sm;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: rgba(15, 23, 42, 0.54);
+  border: 1px solid var(--border-muted);
+  background: var(--surface-muted);
 }
 
 .sync-selective-box {
   @apply mt-3 rounded-lg p-3;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: rgba(15, 23, 42, 0.54);
+  border: 1px solid var(--border-muted);
+  background: var(--surface-muted);
 }

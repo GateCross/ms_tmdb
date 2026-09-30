@@ -12,7 +12,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <label class="text-xs text-black/60">
+  <label class="text-xs text-muted">
     {{ label }}
     <input
       :value="modelValue"
@@ -22,6 +22,6 @@ const emit = defineEmits<{
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     />
     <input class="mt-2 block w-full text-xs" type="file" accept="image/*" @change="emit('upload', $event)" />
-    <span v-if="uploading" class="mt-1 inline-block text-[11px] text-black/50">上传中...</span>
+    <span v-if="uploading" class="mt-1 inline-block text-[11px] text-muted">上传中...</span>
   </label>
 </template>

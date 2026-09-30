@@ -476,9 +476,9 @@ export function useTVDetailPage() {
 
   function episodeEditFieldClass(field: keyof TVEpisodeForm): string {
     if (isEpisodeFieldChanged(field)) {
-      return "rounded-lg border border-amber-300 bg-amber-50/80 p-2";
+      return "rounded-lg border border-warn-line bg-warn-soft p-2";
     }
-    return "rounded-lg border border-transparent bg-white/65 p-2";
+    return "rounded-lg border border-transparent bg-card p-2";
   }
 
   function resetSeasonLocalState() {

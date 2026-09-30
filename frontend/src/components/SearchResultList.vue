@@ -41,9 +41,9 @@ const visibleItems = computed(() => {
           loading="lazy"
         />
         <div class="min-w-0 flex-1">
-          <p class="truncate font-medium text-slate-800">{{ getSearchResultTitle(item) }}</p>
-          <p class="text-xs text-black/55">{{ getSearchResultSubtitle(item, fallbackType) }}</p>
-          <p v-if="item.overview" class="mt-0.5 text-xs text-black/50 line-clamp-1">
+          <p class="truncate font-medium text-ink">{{ getSearchResultTitle(item) }}</p>
+          <p class="text-xs text-muted">{{ getSearchResultSubtitle(item, fallbackType) }}</p>
+          <p v-if="item.overview" class="mt-0.5 text-xs text-muted line-clamp-1">
             {{ item.overview }}
           </p>
         </div>

@@ -1,17 +1,25 @@
-import { computed, onMounted, reactive, watch } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import {
   defaultPreferences,
   sidebarOptions,
   themeOptions,
+  type AdminAppearance,
   type AdminPreferences,
   type AdminSidebarColor,
   type AdminThemeColor,
 } from "./adminLayoutConfig";
 
 const preferenceStorageKey = "ms_tmdb_vben_admin_preferences";
+const darkMedia = window.matchMedia?.("(prefers-color-scheme: dark)");
+
+function normalizeAppearance(value: unknown): AdminAppearance {
+  return value === "dark" || value === "auto" ? value : "light";
+}
 
 function normalizePreferences(raw: unknown): AdminPreferences {
   const payload = raw && typeof raw === "object" ? (raw as Partial<Record<keyof AdminPreferences, unknown>>) : {};
+  // 旧版本把「深色」作为一种主题色存储，迁移为 appearance=dark + 默认青绿主题色
+  const legacyDark = payload.themeColor === "dark";
   const themeColor = themeOptions.some((item) => item.value === payload.themeColor)
     ? (payload.themeColor as AdminThemeColor)
     : defaultPreferences.themeColor;
@@ -19,6 +27,7 @@ function normalizePreferences(raw: unknown): AdminPreferences {
     ? (payload.sidebarColor as AdminSidebarColor)
     : defaultPreferences.sidebarColor;
   return {
+    appearance: legacyDark ? "dark" : normalizeAppearance(payload.appearance),
     compact: typeof payload.compact === "boolean" ? payload.compact : defaultPreferences.compact,
     showTabs: typeof payload.showTabs === "boolean" ? payload.showTabs : defaultPreferences.showTabs,
     sidebarCollapsed:
@@ -30,19 +39,23 @@ function normalizePreferences(raw: unknown): AdminPreferences {
 
 export function useAdminPreferences() {
   const preferences = reactive<AdminPreferences>({ ...defaultPreferences });
+  const systemPrefersDark = ref(darkMedia?.matches ?? false);
   const currentThemeOption = computed(
     () => themeOptions.find((item) => item.value === preferences.themeColor) ?? themeOptions[0],
   );
   const currentSidebarOption = computed(
     () => sidebarOptions.find((item) => item.value === preferences.sidebarColor) ?? sidebarOptions[0],
   );
+  const isDark = computed(() => {
+    if (preferences.appearance === "auto") return systemPrefersDark.value;
+    return preferences.appearance === "dark";
+  });
+
+  /** 仅写主题色派生变量与侧栏变量；表面/文字/状态色由 theme.css 的 :root + html.dark 提供 */
   const adminThemeStyle = computed<Record<string, string>>(() => {
-    const isDarkTheme = currentThemeOption.value.colorScheme === "dark";
     const accent = currentThemeOption.value.accent;
 
     return {
-      "--bg-main": currentThemeOption.value.bgMain,
-      "--border-muted": currentThemeOption.value.borderMuted,
       "--accent": accent,
       "--accent-active-bg": `${accent}24`,
       "--accent-active-border": `${accent}52`,
@@ -50,23 +63,7 @@ export function useAdminPreferences() {
       "--accent-ring": `${accent}1f`,
       "--accent-soft": currentThemeOption.value.accentSoft,
       "--accent-strong": currentThemeOption.value.accentStrong,
-      "--control-bg": isDarkTheme ? "rgba(255, 255, 255, 0.06)" : "#f2f3f5",
-      "--control-hover-bg": isDarkTheme ? "rgba(255, 255, 255, 0.1)" : "#f2f3f5",
-      "--control-text": isDarkTheme ? currentThemeOption.value.textMain : "#1f2329",
-      "--field-border-focus": currentThemeOption.value.fieldBorderFocus,
-      "--field-bg": currentThemeOption.value.fieldBg,
-      "--field-border": currentThemeOption.value.fieldBorder,
-      "--glass-bg": currentThemeOption.value.glassBg,
-      "--glass-bg-strong": currentThemeOption.value.glassBgStrong,
-      "--glass-border": currentThemeOption.value.glassBorder,
-      "--glass-shadow": currentThemeOption.value.glassShadow,
-      "--glass-shadow-soft": currentThemeOption.value.glassShadowSoft,
-      "--menu-bg": isDarkTheme ? currentThemeOption.value.surfaceMuted : "#ffffff",
-      "--menu-hover-bg": isDarkTheme ? "rgba(255, 255, 255, 0.08)" : "#f2f4f7",
-      "--overlay-bg": "rgba(0, 0, 0, 0.42)",
-      "--scrollbar-thumb": isDarkTheme ? "rgba(148, 163, 184, 0.36)" : "rgba(100, 116, 139, 0.38)",
-      "--scrollbar-thumb-hover": isDarkTheme ? "rgba(148, 163, 184, 0.56)" : "rgba(71, 85, 105, 0.58)",
-      "--scrollbar-track": "transparent",
+      "--field-border-focus": `${accent}ad`,
       "--sidebar-active-bg": currentSidebarOption.value.activeBg,
       "--sidebar-active-icon-bg": currentSidebarOption.value.activeIconBg,
       "--sidebar-active-icon-text": currentSidebarOption.value.activeIconText,
@@ -80,19 +77,7 @@ export function useAdminPreferences() {
       "--sidebar-icon-bg": currentSidebarOption.value.iconBg,
       "--sidebar-muted": currentSidebarOption.value.muted,
       "--sidebar-text": currentSidebarOption.value.text,
-      "--surface": currentThemeOption.value.surface,
-      "--surface-active": isDarkTheme ? `${accent}33` : `${accent}24`,
-      "--surface-elevated": isDarkTheme ? currentThemeOption.value.surfaceMuted : currentThemeOption.value.surface,
-      "--surface-hover": isDarkTheme ? "rgba(255, 255, 255, 0.06)" : "#f7f8fa",
-      "--surface-muted": currentThemeOption.value.surfaceMuted,
-      "--surface-strong": currentThemeOption.value.surfaceStrong,
-      "--text-main": currentThemeOption.value.textMain,
-      "--text-muted": currentThemeOption.value.textMuted,
-      "--text-secondary": currentThemeOption.value.textMuted,
-      "--text-strong": isDarkTheme ? currentThemeOption.value.textMain : "#1f2329",
-      "--topbar-bg": currentThemeOption.value.topbarBg,
-      "--primary": "212 100% 54%",
-      "color-scheme": currentThemeOption.value.colorScheme,
+      "--surface-active": isDark.value ? `${accent}33` : `${accent}24`,
     };
   });
 
@@ -100,9 +85,8 @@ export function useAdminPreferences() {
     if (typeof document === "undefined") return;
 
     const root = document.documentElement;
-    // dark: 变体由根元素 .dark 类驱动；挂在根上，Teleport 到 body 的弹层也能命中
-    root.classList.toggle("dark", currentThemeOption.value.colorScheme === "dark");
-    root.setAttribute("data-theme", currentThemeOption.value.dataTheme);
+    // dark: 变体与 theme.css 的 html.dark 令牌由根元素 .dark 类驱动；挂在根上，Teleport 到 body 的弹层也能命中
+    root.classList.toggle("dark", isDark.value);
     for (const [property, value] of Object.entries(style)) {
       root.style.setProperty(property, value);
     }
@@ -130,8 +114,14 @@ export function useAdminPreferences() {
     Object.assign(preferences, { [key]: value });
   }
 
-  watch(adminThemeStyle, applyRootTheme, { immediate: true });
+  function handleSystemColorSchemeChange(event: MediaQueryListEvent) {
+    systemPrefersDark.value = event.matches;
+  }
+
+  // isDark 单独监听：.dark 类不能只依赖 adminThemeStyle 变化触发，否则 auto 模式下若样式恰好不变会漏切换
+  watch([adminThemeStyle, isDark], ([style]) => applyRootTheme(style), { immediate: true });
   watch(preferences, savePreferences);
+  darkMedia?.addEventListener("change", handleSystemColorSchemeChange);
   onMounted(loadPreferences);
 
   return {

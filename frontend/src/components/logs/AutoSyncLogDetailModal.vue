@@ -51,15 +51,15 @@ const emit = defineEmits<{
         <span class="section-label block">Run Detail</span>
         <span class="block text-base font-semibold">
           执行日志明细
-          <span v-if="detail" class="text-sm text-black/55">#{{ detail.id }}</span>
+          <span v-if="detail" class="text-sm text-muted">#{{ detail.id }}</span>
         </span>
       </span>
     </template>
 
-    <p v-if="loading && !detail" class="text-sm text-black/60">明细加载中...</p>
+    <p v-if="loading && !detail" class="text-sm text-muted">明细加载中...</p>
 
     <template v-if="detail">
-      <p v-if="loading" class="mb-3 text-xs text-black/50">分页加载中...</p>
+      <p v-if="loading" class="mb-3 text-xs text-muted">分页加载中...</p>
       <div class="settings-detail-summary-grid">
         <article class="settings-detail-summary-item">
           <span>触发时间</span>
@@ -86,7 +86,7 @@ const emit = defineEmits<{
       <div class="settings-detail-section">
         <div class="settings-detail-section-header">
           <div>
-            <h5 class="text-sm font-semibold text-green-700">同步成功项</h5>
+            <h5 class="text-sm font-semibold text-success">同步成功项</h5>
             <p class="settings-note">展示成功同步条目、远端差异字段和本地字段处理结果。</p>
           </div>
           <span class="badge">{{ detail.synced }} 条</span>
@@ -99,7 +99,7 @@ const emit = defineEmits<{
               <col class="settings-detail-col-local" />
               <col class="settings-detail-col-message" />
             </colgroup>
-            <thead class="table-head text-left text-black/70">
+            <thead class="table-head text-left text-muted">
               <tr>
                 <th class="px-3 py-2 font-medium">媒体</th>
                 <th class="px-3 py-2 font-medium">远端差异</th>
@@ -149,12 +149,12 @@ const emit = defineEmits<{
                   </div>
                   <span v-else class="settings-empty-value">-</span>
                 </td>
-                <td class="px-3 py-2 text-black/70">
+                <td class="px-3 py-2 text-muted">
                   <p class="settings-detail-message">{{ entry.message || "-" }}</p>
                 </td>
               </tr>
               <tr v-if="detail.synced_list.length === 0">
-                <td colspan="4" class="px-3 py-4 text-center text-black/55">无成功同步明细</td>
+                <td colspan="4" class="px-3 py-4 text-center text-muted">无成功同步明细</td>
               </tr>
             </tbody>
           </table>
@@ -172,7 +172,7 @@ const emit = defineEmits<{
       <div class="settings-detail-section">
         <div class="settings-detail-section-header">
           <div>
-            <h5 class="text-sm font-semibold text-red-700">同步失败项</h5>
+            <h5 class="text-sm font-semibold text-danger">同步失败项</h5>
             <p class="settings-note">失败条目会保留原因，便于定位网络、数据或接口异常。</p>
           </div>
           <span class="badge">{{ detail.failed }} 条</span>
@@ -183,7 +183,7 @@ const emit = defineEmits<{
               <col class="settings-detail-col-media" />
               <col class="settings-detail-col-failure" />
             </colgroup>
-            <thead class="table-head text-left text-black/70">
+            <thead class="table-head text-left text-muted">
               <tr>
                 <th class="px-3 py-2 font-medium">媒体</th>
                 <th class="px-3 py-2 font-medium">失败原因</th>
@@ -204,12 +204,12 @@ const emit = defineEmits<{
                     </div>
                   </div>
                 </td>
-                <td class="px-3 py-2 text-black/70">
+                <td class="px-3 py-2 text-muted">
                   <p class="settings-detail-message">{{ entry.message || "-" }}</p>
                 </td>
               </tr>
               <tr v-if="detail.failed_list.length === 0">
-                <td colspan="2" class="px-3 py-4 text-center text-black/55">无失败明细</td>
+                <td colspan="2" class="px-3 py-4 text-center text-muted">无失败明细</td>
               </tr>
             </tbody>
           </table>

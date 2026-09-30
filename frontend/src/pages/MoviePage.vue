@@ -126,23 +126,23 @@ watch(saveMessage, (message) => {
         <!-- 信息面板 -->
         <div class="detail-info">
           <h2 class="text-xl font-bold">{{ detail.title }}</h2>
-          <p v-if="detail.original_title !== detail.title" class="text-sm text-black/55">
+          <p v-if="detail.original_title !== detail.title" class="text-sm text-muted">
             {{ detail.original_title }}
           </p>
-          <div class="mt-2 grid gap-1 text-xs text-black/60 sm:grid-cols-2">
+          <div class="mt-2 grid gap-1 text-xs text-muted sm:grid-cols-2">
             <template v-if="hasRewrittenTmdbId">
               <p>
                 修改后 TMDB ID：
-                <span class="font-medium text-black">{{ currentTmdbId }}</span>
+                <span class="font-medium text-ink">{{ currentTmdbId }}</span>
               </p>
               <p>
                 原始 TMDB ID：
-                <span class="font-medium text-black">{{ originalTmdbId }}</span>
+                <span class="font-medium text-ink">{{ originalTmdbId }}</span>
               </p>
             </template>
             <p v-else>
               TMDB ID：
-              <span class="font-medium text-black">{{ currentTmdbId }}</span>
+              <span class="font-medium text-ink">{{ currentTmdbId }}</span>
             </p>
           </div>
 
@@ -162,7 +162,7 @@ watch(saveMessage, (message) => {
             </span>
           </div>
 
-          <p class="mt-4 text-sm leading-relaxed text-black/75">
+          <p class="mt-4 text-sm leading-relaxed text-muted">
             {{ detail.overview || "暂无简介" }}
           </p>
 

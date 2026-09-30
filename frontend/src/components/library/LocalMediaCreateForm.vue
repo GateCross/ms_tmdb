@@ -26,11 +26,11 @@ const emit = defineEmits<{
 
 <template>
   <div v-if="mediaType === 'movie'" class="grid gap-3 md:grid-cols-2">
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       标题（必填）
       <input v-model="movieForm.title" class="field-control mt-1 w-full text-sm" placeholder="电影标题" />
     </label>
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       原始标题
       <input
         v-model="movieForm.original_title"
@@ -38,23 +38,23 @@ const emit = defineEmits<{
         placeholder="Original Title"
       />
     </label>
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       上映日期
       <input v-model="movieForm.release_date" class="field-control mt-1 w-full text-sm" placeholder="YYYY-MM-DD" />
     </label>
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       状态
       <GlassSelect v-model="movieForm.status" :options="movieStatusOptions" class="mt-1 w-full" />
     </label>
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       原始语言
       <GlassSelect v-model="movieForm.original_language" :options="languageOptions" class="mt-1 w-full" />
     </label>
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       时长（分钟）
       <input v-model="movieForm.runtime" class="field-control mt-1 w-full text-sm" placeholder="120" />
     </label>
-    <label class="text-xs text-black/60 md:col-span-2">
+    <label class="text-xs text-muted md:col-span-2">
       类型（多选）
       <GenreCheckboxGroup v-model="movieForm.genre_names" :options="movieGenreOptions" />
     </label>
@@ -70,54 +70,54 @@ const emit = defineEmits<{
       :uploading="uploadingKey === 'movie_backdrop_path'"
       @upload="(event) => emit('upload', 'movie', 'backdrop_path', event)"
     />
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       评分
       <input v-model="movieForm.vote_average" class="field-control mt-1 w-full text-sm" placeholder="7.8" />
     </label>
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       热度
       <input v-model="movieForm.popularity" class="field-control mt-1 w-full text-sm" placeholder="123.4" />
     </label>
-    <label class="text-xs text-black/60 md:col-span-2">
+    <label class="text-xs text-muted md:col-span-2">
       简介
       <textarea v-model="movieForm.overview" rows="3" class="field-control mt-1 w-full text-sm" placeholder="简介" />
     </label>
   </div>
 
   <div v-else class="grid gap-3 md:grid-cols-2">
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       剧名（必填）
       <input v-model="tvForm.name" class="field-control mt-1 w-full text-sm" placeholder="剧集名称" />
     </label>
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       原始剧名
       <input v-model="tvForm.original_name" class="field-control mt-1 w-full text-sm" placeholder="Original Name" />
     </label>
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       首播日期
       <input v-model="tvForm.first_air_date" class="field-control mt-1 w-full text-sm" placeholder="YYYY-MM-DD" />
     </label>
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       状态
       <GlassSelect v-model="tvForm.status" :options="tvStatusOptions" class="mt-1 w-full" />
     </label>
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       原始语言
       <GlassSelect v-model="tvForm.original_language" :options="languageOptions" class="mt-1 w-full" />
     </label>
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       剧集类型
       <GlassSelect v-model="tvForm.type" :options="tvTypeOptions" class="mt-1 w-full" />
     </label>
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       季数
       <input v-model="tvForm.number_of_seasons" class="field-control mt-1 w-full text-sm" placeholder="3" />
     </label>
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       集数
       <input v-model="tvForm.number_of_episodes" class="field-control mt-1 w-full text-sm" placeholder="24" />
     </label>
-    <label class="text-xs text-black/60 md:col-span-2">
+    <label class="text-xs text-muted md:col-span-2">
       类型（多选）
       <GenreCheckboxGroup v-model="tvForm.genre_names" :options="tvGenreOptions" />
     </label>
@@ -133,15 +133,15 @@ const emit = defineEmits<{
       :uploading="uploadingKey === 'tv_backdrop_path'"
       @upload="(event) => emit('upload', 'tv', 'backdrop_path', event)"
     />
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       评分
       <input v-model="tvForm.vote_average" class="field-control mt-1 w-full text-sm" placeholder="8.1" />
     </label>
-    <label class="text-xs text-black/60">
+    <label class="text-xs text-muted">
       热度
       <input v-model="tvForm.popularity" class="field-control mt-1 w-full text-sm" placeholder="220.5" />
     </label>
-    <label class="text-xs text-black/60 md:col-span-2">
+    <label class="text-xs text-muted md:col-span-2">
       简介
       <textarea v-model="tvForm.overview" rows="3" class="field-control mt-1 w-full text-sm" placeholder="简介" />
     </label>

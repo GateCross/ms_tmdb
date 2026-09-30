@@ -47,7 +47,7 @@ defineProps<{
     <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
       <div>
         <h3 class="text-sm font-semibold">季管理</h3>
-        <p class="mt-1 text-xs text-black/50">点击季卡按需加载分集明细，也可手动新增本地季</p>
+        <p class="mt-1 text-xs text-muted">点击季卡按需加载分集明细，也可手动新增本地季</p>
       </div>
       <button
         type="button"
@@ -70,7 +70,7 @@ defineProps<{
       >
         <img :src="tmdbImg(s.poster_path, 'w185')" :alt="s.name" class="cast-img" loading="lazy" />
         <p class="mt-1 truncate text-xs font-medium">{{ s.name }}</p>
-        <p class="truncate text-xs text-black/50">{{ s.episode_count }} 集</p>
+        <p class="truncate text-xs text-muted">{{ s.episode_count }} 集</p>
       </button>
     </div>
     <div v-else class="season-empty">当前剧集还没有可展示的季数据，可以直接新增本地季。</div>
@@ -105,7 +105,7 @@ defineProps<{
       <div class="flex flex-wrap items-center gap-2">
         <span
           v-if="selectedSeasonDetail && !(seasonEditorVisible && seasonEditorMode === 'create')"
-          class="text-xs text-black/55"
+          class="text-xs text-muted"
         >
           共 {{ selectedSeasonEpisodes.length }} 集
         </span>
@@ -154,25 +154,25 @@ defineProps<{
         >
           {{ seasonLocalSaving ? "删除中..." : "删除本季" }}
         </button>
-        <span v-if="seasonLocalSaved" class="text-xs text-black/50"> 可编辑单集，也可手动新增或删除本地季 </span>
+        <span v-if="seasonLocalSaved" class="text-xs text-muted"> 可编辑单集，也可手动新增或删除本地季 </span>
       </div>
     </div>
     <p
       v-if="selectedSeasonDetail?.overview && !(seasonEditorVisible && seasonEditorMode === 'create')"
-      class="mt-2 text-xs leading-relaxed text-black/60"
+      class="mt-2 text-xs leading-relaxed text-muted"
     >
       {{ selectedSeasonDetail.overview }}
     </p>
     <p
       v-if="seasonLocalSaved && !(seasonEditorVisible && seasonEditorMode === 'create')"
-      class="mt-1 text-xs text-green-700"
+      class="mt-1 text-xs text-success"
     >
       当前季已保存到本地数据库
     </p>
 
     <div v-if="seasonEditorVisible" class="season-editor-box">
       <div class="grid gap-3 md:grid-cols-2">
-        <label class="text-xs text-black/60">
+        <label class="text-xs text-muted">
           季号
           <input
             v-model="seasonForm.season_number"
@@ -181,19 +181,19 @@ defineProps<{
             placeholder="例如：1"
           />
         </label>
-        <label class="text-xs text-black/60">
+        <label class="text-xs text-muted">
           季标题
           <input v-model="seasonForm.name" class="field-control mt-1 w-full text-sm" placeholder="例如：第一季" />
         </label>
-        <label class="text-xs text-black/60">
+        <label class="text-xs text-muted">
           首播日期
           <input v-model="seasonForm.air_date" class="field-control mt-1 w-full text-sm" placeholder="YYYY-MM-DD" />
         </label>
-        <label class="text-xs text-black/60">
+        <label class="text-xs text-muted">
           海报路径
           <input v-model="seasonForm.poster_path" class="field-control mt-1 w-full text-sm" placeholder="/poster.jpg" />
         </label>
-        <label class="text-xs text-black/60 md:col-span-2">
+        <label class="text-xs text-muted md:col-span-2">
           简介
           <textarea
             v-model="seasonForm.overview"
@@ -228,31 +228,31 @@ defineProps<{
       class="season-editor-box"
     >
       <div class="grid gap-3 md:grid-cols-2">
-        <label class="text-xs text-black/60">
+        <label class="text-xs text-muted">
           集号
           <input v-model="episodeForm.episode_number" class="field-control mt-1 w-full text-sm" placeholder="例如：1" />
         </label>
-        <label class="text-xs text-black/60">
+        <label class="text-xs text-muted">
           标题
           <input v-model="episodeForm.name" class="field-control mt-1 w-full text-sm" placeholder="请输入本集标题" />
         </label>
-        <label class="text-xs text-black/60">
+        <label class="text-xs text-muted">
           播出日期
           <input v-model="episodeForm.air_date" class="field-control mt-1 w-full text-sm" placeholder="YYYY-MM-DD" />
         </label>
-        <label class="text-xs text-black/60">
+        <label class="text-xs text-muted">
           时长
           <input v-model="episodeForm.runtime" class="field-control mt-1 w-full text-sm" placeholder="分钟" />
         </label>
-        <label class="text-xs text-black/60">
+        <label class="text-xs text-muted">
           评分
           <input v-model="episodeForm.vote_average" class="field-control mt-1 w-full text-sm" placeholder="8.6" />
         </label>
-        <label class="text-xs text-black/60">
+        <label class="text-xs text-muted">
           剧照路径
           <input v-model="episodeForm.still_path" class="field-control mt-1 w-full text-sm" placeholder="/still.jpg" />
         </label>
-        <label class="text-xs text-black/60 md:col-span-2">
+        <label class="text-xs text-muted md:col-span-2">
           简介
           <textarea
             v-model="episodeForm.overview"
@@ -282,7 +282,7 @@ defineProps<{
       </div>
     </div>
 
-    <p v-if="seasonDetailLoading" class="mt-3 text-xs text-black/60">正在加载分集明细...</p>
+    <p v-if="seasonDetailLoading" class="mt-3 text-xs text-muted">正在加载分集明细...</p>
     <p v-else-if="!selectedSeasonDetail && !seasonEditorVisible" class="season-inline-note mt-3">
       请选择一个已有季，或点击“新增季”创建本地季。
     </p>
@@ -315,11 +315,11 @@ defineProps<{
             }}</span>
           </div>
           <template v-if="seasonLocalSaved && editingEpisodeNumber === ep.episode_number">
-            <p class="mt-2 text-xs" :class="episodeEditChangedCount > 0 ? 'text-amber-700' : 'text-black/55'">
+            <p class="mt-2 text-xs" :class="episodeEditChangedCount > 0 ? 'text-warn' : 'text-muted'">
               {{ episodeEditChangedCount > 0 ? `已修改 ${episodeEditChangedCount} 个字段` : "尚未修改字段" }}
             </p>
             <div class="mt-2 grid gap-2 md:grid-cols-3">
-              <label :class="['text-xs text-black/60', episodeEditFieldClass('episode_number')]">
+              <label :class="['text-xs text-muted', episodeEditFieldClass('episode_number')]">
                 集号
                 <input
                   v-model="episodeForm.episode_number"
@@ -327,7 +327,7 @@ defineProps<{
                   placeholder="例如：1"
                 />
               </label>
-              <label :class="['text-xs text-black/60', episodeEditFieldClass('name')]">
+              <label :class="['text-xs text-muted', episodeEditFieldClass('name')]">
                 标题
                 <input
                   v-model="episodeForm.name"
@@ -335,7 +335,7 @@ defineProps<{
                   placeholder="请输入本集标题"
                 />
               </label>
-              <label :class="['text-xs text-black/60', episodeEditFieldClass('air_date')]">
+              <label :class="['text-xs text-muted', episodeEditFieldClass('air_date')]">
                 播出日期
                 <input
                   v-model="episodeForm.air_date"
@@ -343,7 +343,7 @@ defineProps<{
                   placeholder="YYYY-MM-DD"
                 />
               </label>
-              <label :class="['text-xs text-black/60', episodeEditFieldClass('runtime')]">
+              <label :class="['text-xs text-muted', episodeEditFieldClass('runtime')]">
                 时长
                 <input
                   v-model="episodeForm.runtime"
@@ -351,7 +351,7 @@ defineProps<{
                   placeholder="分钟"
                 />
               </label>
-              <label :class="['text-xs text-black/60', episodeEditFieldClass('vote_average')]">
+              <label :class="['text-xs text-muted', episodeEditFieldClass('vote_average')]">
                 评分
                 <input
                   v-model="episodeForm.vote_average"
@@ -359,7 +359,7 @@ defineProps<{
                   placeholder="8.6"
                 />
               </label>
-              <label :class="['text-xs text-black/60', episodeEditFieldClass('still_path')]">
+              <label :class="['text-xs text-muted', episodeEditFieldClass('still_path')]">
                 剧照路径
                 <input
                   v-model="episodeForm.still_path"
@@ -367,7 +367,7 @@ defineProps<{
                   placeholder="/still.jpg"
                 />
               </label>
-              <label :class="['text-xs text-black/60 md:col-span-3', episodeEditFieldClass('overview')]">
+              <label :class="['text-xs text-muted md:col-span-3', episodeEditFieldClass('overview')]">
                 简介
                 <textarea
                   v-model="episodeForm.overview"
@@ -398,7 +398,7 @@ defineProps<{
           </template>
           <template v-else>
             <h4 class="mt-2 truncate text-sm font-semibold">{{ ep.name || `第${ep.episode_number}集` }}</h4>
-            <p class="mt-1 text-xs leading-relaxed text-black/65">
+            <p class="mt-1 text-xs leading-relaxed text-muted">
               {{ ep.overview || "暂无简介" }}
             </p>
             <div v-if="seasonLocalSaved" class="mt-2 flex items-center gap-2">

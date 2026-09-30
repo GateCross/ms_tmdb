@@ -69,7 +69,7 @@ onMounted(loadSettings);
 <template>
   <section class="card max-w-2xl">
     <h2 class="text-lg font-semibold">代理设置</h2>
-    <p class="mt-1 text-sm text-black/60">配置后端访问 TMDB 时使用的网络代理。关闭后将恢复为直连。</p>
+    <p class="mt-1 text-sm text-muted">配置后端访问 TMDB 时使用的网络代理。关闭后将恢复为直连。</p>
 
     <div
       v-if="refreshError && !loadError"
@@ -91,7 +91,7 @@ onMounted(loadSettings);
         <span>启用代理访问 TMDB</span>
       </label>
 
-      <label class="mt-3 block text-xs text-black/60">
+      <label class="mt-3 block text-xs text-muted">
         代理地址
         <input
           v-model="proxyURL"
@@ -102,7 +102,7 @@ onMounted(loadSettings);
         />
       </label>
 
-      <p class="mt-2 text-xs text-black/50">支持格式示例：`http://127.0.0.1:7890`、`socks5://127.0.0.1:1080`</p>
+      <p class="mt-2 text-xs text-muted">支持格式示例：`http://127.0.0.1:7890`、`socks5://127.0.0.1:1080`</p>
 
       <div class="mt-4 flex items-center gap-3">
         <button class="btn-primary disabled:opacity-60" :disabled="saving" @click="saveSettings">

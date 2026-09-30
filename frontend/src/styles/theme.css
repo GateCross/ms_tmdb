@@ -1,4 +1,74 @@
+/*
+ * 主题令牌单一事实来源：
+ * - :root 提供浅色默认值，html.dark 覆盖为深色（.dark 类由偏好/系统外观驱动）。
+ * - 主题色（accent 系）由 useAdminPreferences 按主题预设写入内联样式，CSS 只保留默认值。
+ * - 组件样式只允许引用这些语义变量，禁止按主题写死颜色。
+ */
 :root {
+  color-scheme: light;
+  --bg-main: #f5f7fb;
+  --surface: #ffffff;
+  --surface-muted: #f5f7fb;
+  --surface-strong: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-hover: #f7f8fa;
+  --surface-active: rgba(14, 165, 164, 0.14);
+  --control-bg: #f2f3f5;
+  --control-hover-bg: #f2f3f5;
+  --control-text: #1f2329;
+  --menu-bg: #ffffff;
+  --menu-hover-bg: #f2f4f7;
+  --overlay-bg: rgba(15, 23, 42, 0.42);
+  --border-muted: #e5e7eb;
+  --text-main: #1f2937;
+  --text-muted: #667085;
+  --text-strong: #1f2329;
+  /* 兼容别名：次要文字与 muted 同值 */
+  --text-secondary: var(--text-muted);
+  --text-placeholder: #98a2b3;
+  --topbar-bg: #ffffff;
+  --glass-border: #e5e7eb;
+  --glass-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --glass-shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
+  /* 深色下为磨砂渐变面板、浅色下为实底卡片，见 panel-glass / logs-detail-modal 等 */
+  --panel-bg: #ffffff;
+  --panel-blur: none;
+  /* 软按钮（badge / btn-soft / detail-back-btn 等中性按钮） */
+  --soft-btn-fg: #344054;
+  --soft-btn-bg: #ffffff;
+  --soft-btn-bg-hover: #f2f4f7;
+  --soft-btn-border: var(--border-muted);
+  /* 状态色：前景 / 软背景 / 描边 / 软背景悬停 */
+  --success-fg: #15803d;
+  --success-bg: rgba(21, 128, 61, 0.08);
+  --success-border: rgba(21, 128, 61, 0.32);
+  --warn-fg: #ad6800;
+  --warn-bg: rgba(217, 119, 6, 0.08);
+  --warn-bg-hover: rgba(217, 119, 6, 0.14);
+  --warn-border: rgba(217, 119, 6, 0.32);
+  --danger-fg: #b42318;
+  --danger-bg: #fff1f0;
+  --danger-bg-hover: #ffe7e5;
+  --danger-border: #ffccc7;
+  --info-fg: #0369a1;
+  --info-bg: rgba(2, 132, 199, 0.08);
+  --info-border: rgba(2, 132, 199, 0.28);
+  --accent: #0ea5a4;
+  --accent-soft: #90cea1;
+  --accent-strong: #0d7c8a;
+  --accent-active-bg: rgba(14, 165, 164, 0.14);
+  --accent-active-border: rgba(14, 165, 164, 0.32);
+  --accent-hover-border: rgba(14, 165, 164, 0.34);
+  --accent-ring: rgba(14, 165, 164, 0.12);
+  --field-bg: #ffffff;
+  --field-border: rgba(15, 23, 42, 0.14);
+  --field-border-focus: rgba(14, 165, 164, 0.68);
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgba(100, 116, 139, 0.38);
+  --scrollbar-thumb-hover: rgba(71, 85, 105, 0.58);
+}
+
+html.dark {
   color-scheme: dark;
   --bg-main: #0f1115;
   --surface: #161a20;
@@ -12,26 +82,39 @@
   --control-text: #edf2f7;
   --menu-bg: #1d232b;
   --menu-hover-bg: rgba(255, 255, 255, 0.08);
-  --sidebar-bg: #11151a;
-  --topbar-bg: rgba(18, 22, 28, 0.94);
+  --overlay-bg: rgba(0, 0, 0, 0.42);
   --border-muted: rgba(208, 216, 228, 0.12);
   --text-main: #edf2f7;
   --text-muted: #aeb9c7;
   --text-strong: #edf2f7;
-  --text-secondary: #aeb9c7;
-  --overlay-bg: rgba(0, 0, 0, 0.42);
-  --glass-bg: rgba(25, 30, 38, 0.72);
-  --glass-bg-strong: rgba(29, 35, 43, 0.92);
+  --text-secondary: var(--text-muted);
+  --text-placeholder: rgba(199, 210, 227, 0.62);
+  --topbar-bg: rgba(18, 22, 28, 0.94);
   --glass-border: rgba(208, 216, 228, 0.12);
   --glass-shadow: 0 18px 38px rgba(0, 0, 0, 0.28);
   --glass-shadow-soft: 0 10px 22px rgba(0, 0, 0, 0.2);
-  --accent: #0ea5a4;
-  --accent-strong: #0d7c8a;
-  --accent-soft: #90cea1;
+  --panel-bg: linear-gradient(150deg, rgba(27, 40, 64, 0.92) 0%, rgba(24, 36, 58, 0.86) 100%);
+  --panel-blur: blur(16px) saturate(145%);
+  --soft-btn-fg: rgba(226, 232, 240, 0.9);
+  --soft-btn-bg: rgba(30, 41, 59, 0.66);
+  --soft-btn-bg-hover: rgba(51, 65, 85, 0.78);
+  --soft-btn-border: rgba(148, 163, 184, 0.22);
+  --success-fg: #4ade80;
+  --success-bg: rgba(74, 222, 128, 0.12);
+  --success-border: rgba(74, 222, 128, 0.3);
+  --warn-fg: #fde68a;
+  --warn-bg: rgba(146, 64, 14, 0.24);
+  --warn-bg-hover: rgba(146, 64, 14, 0.42);
+  --warn-border: rgba(251, 191, 36, 0.3);
+  --danger-fg: #fca5a5;
+  --danger-bg: rgba(127, 29, 29, 0.3);
+  --danger-bg-hover: rgba(153, 27, 27, 0.4);
+  --danger-border: rgba(248, 113, 113, 0.32);
+  --info-fg: #bae6fd;
+  --info-bg: rgba(2, 132, 199, 0.2);
+  --info-border: rgba(56, 189, 248, 0.24);
   --field-bg: rgba(18, 22, 28, 0.96);
   --field-border: rgba(208, 216, 228, 0.16);
-  --field-border-focus: rgba(14, 165, 164, 0.68);
-  --scrollbar-track: transparent;
   --scrollbar-thumb: rgba(148, 163, 184, 0.36);
   --scrollbar-thumb-hover: rgba(148, 163, 184, 0.56);
 }

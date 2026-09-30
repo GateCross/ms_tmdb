@@ -28,10 +28,10 @@ const emit = defineEmits<{
     @close="emit('close')"
   >
     <template #title>
-      <span class="text-base font-semibold text-red-700">确认清空日志</span>
+      <span class="text-base font-semibold text-danger">确认清空日志</span>
     </template>
 
-    <p class="text-sm text-black/70">将清空当前视图的{{ label }}，清空后无法恢复。</p>
+    <p class="text-sm text-muted">将清空当前视图的{{ label }}，清空后无法恢复。</p>
 
     <template #footer>
       <button class="btn-soft disabled:opacity-60" :disabled="busy" @click="emit('close')">取消</button>

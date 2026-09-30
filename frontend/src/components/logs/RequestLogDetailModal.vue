@@ -49,7 +49,7 @@ const emit = defineEmits<{
       </span>
     </template>
 
-    <p v-if="loading" class="text-sm text-black/60">详情加载中...</p>
+    <p v-if="loading" class="text-sm text-muted">详情加载中...</p>
 
     <template v-if="detail">
       <div class="logs-detail-overview">

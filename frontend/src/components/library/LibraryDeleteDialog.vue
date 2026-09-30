@@ -29,13 +29,13 @@ defineProps<{
       <span class="text-base font-semibold text-ink">确认删除</span>
     </template>
 
-    <p class="text-sm text-black/70">
+    <p class="text-sm text-muted">
       将删除本地数据：
-      <span class="font-medium text-black">{{
+      <span class="font-medium text-ink">{{
         pendingDeleteItem?.title || pendingDeleteItem?.name || `ID ${pendingDeleteItem?.tmdb_id ?? ""}`
       }}</span>
     </p>
-    <p class="mt-1 text-xs text-black/55">删除后不可恢复。</p>
+    <p class="mt-1 text-xs text-muted">删除后不可恢复。</p>
 
     <template #footer>
       <button class="btn-soft" :disabled="deletingId !== null" @click="onClose">取消</button>

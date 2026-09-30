@@ -5,6 +5,40 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>媒体数据管理</title>
+    <script>
+      // 首帧前应用主题偏好，避免浅色用户刷新时闪现深色（与 useAdminPreferences 的推导保持一致）
+      (function () {
+        try {
+          var prefs = JSON.parse(localStorage.getItem("ms_tmdb_vben_admin_preferences") || "{}");
+          var accents = {
+            teal: ["#0ea5a4", "#90cea1", "#0d7c8a"],
+            blue: ["#1677ff", "#69b1ff", "#0958d9"],
+            green: ["#16a34a", "#86efac", "#15803d"],
+            amber: ["#d97706", "#fcd34d", "#b45309"],
+            rose: ["#e11d48", "#fda4af", "#be123c"],
+          };
+          var appearance = prefs.appearance === "dark" || prefs.appearance === "auto" ? prefs.appearance : "light";
+          var legacyDark = prefs.themeColor === "dark";
+          var systemDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var dark = legacyDark || appearance === "dark" || (appearance === "auto" && systemDark);
+          var accent = accents[prefs.themeColor] || accents.blue;
+          var root = document.documentElement;
+          root.classList.toggle("dark", dark);
+          var style = root.style;
+          style.setProperty("--accent", accent[0]);
+          style.setProperty("--accent-soft", accent[1]);
+          style.setProperty("--accent-strong", accent[2]);
+          style.setProperty("--accent-active-bg", accent[0] + "24");
+          style.setProperty("--accent-active-border", accent[0] + "52");
+          style.setProperty("--accent-hover-border", accent[0] + "57");
+          style.setProperty("--accent-ring", accent[0] + "1f");
+          style.setProperty("--field-border-focus", accent[0] + "ad");
+          style.setProperty("--surface-active", dark ? accent[0] + "33" : accent[0] + "24");
+        } catch (error) {
+          /* 忽略本地存储解析异常，回落到 CSS 默认浅色主题 */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>

@@ -4,12 +4,19 @@ import BaseDrawer from "@/components/common/BaseDrawer.vue";
 import {
   sidebarControlStyle,
   themeSwatchStyle,
+  type AdminAppearance,
   type AdminPreferences,
   type AdminSidebarColor,
   type AdminSidebarOption,
   type AdminThemeColor,
   type AdminThemeOption,
 } from "./adminLayoutConfig";
+
+const appearanceOptions: Array<{ value: AdminAppearance; label: string }> = [
+  { value: "light", label: "浅色" },
+  { value: "dark", label: "深色" },
+  { value: "auto", label: "跟随系统" },
+];
 
 const props = defineProps<{
   currentSidebarOption: AdminSidebarOption;
@@ -37,6 +44,10 @@ const showTabs = computed({
 const sidebarCollapsed = computed({
   get: () => props.preferences.sidebarCollapsed,
   set: (value: boolean) => emit("updatePreference", "sidebarCollapsed", value),
+});
+const appearance = computed({
+  get: () => props.preferences.appearance,
+  set: (value: AdminAppearance) => emit("updatePreference", "appearance", value),
 });
 
 function setThemeColor(value: AdminThemeColor) {
@@ -70,6 +81,20 @@ function setSidebarColor(value: AdminSidebarColor) {
 
     <section class="admin-preference-group" aria-label="外观">
       <p class="admin-preference-section-title">外观</p>
+      <p class="admin-preference-label">界面模式</p>
+      <div class="admin-sidebar-control admin-appearance-switch" role="group" aria-label="界面模式">
+        <button
+          v-for="option in appearanceOptions"
+          :key="option.value"
+          type="button"
+          class="admin-sidebar-control-btn"
+          :class="{ 'admin-sidebar-control-btn-active': preferences.appearance === option.value }"
+          :aria-pressed="preferences.appearance === option.value"
+          @click="appearance = option.value"
+        >
+          <span>{{ option.label }}</span>
+        </button>
+      </div>
       <p class="admin-preference-label">主题色 · {{ currentThemeOption.label }}</p>
       <div class="admin-theme-grid">
         <button

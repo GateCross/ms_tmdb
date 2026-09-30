@@ -47,12 +47,12 @@ export function formatStatusCode(code: number) {
 
 export function statusClass(code: number) {
   if (code >= 200 && code < 400) {
-    return "bg-green-50 text-green-700 border border-green-200";
+    return "bg-success-soft text-success border border-success-line";
   }
   if (code === 0 || code >= 400) {
-    return "bg-red-50 text-red-700 border border-red-200";
+    return "bg-danger-soft text-danger border border-danger-line";
   }
-  return "bg-amber-50 text-amber-700 border border-amber-200";
+  return "bg-warn-soft text-warn border border-warn-line";
 }
 
 export function formatMode(mode: string) {
@@ -77,15 +77,15 @@ export function formatAutoSyncStatus(status: string) {
 export function autoSyncStatusClass(status: string) {
   switch (status) {
     case "success":
-      return "bg-green-50 text-green-700 border border-green-200";
+      return "bg-success-soft text-success border border-success-line";
     case "partial_failed":
-      return "bg-amber-50 text-amber-700 border border-amber-200";
+      return "bg-warn-soft text-warn border border-warn-line";
     case "panic":
-      return "bg-red-50 text-red-700 border border-red-200";
+      return "bg-danger-soft text-danger border border-danger-line";
     case "canceled":
-      return "bg-slate-50 text-slate-600 border border-slate-200";
+      return "bg-raised text-muted border border-line";
     default:
-      return "bg-gray-50 text-gray-600 border border-gray-200";
+      return "bg-raised text-muted border border-line";
   }
 }
 

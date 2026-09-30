@@ -163,23 +163,23 @@ watch(seasonLocalMessage, (message) => {
 
         <div class="detail-info">
           <h2 class="text-xl font-bold">{{ detail.name }}</h2>
-          <p v-if="detail.original_name !== detail.name" class="text-sm text-black/55">
+          <p v-if="detail.original_name !== detail.name" class="text-sm text-muted">
             {{ detail.original_name }}
           </p>
-          <div class="mt-2 grid gap-1 text-xs text-black/60 sm:grid-cols-2">
+          <div class="mt-2 grid gap-1 text-xs text-muted sm:grid-cols-2">
             <template v-if="hasRewrittenTmdbId">
               <p>
                 修改后 TMDB ID：
-                <span class="font-medium text-black">{{ currentTmdbId }}</span>
+                <span class="font-medium text-ink">{{ currentTmdbId }}</span>
               </p>
               <p>
                 原始 TMDB ID：
-                <span class="font-medium text-black">{{ originalTmdbId }}</span>
+                <span class="font-medium text-ink">{{ originalTmdbId }}</span>
               </p>
             </template>
             <p v-else>
               TMDB ID：
-              <span class="font-medium text-black">{{ currentTmdbId }}</span>
+              <span class="font-medium text-ink">{{ currentTmdbId }}</span>
             </p>
           </div>
 
@@ -201,7 +201,7 @@ watch(seasonLocalMessage, (message) => {
             </span>
           </div>
 
-          <p class="mt-4 text-sm leading-relaxed text-black/75">
+          <p class="mt-4 text-sm leading-relaxed text-muted">
             {{ detail.overview || "暂无简介" }}
           </p>
 
@@ -304,16 +304,16 @@ watch(seasonLocalMessage, (message) => {
     @close="closeTmdbRiskModal(false)"
   >
     <template #title>
-      <span class="text-base font-semibold text-amber-800">修改 TMDB ID 风险确认</span>
+      <span class="text-base font-semibold text-warn">修改 TMDB ID 风险确认</span>
     </template>
 
-    <p class="text-sm text-black/75">
+    <p class="text-sm text-muted">
       你正在修改剧集 TMDB ID：
       <span class="font-medium">{{ tmdbRiskCurrentId }}</span>
       ->
       <span class="font-medium">{{ tmdbRiskNextId }}</span>
     </p>
-    <div class="mt-3 rounded-lg border border-amber-200 bg-amber-50/80 p-3 text-xs leading-relaxed text-amber-800">
+    <div class="mt-3 rounded-lg border border-warn-line bg-warn-soft p-3 text-xs leading-relaxed text-warn">
       <p>1) 这是高风险操作，可能导致与第三方历史引用不一致；</p>
       <p>2) 之后自动/手动同步将继续使用旧 TMDB ID 向 TMDB 拉取；</p>
       <p>3) 对外返回与页面访问将使用新的 TMDB ID。</p>
@@ -339,15 +339,15 @@ watch(seasonLocalMessage, (message) => {
     @close="closeDeleteConfirmModal"
   >
     <template #title>
-      <span class="text-base font-semibold text-red-700">删除本地数据确认</span>
+      <span class="text-base font-semibold text-danger">删除本地数据确认</span>
     </template>
 
-    <p class="text-sm text-black/75">
+    <p class="text-sm text-muted">
       确认删除剧集
       <span class="font-medium">{{ detail?.name || detail?.original_name || `ID ${tvId}` }}</span>
       的本地数据吗？
     </p>
-    <p class="mt-2 text-xs text-red-700">删除后不可恢复。</p>
+    <p class="mt-2 text-xs text-danger">删除后不可恢复。</p>
 
     <template #footer>
       <button class="btn-soft" :disabled="deleting" @click="closeDeleteConfirmModal">取消</button>
@@ -370,13 +370,13 @@ watch(seasonLocalMessage, (message) => {
     @close="closeLocalDeleteConfirmModal(false)"
   >
     <template #title>
-      <span class="text-base font-semibold text-red-700">{{ localDeleteConfirmTitle || "删除确认" }}</span>
+      <span class="text-base font-semibold text-danger">{{ localDeleteConfirmTitle || "删除确认" }}</span>
     </template>
 
-    <p class="text-sm text-black/75">
+    <p class="text-sm text-muted">
       {{ localDeleteConfirmMessage }}
     </p>
-    <p class="mt-2 text-xs text-red-700">删除后不可恢复。</p>
+    <p class="mt-2 text-xs text-danger">删除后不可恢复。</p>
 
     <template #footer>
       <button class="btn-soft" @click="closeLocalDeleteConfirmModal(false)">取消</button>

@@ -1,7 +1,7 @@
-.modal-header-dark {
+.modal-header {
   @apply flex items-center justify-between px-5 py-3;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
-  background: rgba(15, 23, 42, 0.56);
+  border-bottom: 1px solid var(--border-muted);
+  background: var(--surface);
 }
 
 .empty-state {
@@ -288,13 +288,13 @@
 
 .library-delete-btn {
   @apply flex h-8 w-8 items-center justify-center rounded-lg text-sm shadow-sm transition-all duration-200 disabled:cursor-not-allowed;
-  color: #fecaca;
-  background: rgba(127, 29, 29, 0.72);
-  border: 1px solid rgba(248, 113, 113, 0.42);
+  color: var(--danger-fg);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
 }
 
 .library-delete-btn:hover {
-  background: rgba(153, 27, 27, 0.82);
+  background: var(--danger-bg-hover);
 }
 
 .table-row-hover {
@@ -362,23 +362,23 @@
 }
 
 .table-action-btn-soft {
-  color: rgba(226, 232, 240, 0.9);
-  background: rgba(30, 41, 59, 0.52);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: var(--soft-btn-fg);
+  background: var(--soft-btn-bg);
+  border: 1px solid var(--soft-btn-border);
 }
 
 .table-action-btn-soft:hover {
-  background: rgba(51, 65, 85, 0.7);
+  background: var(--soft-btn-bg-hover);
 }
 
 .table-action-btn-danger {
-  color: #fecaca;
-  background: rgba(127, 29, 29, 0.24);
-  border: 1px solid rgba(248, 113, 113, 0.28);
+  color: var(--danger-fg);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
 }
 
 .table-action-btn-danger:hover {
-  background: rgba(153, 27, 27, 0.34);
+  background: var(--danger-bg-hover);
 }
 
 /* 列表贴合内容区宽度；桌面固定高度下由 library-page-shell 接管纵向滚动 */
@@ -421,7 +421,7 @@
 .library-list-title {
   min-width: 0;
   overflow: hidden;
-  color: rgba(241, 247, 255, 0.94);
+  color: var(--text-strong);
   font-size: 0.86rem;
   font-weight: 600;
   line-height: 1.35;
@@ -432,7 +432,7 @@
 .library-list-subtitle {
   min-width: 0;
   overflow: hidden;
-  color: rgba(203, 213, 225, 0.58);
+  color: var(--text-muted);
   font-size: 0.72rem;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -448,7 +448,7 @@
 }
 
 .library-list-status-muted {
-  color: rgba(203, 213, 225, 0.55);
+  color: var(--text-muted);
   font-size: 0.75rem;
 }
 

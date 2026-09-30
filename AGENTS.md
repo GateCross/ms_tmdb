@@ -13,7 +13,7 @@
 | 路由 | Vue Router 4（history 模式） | 所有页面路由懒加载 `() => import(...)` |
 | UI 原语 | radix-vue ^1.9 | 仅用于弹层/下拉等无头原语，无组件库皮肤 |
 | 图标 | lucide-vue-next | 具名按需导入，尺寸用 Tailwind class（如 `h-4 w-4`） |
-| 样式 | TailwindCSS 3.4（PostCSS 方式）+ tailwindcss-animate | `darkMode: 'class'` 已启用：`.dark` 类由 `useAdminPreferences.applyRootTheme` 按主题 `colorScheme` 同步到 `html` 根（挂在根上才能覆盖 Teleport 到 body 的弹层）；主题另靠 CSS 变量 + `[data-theme]` |
+| 样式 | TailwindCSS 3.4（PostCSS 方式）+ tailwindcss-animate | `darkMode: 'class'` 已启用：`.dark` 类由 `useAdminPreferences.applyRootTheme` 按界面模式同步到 `html` 根（挂在根上才能覆盖 Teleport 到 body 的弹层）；深浅两套颜色令牌集中在 `styles/theme.css` 的 `:root`（浅色默认）与 `html.dark` |
 | 请求 | axios 1.8 单例 | 见 `src/api/http.ts` |
 | 工具 | clsx + tailwind-merge → `cn()`（`src/lib/utils.ts`） | 合并 class 一律用 `cn()` |
 | 包管理 | pnpm 11.5.1（`packageManager` 钉死，CI 同版本） | 不要用 npm/yarn |
@@ -84,11 +84,13 @@ frontend/src/
 - movie/tv 下成对出现的组件（MovieLocalEditor vs TVLocalEditorCard、MovieRemoteDiffCard vs TVRemoteDiffCard）是刻意的对称拆分，各自配 `types.ts`；改一边时检查另一边是否需要同步。
 
 ### 样式（src/styles/）
-- 设计令牌：`styles/theme.css` 的 `:root` CSS 变量（`--bg-main`、`--surface`、`--text-main`、`--accent: #0ea5a4` 等），按暗色基调书写；但偏好默认主题是浅色「Vben 蓝」，明暗两套都靠 `adminThemeStyle` 注入变量生效，`[data-theme]` 同时挂在 `html` 根与 `.admin-app` 上，硬编码颜色须两套主题都可读（参考 `media.css` 的 `.rating-badge` mslight 覆盖），`dark-theme-overrides.css` 里有大量多主题名兼容选择器，属历史遗留，勿随手删。
-- `style.css` 只有 `@tailwind` 指令；CSS 引入顺序在 `main.ts` 固定（theme → layout → pages/* → controls → dark-theme-overrides → responsive），顺序即覆盖优先级，新增文件要考虑插入位置。
+- 设计令牌单一事实来源：`styles/theme.css` 的 `:root`（浅色默认值）+ `html.dark`（深色覆盖），包含表面/文字/状态色全套变量；主题色（`--accent` 系 5 个派生变量 + `--surface-active`/`--field-border-focus`）由 `useAdminPreferences` 按主题色预设写入 `html` 内联样式，`index.html` 头部有同逻辑的内联引导脚本（首帧前应用，防刷新闪屏，两处逻辑必须同步改）。
+- 界面模式三态：`appearance: light / dark / auto`（跟随系统 `prefers-color-scheme`）；旧存储里 `themeColor: "dark"` 由 `normalizePreferences` 迁移为 `appearance: "dark"`。
+- **新组件禁止写死浅色/深色颜色**：Tailwind 一律用语义色 token（`text-ink`/`text-muted`/`bg-card`/`bg-raised`/`border-line`/`text-success`/`bg-warn-soft`/`border-danger-line` 等，见 tailwind.config.cjs，全部指向 CSS 变量）；手写 CSS 一律引用 `--xxx` 变量；确需按明暗区分的样式用 `html.dark` 选择器就地写在同文件（参考 controls.css 的 global-toast 块），禁止新建按主题前缀覆盖的独立文件。
+- `style.css` 只有 `@tailwind` 指令；CSS 引入顺序在 `main.ts` 固定（theme → layout → pages/* → controls → responsive），顺序即覆盖优先级，新增文件要考虑插入位置。
 - 页面样式一页一文件：`styles/pages/home.css` / `media.css`（详情页）/ `library.css` / `settings.css`；通用控件类（`.btn-primary`、`.btn-soft`、`.card`、`.panel-glass`、`.field-control` 等）在 `styles/controls.css`，先复用再造。
 - 组件内样式：优先 Tailwind 工具类；确需 scoped CSS 可用 `@apply`（参考 LoadState.vue）。
-- Tailwind 品牌色（tailwind.config.cjs）：`ink/haze/sand/coral/pine` + `shadow-soft`。
+- Tailwind 语义色（tailwind.config.cjs）：`ink/muted/strong/page/card/raised/line` + `brand/success/warn/danger/info`（各带 `soft`/`line` 变体），全部指向 theme.css 令牌。
 - 响应式：`styles/responsive.css` + Tailwind 断点。**海报网格列数断点与 `useLibraryList.currentGridColumnCount()` 必须一一对应**（640/768/1024/1280/1536/1920/2560 → 2/3/4/5/6/8/10/12 列，卡片视图每页行数固定 2），改任何一边要同步另一边。
 
 ### 路由（src/router/index.ts）

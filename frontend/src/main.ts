@@ -9,7 +9,6 @@ import "./styles/pages/media.css";
 import "./styles/pages/settings.css";
 import "./styles/pages/library.css";
 import "./styles/controls.css";
-import "./styles/dark-theme-overrides.css";
 import "./styles/responsive.css";
 
 createApp(App).use(router).mount("#app");

@@ -25,7 +25,7 @@ defineProps<{
     v-if="checkingRemoteDiff || remoteDiffNotice || remoteDiffMessage || remoteDiffDecision === 'no_diff'"
     class="detail-alert"
   >
-    <p v-if="checkingRemoteDiff" class="text-xs text-amber-700">正在检测远程数据差异...</p>
+    <p v-if="checkingRemoteDiff" class="text-xs text-warn">正在检测远程数据差异...</p>
 
     <template v-else-if="remoteDiffNotice">
       <p class="detail-alert-title">检测到远程电影数据与本地不一致</p>
@@ -57,9 +57,9 @@ defineProps<{
           :key="`remote-${item.field}`"
           class="detail-diff-item"
         >
-          <p class="text-xs font-semibold text-amber-900">{{ item.field }}</p>
-          <p class="mt-1 text-xs text-amber-800">本地：{{ item.local }}</p>
-          <p class="mt-1 text-xs text-amber-800">远程：{{ item.remote }}</p>
+          <p class="text-xs font-semibold text-warn">{{ item.field }}</p>
+          <p class="mt-1 text-xs text-warn">本地：{{ item.local }}</p>
+          <p class="mt-1 text-xs text-warn">远程：{{ item.remote }}</p>
         </div>
       </div>
 
@@ -72,9 +72,9 @@ defineProps<{
           :key="`local-${item.field}`"
           class="detail-diff-item"
         >
-          <p class="text-xs font-semibold text-amber-900">{{ item.field }}</p>
-          <p class="mt-1 text-xs text-amber-800">本地：{{ item.local }}</p>
-          <p class="mt-1 text-xs text-amber-800">远程：{{ item.remote }}</p>
+          <p class="text-xs font-semibold text-warn">{{ item.field }}</p>
+          <p class="mt-1 text-xs text-warn">本地：{{ item.local }}</p>
+          <p class="mt-1 text-xs text-warn">远程：{{ item.remote }}</p>
         </div>
       </div>
     </template>
@@ -91,11 +91,11 @@ defineProps<{
 
     <p
       v-if="!checkingRemoteDiff && !remoteDiffNotice && remoteDiffDecision === 'no_diff'"
-      class="mt-3 text-xs text-green-700"
+      class="mt-3 text-xs text-success"
     >
       已完成检查，当前未发现远程差异。
     </p>
-    <p v-if="!checkingRemoteDiff && !remoteDiffNotice && remoteDiffMessage" class="mt-3 text-xs text-green-700">
+    <p v-if="!checkingRemoteDiff && !remoteDiffNotice && remoteDiffMessage" class="mt-3 text-xs text-success">
       {{ remoteDiffMessage }}
     </p>
   </div>

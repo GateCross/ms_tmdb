@@ -319,7 +319,7 @@ onBeforeUnmount(() => {
             <span class="badge">🔥 {{ detail.popularity?.toFixed(0) ?? "-" }}</span>
           </div>
 
-          <p class="mt-4 text-sm leading-relaxed text-black/75">
+          <p class="mt-4 text-sm leading-relaxed text-muted">
             {{ detail.biography || "暂无简介" }}
           </p>
 
@@ -334,7 +334,7 @@ onBeforeUnmount(() => {
                 {{ photosLoading ? "加载中..." : photosLoaded ? "刷新照片" : "加载照片" }}
               </button>
             </div>
-            <p v-if="photosLoading" class="text-xs text-black/55">正在加载照片...</p>
+            <p v-if="photosLoading" class="text-xs text-muted">正在加载照片...</p>
             <div
               v-else-if="photosError"
               class="logs-refresh-error"
@@ -346,7 +346,7 @@ onBeforeUnmount(() => {
                 重试
               </button>
             </div>
-            <p v-else-if="photosLoaded && !photoProfiles.length" class="text-xs text-black/55">暂无照片数据</p>
+            <p v-else-if="photosLoaded && !photoProfiles.length" class="text-xs text-muted">暂无照片数据</p>
             <div v-else-if="photoProfiles.length" class="person-photo-strip">
               <img
                 v-for="(img, idx) in photoProfiles"
@@ -370,7 +370,7 @@ onBeforeUnmount(() => {
                 {{ creditsLoading ? "加载中..." : creditsLoaded ? "刷新作品" : "加载作品" }}
               </button>
             </div>
-            <p v-if="creditsLoading" class="text-xs text-black/55">正在加载代表作品...</p>
+            <p v-if="creditsLoading" class="text-xs text-muted">正在加载代表作品...</p>
             <div
               v-else-if="creditsError"
               class="logs-refresh-error"
@@ -387,7 +387,7 @@ onBeforeUnmount(() => {
                 重试
               </button>
             </div>
-            <p v-else-if="creditsLoaded && !topCredits.length" class="text-xs text-black/55">暂无代表作品数据</p>
+            <p v-else-if="creditsLoaded && !topCredits.length" class="text-xs text-muted">暂无代表作品数据</p>
             <div v-else-if="topCredits.length" class="cast-grid">
               <div v-for="c in topCredits" :key="c.id + (c.media_type || '')" class="cast-card">
                 <RouterLink
@@ -401,7 +401,7 @@ onBeforeUnmount(() => {
                   <img :src="tmdbImg(c.poster_path, 'w185')" :alt="c.title || c.name" class="cast-img" loading="lazy" />
                 </RouterLink>
                 <p class="mt-1 truncate text-xs font-medium">{{ c.title || c.name }}</p>
-                <p class="truncate text-xs text-black/50">{{ c.character ?? c.job ?? "" }}</p>
+                <p class="truncate text-xs text-muted">{{ c.character ?? c.job ?? "" }}</p>
               </div>
             </div>
           </div>

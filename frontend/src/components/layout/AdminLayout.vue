@@ -122,7 +122,6 @@ onBeforeUnmount(() => {
   <div
     class="admin-app"
     :class="{ 'admin-app-sidebar-collapsed': preferences.sidebarCollapsed }"
-    :data-theme="currentThemeOption.dataTheme"
     :style="adminThemeStyle"
   >
     <AdminSidebar :active-path="activeMenuPath" :groups="menuGroups" :open="sidebarOpen" />

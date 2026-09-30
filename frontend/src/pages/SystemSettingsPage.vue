@@ -269,7 +269,7 @@ onMounted(reloadAll);
       <div class="min-w-0">
         <p class="section-label">系统设置</p>
         <h2 class="library-toolbar-title">运行配置</h2>
-        <p class="mt-1 text-sm text-black/55">统一管理 TMDB 网络代理、日志保留和库内定时同步任务。</p>
+        <p class="mt-1 text-sm text-muted">统一管理 TMDB 网络代理、日志保留和库内定时同步任务。</p>
       </div>
 
       <div class="flex items-center gap-3">

@@ -17,10 +17,12 @@ export interface AdminTab {
   title: string;
 }
 
-export type AdminThemeColor = "teal" | "blue" | "green" | "amber" | "rose" | "dark";
+export type AdminThemeColor = "teal" | "blue" | "green" | "amber" | "rose";
+export type AdminAppearance = "light" | "dark" | "auto";
 export type AdminSidebarColor = "navy" | "light" | "dark" | "teal" | "blue" | "green" | "purple";
 
 export interface AdminPreferences {
+  appearance: AdminAppearance;
   compact: boolean;
   showTabs: boolean;
   sidebarCollapsed: boolean;
@@ -28,30 +30,15 @@ export interface AdminPreferences {
   themeColor: AdminThemeColor;
 }
 
+/**
+ * 主题预设只描述「主题色」差异；深浅两套表面/文字/状态色全部收敛在 styles/theme.css
+ * 的 :root 与 html.dark 令牌里，这里不再携带整套颜色值。
+ */
 export interface AdminThemeOption {
   accent: string;
   accentSoft: string;
   accentStrong: string;
-  bgMain: string;
-  borderMuted: string;
-  colorScheme: "dark" | "light";
-  dataTheme: "msdark" | "mslight";
-  fieldBorderFocus: string;
-  fieldBg: string;
-  fieldBorder: string;
-  glassBg: string;
-  glassBgStrong: string;
-  glassBorder: string;
-  glassShadow: string;
-  glassShadowSoft: string;
   label: string;
-  sidebarBg: string;
-  surface: string;
-  surfaceMuted: string;
-  surfaceStrong: string;
-  textMain: string;
-  textMuted: string;
-  topbarBg: string;
   value: AdminThemeColor;
 }
 
@@ -74,6 +61,7 @@ export interface AdminSidebarOption {
 }
 
 export const defaultPreferences: AdminPreferences = {
+  appearance: "light",
   compact: false,
   showTabs: true,
   sidebarCollapsed: false,
@@ -208,157 +196,36 @@ export const themeOptions: AdminThemeOption[] = [
     accent: "#0ea5a4",
     accentSoft: "#90cea1",
     accentStrong: "#0d7c8a",
-    bgMain: "#f5f7fb",
-    borderMuted: "#e5e7eb",
-    colorScheme: "light",
-    dataTheme: "mslight",
-    fieldBorderFocus: "rgba(14, 165, 164, 0.68)",
-    fieldBg: "#ffffff",
-    fieldBorder: "rgba(15, 23, 42, 0.14)",
-    glassBg: "rgba(255, 255, 255, 0.86)",
-    glassBgStrong: "rgba(255, 255, 255, 0.98)",
-    glassBorder: "#e5e7eb",
-    glassShadow: "0 1px 3px rgba(15, 23, 42, 0.06)",
-    glassShadowSoft: "0 1px 2px rgba(15, 23, 42, 0.04)",
     label: "青绿",
-    sidebarBg: "#001529",
-    surface: "#ffffff",
-    surfaceMuted: "#f5f7fb",
-    surfaceStrong: "#ffffff",
-    textMain: "#1f2937",
-    textMuted: "#667085",
-    topbarBg: "#ffffff",
     value: "teal",
   },
   {
     accent: "#1677ff",
     accentSoft: "#69b1ff",
     accentStrong: "#0958d9",
-    bgMain: "#f5f7fb",
-    borderMuted: "#e5e7eb",
-    colorScheme: "light",
-    dataTheme: "mslight",
-    fieldBorderFocus: "rgba(22, 119, 255, 0.48)",
-    fieldBg: "#ffffff",
-    fieldBorder: "rgba(15, 23, 42, 0.14)",
-    glassBg: "rgba(255, 255, 255, 0.86)",
-    glassBgStrong: "rgba(255, 255, 255, 0.98)",
-    glassBorder: "#e5e7eb",
-    glassShadow: "0 1px 3px rgba(15, 23, 42, 0.06)",
-    glassShadowSoft: "0 1px 2px rgba(15, 23, 42, 0.04)",
     label: "Vben 蓝",
-    sidebarBg: "#001529",
-    surface: "#ffffff",
-    surfaceMuted: "#f5f7fb",
-    surfaceStrong: "#ffffff",
-    textMain: "#1f2937",
-    textMuted: "#667085",
-    topbarBg: "#ffffff",
     value: "blue",
   },
   {
     accent: "#16a34a",
     accentSoft: "#86efac",
     accentStrong: "#15803d",
-    bgMain: "#f5f7fb",
-    borderMuted: "#e5e7eb",
-    colorScheme: "light",
-    dataTheme: "mslight",
-    fieldBorderFocus: "rgba(22, 163, 74, 0.68)",
-    fieldBg: "#ffffff",
-    fieldBorder: "rgba(15, 23, 42, 0.14)",
-    glassBg: "rgba(255, 255, 255, 0.86)",
-    glassBgStrong: "rgba(255, 255, 255, 0.98)",
-    glassBorder: "#e5e7eb",
-    glassShadow: "0 1px 3px rgba(15, 23, 42, 0.06)",
-    glassShadowSoft: "0 1px 2px rgba(15, 23, 42, 0.04)",
     label: "绿色",
-    sidebarBg: "#001529",
-    surface: "#ffffff",
-    surfaceMuted: "#f5f7fb",
-    surfaceStrong: "#ffffff",
-    textMain: "#1f2937",
-    textMuted: "#667085",
-    topbarBg: "#ffffff",
     value: "green",
   },
   {
     accent: "#d97706",
     accentSoft: "#fcd34d",
     accentStrong: "#b45309",
-    bgMain: "#f5f7fb",
-    borderMuted: "#e5e7eb",
-    colorScheme: "light",
-    dataTheme: "mslight",
-    fieldBorderFocus: "rgba(217, 119, 6, 0.68)",
-    fieldBg: "#ffffff",
-    fieldBorder: "rgba(15, 23, 42, 0.14)",
-    glassBg: "rgba(255, 255, 255, 0.86)",
-    glassBgStrong: "rgba(255, 255, 255, 0.98)",
-    glassBorder: "#e5e7eb",
-    glassShadow: "0 1px 3px rgba(15, 23, 42, 0.06)",
-    glassShadowSoft: "0 1px 2px rgba(15, 23, 42, 0.04)",
     label: "琥珀",
-    sidebarBg: "#001529",
-    surface: "#ffffff",
-    surfaceMuted: "#f5f7fb",
-    surfaceStrong: "#ffffff",
-    textMain: "#1f2937",
-    textMuted: "#667085",
-    topbarBg: "#ffffff",
     value: "amber",
   },
   {
     accent: "#e11d48",
     accentSoft: "#fda4af",
     accentStrong: "#be123c",
-    bgMain: "#f5f7fb",
-    borderMuted: "#e5e7eb",
-    colorScheme: "light",
-    dataTheme: "mslight",
-    fieldBorderFocus: "rgba(225, 29, 72, 0.68)",
-    fieldBg: "#ffffff",
-    fieldBorder: "rgba(15, 23, 42, 0.14)",
-    glassBg: "rgba(255, 255, 255, 0.86)",
-    glassBgStrong: "rgba(255, 255, 255, 0.98)",
-    glassBorder: "#e5e7eb",
-    glassShadow: "0 1px 3px rgba(15, 23, 42, 0.06)",
-    glassShadowSoft: "0 1px 2px rgba(15, 23, 42, 0.04)",
     label: "玫红",
-    sidebarBg: "#001529",
-    surface: "#ffffff",
-    surfaceMuted: "#f5f7fb",
-    surfaceStrong: "#ffffff",
-    textMain: "#1f2937",
-    textMuted: "#667085",
-    topbarBg: "#ffffff",
     value: "rose",
-  },
-  {
-    accent: "#0ea5a4",
-    accentSoft: "#90cea1",
-    accentStrong: "#0d7c8a",
-    bgMain: "#0f1115",
-    borderMuted: "rgba(208, 216, 228, 0.12)",
-    colorScheme: "dark",
-    dataTheme: "msdark",
-    fieldBorderFocus: "rgba(14, 165, 164, 0.68)",
-    fieldBg: "rgba(18, 22, 28, 0.96)",
-    fieldBorder: "rgba(208, 216, 228, 0.16)",
-    glassBg: "rgba(25, 30, 38, 0.72)",
-    glassBgStrong: "rgba(29, 35, 43, 0.92)",
-    glassBorder: "rgba(208, 216, 228, 0.12)",
-    glassShadow: "0 18px 38px rgba(0, 0, 0, 0.28)",
-    glassShadowSoft: "0 10px 22px rgba(0, 0, 0, 0.2)",
-    label: "深色",
-    sidebarBg: "#001529",
-    surface: "#161a20",
-    surfaceMuted: "#1d232b",
-    surfaceStrong: "#101317",
-    textMain: "#edf2f7",
-    textMuted: "#aeb9c7",
-    topbarBg: "rgba(18, 22, 28, 0.94)",
-    value: "dark",
   },
 ];
 
@@ -383,7 +250,7 @@ export function getMenuIconPaths(path: string) {
 
 export function themeSwatchStyle(option: AdminThemeOption) {
   return {
-    background: `linear-gradient(135deg, ${option.bgMain} 0 52%, ${option.accent} 52% 100%)`,
+    background: `linear-gradient(135deg, ${option.accent} 0%, ${option.accentStrong} 100%)`,
   };
 }
 

@@ -43,7 +43,7 @@ const props = withDefaults(
     maxWidthClass: "max-w-5xl",
     panelClass: "panel-glass",
     headerClass:
-      "sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-black/35 px-4 py-3 backdrop-blur sm:px-6",
+      "sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-card px-4 py-3 sm:px-6",
     contentClass: "modal-scroll-content max-h-[calc(88vh-120px)] overflow-y-auto px-4 py-4 sm:px-6",
     footerClass: "",
     overlayClass: "fixed inset-0 z-[1300] bg-black/60 backdrop-blur-[2px]",
@@ -112,7 +112,7 @@ function handleOpenAutoFocus(event: Event) {
                   </h3>
                 </slot>
               </DialogTitle>
-              <DialogDescription v-if="description" class="mt-0.5 text-xs text-black/60 dark:text-slate-400">
+              <DialogDescription v-if="description" class="mt-0.5 text-xs text-muted">
                 {{ description }}
               </DialogDescription>
             </div>

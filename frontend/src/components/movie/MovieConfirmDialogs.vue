@@ -28,16 +28,16 @@ defineProps<{
     @close="onCloseTmdbRisk(false)"
   >
     <template #title>
-      <span class="text-base font-semibold text-amber-800">修改 TMDB ID 风险确认</span>
+      <span class="text-base font-semibold text-warn">修改 TMDB ID 风险确认</span>
     </template>
 
-    <p class="text-sm text-black/75">
+    <p class="text-sm text-muted">
       你正在修改电影 TMDB ID：
       <span class="font-medium">{{ tmdbRiskCurrentId }}</span>
       ->
       <span class="font-medium">{{ tmdbRiskNextId }}</span>
     </p>
-    <div class="mt-3 rounded-lg border border-amber-200 bg-amber-50/80 p-3 text-xs leading-relaxed text-amber-800">
+    <div class="mt-3 rounded-lg border border-warn-line bg-warn-soft p-3 text-xs leading-relaxed text-warn">
       <p>1) 这是高风险操作，可能导致与第三方历史引用不一致；</p>
       <p>2) 之后自动/手动同步将继续使用旧 TMDB ID 向 TMDB 拉取；</p>
       <p>3) 对外返回与页面访问将使用新的 TMDB ID。</p>
@@ -63,15 +63,15 @@ defineProps<{
     @close="onCloseDeleteConfirm"
   >
     <template #title>
-      <span class="text-base font-semibold text-red-700">删除本地数据确认</span>
+      <span class="text-base font-semibold text-danger">删除本地数据确认</span>
     </template>
 
-    <p class="text-sm text-black/75">
+    <p class="text-sm text-muted">
       确认删除电影
       <span class="font-medium">{{ movieTitle }}</span>
       的本地数据吗？
     </p>
-    <p class="mt-2 text-xs text-red-700">删除后不可恢复。</p>
+    <p class="mt-2 text-xs text-danger">删除后不可恢复。</p>
 
     <template #footer>
       <button class="btn-soft" :disabled="deleting" @click="onCloseDeleteConfirm">取消</button>

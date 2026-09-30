@@ -19,7 +19,7 @@ const emit = defineEmits<{
       <div class="min-w-0">
         <p class="section-label">Logs</p>
         <h2 class="library-toolbar-title">请求日志</h2>
-        <p class="mt-1 text-sm text-black/55">代理访问、TMDB 回源请求与定时同步执行记录。</p>
+        <p class="mt-1 text-sm text-muted">代理访问、TMDB 回源请求与定时同步执行记录。</p>
       </div>
     </div>
 

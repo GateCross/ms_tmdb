@@ -94,7 +94,7 @@ function requestClose() {
                   <h2>{{ title }}</h2>
                 </slot>
               </DialogTitle>
-              <DialogDescription v-if="description" class="mt-0.5 text-xs text-black/55 dark:text-slate-400">
+              <DialogDescription v-if="description" class="mt-0.5 text-xs text-muted">
                 {{ description }}
               </DialogDescription>
             </div>

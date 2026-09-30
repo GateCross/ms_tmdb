@@ -47,9 +47,9 @@ const visibleModeOptions = computed(() => {
 });
 const panelClass = computed(() => {
   if (props.embedded) {
-    return "mt-3 rounded-lg border border-amber-200 bg-gray-50 p-3";
+    return "mt-3 rounded-lg border border-warn-line bg-raised p-3";
   }
-  return "mt-6 rounded-xl border border-black/10 bg-white/70 p-4";
+  return "mt-6 rounded-xl border border-line bg-card p-4";
 });
 
 function normalizePresetChangedFields(): string[] {
@@ -217,7 +217,7 @@ watch(
 <template>
   <div :class="panelClass">
     <h3 v-if="!props.embedded" class="text-sm font-semibold">数据库同步</h3>
-    <p class="text-xs text-black/60" :class="{ 'mt-1': !props.embedded }">
+    <p class="text-xs text-muted" :class="{ 'mt-1': !props.embedded }">
       直接在详情页执行数据重拉取，不再需要进入管理页。
     </p>
 
@@ -227,7 +227,7 @@ watch(
           <input v-model="syncMode" type="radio" class="radio-control" :value="option.value" />
           <span class="font-medium">{{ option.label }}</span>
         </div>
-        <p class="mt-1 pl-5 text-xs text-black/55">{{ option.hint }}</p>
+        <p class="mt-1 pl-5 text-xs text-muted">{{ option.hint }}</p>
       </label>
     </div>
 
@@ -241,9 +241,9 @@ watch(
         >
           {{ diffChecking ? "检测中..." : "检测变化字段" }}
         </button>
-        <span class="text-xs text-black/60">共 {{ changedFields.length }} 项</span>
+        <span class="text-xs text-muted">共 {{ changedFields.length }} 项</span>
       </div>
-      <p v-if="usingPresetChangedFields" class="mt-2 text-xs text-black/55">
+      <p v-if="usingPresetChangedFields" class="mt-2 text-xs text-muted">
         已使用上方远程差异字段列表，可直接选择覆盖项。
       </p>
 
@@ -252,7 +252,7 @@ watch(
           <input v-model="selectedOverwriteFields" type="checkbox" class="check-control" :value="field" />
           <span>{{ resolveFieldLabel(field) }}</span>
         </label>
-        <span v-if="!changedFields.length" class="text-xs text-black/50"> 暂未检测到变化字段 </span>
+        <span v-if="!changedFields.length" class="text-xs text-muted"> 暂未检测到变化字段 </span>
       </div>
     </div>
 
@@ -267,7 +267,7 @@ watch(
     </div>
 
     <div class="mt-2">
-      <span v-if="syncMessage" class="text-xs text-green-700">{{ syncMessage }}</span>
+      <span v-if="syncMessage" class="text-xs text-success">{{ syncMessage }}</span>
     </div>
 
     <ToastNotice :visible="toastVisible" :message="toastText" :tone="toastTone" @close="closeToastNotice" />
