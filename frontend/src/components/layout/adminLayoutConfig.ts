@@ -19,14 +19,12 @@ export interface AdminTab {
 
 export type AdminThemeColor = "teal" | "blue" | "green" | "amber" | "rose";
 export type AdminAppearance = "light" | "dark" | "auto";
-export type AdminSidebarColor = "navy" | "light" | "dark" | "teal" | "blue" | "green" | "purple";
 
 export interface AdminPreferences {
   appearance: AdminAppearance;
   compact: boolean;
   showTabs: boolean;
   sidebarCollapsed: boolean;
-  sidebarColor: AdminSidebarColor;
   themeColor: AdminThemeColor;
 }
 
@@ -42,154 +40,13 @@ export interface AdminThemeOption {
   value: AdminThemeColor;
 }
 
-export interface AdminSidebarOption {
-  activeBg: string;
-  activeIconBg: string;
-  activeIconText: string;
-  activeText: string;
-  bg: string;
-  border: string;
-  hoverBg: string;
-  hoverIconBg: string;
-  hoverIconText: string;
-  hoverText: string;
-  iconBg: string;
-  label: string;
-  muted: string;
-  text: string;
-  value: AdminSidebarColor;
-}
-
 export const defaultPreferences: AdminPreferences = {
   appearance: "light",
   compact: false,
   showTabs: true,
   sidebarCollapsed: false,
-  sidebarColor: "light",
   themeColor: "blue",
 };
-
-export const sidebarOptions: AdminSidebarOption[] = [
-  {
-    activeBg: "var(--accent)",
-    activeIconBg: "rgba(255, 255, 255, 0.18)",
-    activeIconText: "#ffffff",
-    activeText: "#ffffff",
-    bg: "#001529",
-    border: "rgba(255, 255, 255, 0.08)",
-    hoverBg: "rgba(255, 255, 255, 0.07)",
-    hoverIconBg: "rgba(255, 255, 255, 0.14)",
-    hoverIconText: "#ffffff",
-    hoverText: "#ffffff",
-    iconBg: "rgba(255, 255, 255, 0.1)",
-    label: "深蓝",
-    muted: "rgba(255, 255, 255, 0.42)",
-    text: "rgba(255, 255, 255, 0.72)",
-    value: "navy",
-  },
-  {
-    activeBg: "var(--accent)",
-    activeIconBg: "transparent",
-    activeIconText: "#ffffff",
-    activeText: "#ffffff",
-    bg: "#ffffff",
-    border: "#e5e7eb",
-    hoverBg: "#f5f7fb",
-    hoverIconBg: "transparent",
-    hoverIconText: "#1677ff",
-    hoverText: "#1677ff",
-    iconBg: "transparent",
-    label: "浅色",
-    muted: "#8a8f99",
-    text: "#1f2329",
-    value: "light",
-  },
-  {
-    activeBg: "var(--accent)",
-    activeIconBg: "rgba(255, 255, 255, 0.18)",
-    activeIconText: "#ffffff",
-    activeText: "#ffffff",
-    bg: "#111827",
-    border: "rgba(255, 255, 255, 0.08)",
-    hoverBg: "rgba(255, 255, 255, 0.07)",
-    hoverIconBg: "rgba(255, 255, 255, 0.14)",
-    hoverIconText: "#ffffff",
-    hoverText: "#ffffff",
-    iconBg: "rgba(255, 255, 255, 0.1)",
-    label: "深灰",
-    muted: "rgba(255, 255, 255, 0.42)",
-    text: "rgba(255, 255, 255, 0.72)",
-    value: "dark",
-  },
-  {
-    activeBg: "var(--accent)",
-    activeIconBg: "rgba(255, 255, 255, 0.18)",
-    activeIconText: "#ffffff",
-    activeText: "#ffffff",
-    bg: "#0f3f3f",
-    border: "rgba(255, 255, 255, 0.08)",
-    hoverBg: "rgba(255, 255, 255, 0.08)",
-    hoverIconBg: "rgba(255, 255, 255, 0.14)",
-    hoverIconText: "#ffffff",
-    hoverText: "#ffffff",
-    iconBg: "rgba(255, 255, 255, 0.1)",
-    label: "青绿",
-    muted: "rgba(255, 255, 255, 0.46)",
-    text: "rgba(255, 255, 255, 0.76)",
-    value: "teal",
-  },
-  {
-    activeBg: "var(--accent)",
-    activeIconBg: "rgba(255, 255, 255, 0.18)",
-    activeIconText: "#ffffff",
-    activeText: "#ffffff",
-    bg: "#0f2f66",
-    border: "rgba(255, 255, 255, 0.08)",
-    hoverBg: "rgba(255, 255, 255, 0.08)",
-    hoverIconBg: "rgba(255, 255, 255, 0.14)",
-    hoverIconText: "#ffffff",
-    hoverText: "#ffffff",
-    iconBg: "rgba(255, 255, 255, 0.1)",
-    label: "蓝色",
-    muted: "rgba(255, 255, 255, 0.46)",
-    text: "rgba(255, 255, 255, 0.76)",
-    value: "blue",
-  },
-  {
-    activeBg: "var(--accent)",
-    activeIconBg: "rgba(255, 255, 255, 0.18)",
-    activeIconText: "#ffffff",
-    activeText: "#ffffff",
-    bg: "#12361f",
-    border: "rgba(255, 255, 255, 0.08)",
-    hoverBg: "rgba(255, 255, 255, 0.08)",
-    hoverIconBg: "rgba(255, 255, 255, 0.14)",
-    hoverIconText: "#ffffff",
-    hoverText: "#ffffff",
-    iconBg: "rgba(255, 255, 255, 0.1)",
-    label: "绿色",
-    muted: "rgba(255, 255, 255, 0.46)",
-    text: "rgba(255, 255, 255, 0.76)",
-    value: "green",
-  },
-  {
-    activeBg: "var(--accent)",
-    activeIconBg: "rgba(255, 255, 255, 0.18)",
-    activeIconText: "#ffffff",
-    activeText: "#ffffff",
-    bg: "#2f1f56",
-    border: "rgba(255, 255, 255, 0.08)",
-    hoverBg: "rgba(255, 255, 255, 0.08)",
-    hoverIconBg: "rgba(255, 255, 255, 0.14)",
-    hoverIconText: "#ffffff",
-    hoverText: "#ffffff",
-    iconBg: "rgba(255, 255, 255, 0.1)",
-    label: "紫色",
-    muted: "rgba(255, 255, 255, 0.46)",
-    text: "rgba(255, 255, 255, 0.76)",
-    value: "purple",
-  },
-];
 
 export const themeOptions: AdminThemeOption[] = [
   {
@@ -251,11 +108,5 @@ export function getMenuIconPaths(path: string) {
 export function themeSwatchStyle(option: AdminThemeOption) {
   return {
     background: `linear-gradient(135deg, ${option.accent} 0%, ${option.accentStrong} 100%)`,
-  };
-}
-
-export function sidebarControlStyle(option: AdminSidebarOption) {
-  return {
-    "--sidebar-preview": option.bg,
   };
 }

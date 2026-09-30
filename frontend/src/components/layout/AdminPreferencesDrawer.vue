@@ -2,12 +2,9 @@
 import { computed } from "vue";
 import BaseDrawer from "@/components/common/BaseDrawer.vue";
 import {
-  sidebarControlStyle,
   themeSwatchStyle,
   type AdminAppearance,
   type AdminPreferences,
-  type AdminSidebarColor,
-  type AdminSidebarOption,
   type AdminThemeColor,
   type AdminThemeOption,
 } from "./adminLayoutConfig";
@@ -19,10 +16,8 @@ const appearanceOptions: Array<{ value: AdminAppearance; label: string }> = [
 ];
 
 const props = defineProps<{
-  currentSidebarOption: AdminSidebarOption;
   currentThemeOption: AdminThemeOption;
   preferences: AdminPreferences;
-  sidebarOptions: AdminSidebarOption[];
   themeOptions: AdminThemeOption[];
   visible: boolean;
 }>();
@@ -53,10 +48,6 @@ const appearance = computed({
 function setThemeColor(value: AdminThemeColor) {
   emit("updatePreference", "themeColor", value);
 }
-
-function setSidebarColor(value: AdminSidebarColor) {
-  emit("updatePreference", "sidebarColor", value);
-}
 </script>
 
 <template>
@@ -82,13 +73,13 @@ function setSidebarColor(value: AdminSidebarColor) {
     <section class="admin-preference-group" aria-label="外观">
       <p class="admin-preference-section-title">外观</p>
       <p class="admin-preference-label">界面模式</p>
-      <div class="admin-sidebar-control admin-appearance-switch" role="group" aria-label="界面模式">
+      <div class="admin-choice-grid admin-appearance-switch" role="group" aria-label="界面模式">
         <button
           v-for="option in appearanceOptions"
           :key="option.value"
           type="button"
-          class="admin-sidebar-control-btn"
-          :class="{ 'admin-sidebar-control-btn-active': preferences.appearance === option.value }"
+          class="admin-choice-btn"
+          :class="{ 'admin-choice-btn-active': preferences.appearance === option.value }"
           :aria-pressed="preferences.appearance === option.value"
           @click="appearance = option.value"
         >
@@ -109,23 +100,6 @@ function setSidebarColor(value: AdminSidebarColor) {
           @click="setThemeColor(option.value)"
         >
           <span v-if="preferences.themeColor === option.value" class="admin-theme-check"></span>
-        </button>
-      </div>
-      <p class="admin-preference-label">侧栏色 · {{ currentSidebarOption.label }}</p>
-      <div class="admin-sidebar-control" role="group" aria-label="侧栏色">
-        <button
-          v-for="option in sidebarOptions"
-          :key="option.value"
-          type="button"
-          class="admin-sidebar-control-btn"
-          :class="{ 'admin-sidebar-control-btn-active': preferences.sidebarColor === option.value }"
-          :style="sidebarControlStyle(option)"
-          :aria-label="`侧栏色：${option.label}`"
-          :title="option.label"
-          @click="setSidebarColor(option.value)"
-        >
-          <span class="admin-sidebar-control-preview"></span>
-          <span>{{ option.label }}</span>
         </button>
       </div>
     </section>

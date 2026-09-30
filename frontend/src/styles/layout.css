@@ -21,8 +21,8 @@
   display: flex;
   width: var(--sidebar-width);
   flex-direction: column;
-  border-right: 1px solid var(--sidebar-border);
-  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border-muted);
+  background: var(--surface-strong);
   transition:
     width 0.18s ease,
     transform 0.18s ease;
@@ -34,9 +34,9 @@
   align-items: center;
   gap: 12px;
   overflow: hidden;
-  border-bottom: 1px solid var(--sidebar-border);
+  border-bottom: 1px solid var(--border-muted);
   padding: 0 22px;
-  color: var(--sidebar-text);
+  color: var(--text-muted);
 }
 
 .admin-brand-mark {
@@ -73,7 +73,7 @@
 }
 
 .admin-brand-copy strong {
-  color: var(--sidebar-text);
+  color: var(--text-strong);
   font-size: 18px;
   font-weight: 700;
   line-height: 1.1;
@@ -92,7 +92,7 @@
 .admin-menu-title {
   margin: 12px 0 8px;
   padding: 0 14px;
-  color: var(--sidebar-muted);
+  color: var(--text-muted);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -105,7 +105,7 @@
   overflow: hidden;
   border-radius: 8px;
   padding: 0 16px;
-  color: var(--sidebar-text);
+  color: var(--text-main);
   font-size: 15px;
   font-weight: 500;
   transition:
@@ -114,18 +114,13 @@
 }
 
 .admin-menu-link:hover {
-  background: var(--sidebar-hover-bg);
-  color: var(--sidebar-hover-text);
-}
-
-.admin-menu-link:hover .admin-menu-icon {
-  background: var(--sidebar-hover-icon-bg);
-  color: var(--sidebar-hover-icon-text);
+  background: var(--surface-hover);
+  color: var(--accent);
 }
 
 .admin-menu-link-active {
-  background: var(--sidebar-active-bg);
-  color: var(--sidebar-active-text);
+  background: var(--accent);
+  color: #fff;
   font-weight: 600;
 }
 
@@ -136,7 +131,6 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 0;
-  background: var(--sidebar-icon-bg);
   color: inherit;
   font-size: 12px;
   font-weight: 650;
@@ -150,11 +144,6 @@
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.8;
-}
-
-.admin-menu-link-active .admin-menu-icon {
-  background: var(--sidebar-active-icon-bg);
-  color: var(--sidebar-active-icon-text);
 }
 
 .admin-app-sidebar-collapsed .admin-sidebar {
@@ -726,8 +715,8 @@
   gap: 12px;
 }
 
-/* 界面模式（浅色/深色/跟随系统）三段切换，按钮复用 admin-sidebar-control-btn */
-.admin-sidebar-control.admin-appearance-switch {
+/* 界面模式（浅色/深色/跟随系统）三段切换 */
+.admin-choice-grid.admin-appearance-switch {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -769,13 +758,13 @@
     inset 0 0 0 1px rgba(0, 0, 0, 0.16);
 }
 
-.admin-sidebar-control {
+.admin-choice-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
-.admin-sidebar-control-btn {
+.admin-choice-btn {
   display: flex;
   min-height: 34px;
   align-items: center;
@@ -793,24 +782,15 @@
     color 0.16s ease;
 }
 
-.admin-sidebar-control-btn:hover {
+.admin-choice-btn:hover {
   border-color: var(--accent-hover-border);
   background: var(--surface-muted);
 }
 
-.admin-sidebar-control-btn-active {
+.admin-choice-btn-active {
   border-color: var(--accent-active-border);
   background: var(--accent-active-bg);
   color: var(--text-strong);
-}
-
-.admin-sidebar-control-preview {
-  width: 14px;
-  height: 14px;
-  flex: 0 0 auto;
-  border-radius: 4px;
-  border: 1px solid rgba(15, 23, 42, 0.14);
-  background: var(--sidebar-preview);
 }
 
 .admin-preference-option {

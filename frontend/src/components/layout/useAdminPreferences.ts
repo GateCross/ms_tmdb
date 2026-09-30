@@ -1,11 +1,9 @@
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import {
   defaultPreferences,
-  sidebarOptions,
   themeOptions,
   type AdminAppearance,
   type AdminPreferences,
-  type AdminSidebarColor,
   type AdminThemeColor,
 } from "./adminLayoutConfig";
 
@@ -18,21 +16,17 @@ function normalizeAppearance(value: unknown): AdminAppearance {
 
 function normalizePreferences(raw: unknown): AdminPreferences {
   const payload = raw && typeof raw === "object" ? (raw as Partial<Record<keyof AdminPreferences, unknown>>) : {};
-  // 旧版本把「深色」作为一种主题色存储，迁移为 appearance=dark + 默认青绿主题色
+  // 旧版本把「深色」作为一种主题色存储，迁移为 appearance=dark + 默认主题色
   const legacyDark = payload.themeColor === "dark";
   const themeColor = themeOptions.some((item) => item.value === payload.themeColor)
     ? (payload.themeColor as AdminThemeColor)
     : defaultPreferences.themeColor;
-  const sidebarColor = sidebarOptions.some((item) => item.value === payload.sidebarColor)
-    ? (payload.sidebarColor as AdminSidebarColor)
-    : defaultPreferences.sidebarColor;
   return {
     appearance: legacyDark ? "dark" : normalizeAppearance(payload.appearance),
     compact: typeof payload.compact === "boolean" ? payload.compact : defaultPreferences.compact,
     showTabs: typeof payload.showTabs === "boolean" ? payload.showTabs : defaultPreferences.showTabs,
     sidebarCollapsed:
       typeof payload.sidebarCollapsed === "boolean" ? payload.sidebarCollapsed : defaultPreferences.sidebarCollapsed,
-    sidebarColor,
     themeColor,
   };
 }
@@ -43,15 +37,12 @@ export function useAdminPreferences() {
   const currentThemeOption = computed(
     () => themeOptions.find((item) => item.value === preferences.themeColor) ?? themeOptions[0],
   );
-  const currentSidebarOption = computed(
-    () => sidebarOptions.find((item) => item.value === preferences.sidebarColor) ?? sidebarOptions[0],
-  );
   const isDark = computed(() => {
     if (preferences.appearance === "auto") return systemPrefersDark.value;
     return preferences.appearance === "dark";
   });
 
-  /** 仅写主题色派生变量与侧栏变量；表面/文字/状态色由 theme.css 的 :root + html.dark 提供 */
+  /** 仅写主题色派生变量；表面/文字/侧栏等颜色由 theme.css 的 :root + html.dark 提供 */
   const adminThemeStyle = computed<Record<string, string>>(() => {
     const accent = currentThemeOption.value.accent;
 
@@ -64,19 +55,6 @@ export function useAdminPreferences() {
       "--accent-soft": currentThemeOption.value.accentSoft,
       "--accent-strong": currentThemeOption.value.accentStrong,
       "--field-border-focus": `${accent}ad`,
-      "--sidebar-active-bg": currentSidebarOption.value.activeBg,
-      "--sidebar-active-icon-bg": currentSidebarOption.value.activeIconBg,
-      "--sidebar-active-icon-text": currentSidebarOption.value.activeIconText,
-      "--sidebar-active-text": currentSidebarOption.value.activeText,
-      "--sidebar-bg": currentSidebarOption.value.bg,
-      "--sidebar-border": currentSidebarOption.value.border,
-      "--sidebar-hover-bg": currentSidebarOption.value.hoverBg,
-      "--sidebar-hover-icon-bg": currentSidebarOption.value.hoverIconBg,
-      "--sidebar-hover-icon-text": currentSidebarOption.value.hoverIconText,
-      "--sidebar-hover-text": currentSidebarOption.value.hoverText,
-      "--sidebar-icon-bg": currentSidebarOption.value.iconBg,
-      "--sidebar-muted": currentSidebarOption.value.muted,
-      "--sidebar-text": currentSidebarOption.value.text,
       "--surface-active": isDark.value ? `${accent}33` : `${accent}24`,
     };
   });
@@ -126,7 +104,6 @@ export function useAdminPreferences() {
 
   return {
     adminThemeStyle,
-    currentSidebarOption,
     currentThemeOption,
     preferences,
     resetPreferences,

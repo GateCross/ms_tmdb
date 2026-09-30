@@ -7,7 +7,7 @@ import AdminTabs from "@/components/layout/AdminTabs.vue";
 import AdminTopbar from "@/components/layout/AdminTopbar.vue";
 import { globalPageLoading } from "@/composables/useGlobalPageLoading";
 import { buildSearchQuery, readQueryString } from "@/utils/routeSearch";
-import { sidebarOptions, themeOptions, type AdminMenuGroup, type AdminMenuItem } from "./adminLayoutConfig";
+import { themeOptions, type AdminMenuGroup, type AdminMenuItem } from "./adminLayoutConfig";
 import { useAdminPreferences } from "./useAdminPreferences";
 import { useAdminTabs } from "./useAdminTabs";
 
@@ -18,8 +18,7 @@ const preferencesOpen = ref(false);
 const showBackToTop = ref(false);
 const topbarSearchQuery = ref("");
 
-const { adminThemeStyle, currentSidebarOption, currentThemeOption, preferences, resetPreferences, setPreference } =
-  useAdminPreferences();
+const { adminThemeStyle, currentThemeOption, preferences, resetPreferences, setPreference } = useAdminPreferences();
 
 const menuItems = computed<AdminMenuItem[]>(() =>
   router
@@ -172,10 +171,8 @@ onBeforeUnmount(() => {
     </section>
 
     <AdminPreferencesDrawer
-      :current-sidebar-option="currentSidebarOption"
       :current-theme-option="currentThemeOption"
       :preferences="preferences"
-      :sidebar-options="sidebarOptions"
       :theme-options="themeOptions"
       :visible="preferencesOpen"
       @close="preferencesOpen = false"
