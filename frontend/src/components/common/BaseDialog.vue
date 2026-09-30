@@ -46,7 +46,7 @@ const props = withDefaults(
       "sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-card px-4 py-3 sm:px-6",
     contentClass: "modal-scroll-content max-h-[calc(88vh-120px)] overflow-y-auto px-4 py-4 sm:px-6",
     footerClass: "",
-    overlayClass: "fixed inset-0 z-[1300] bg-black/60 backdrop-blur-[2px]",
+    overlayClass: "bg-black/60 backdrop-blur-[2px]",
     rootClass: "fixed inset-0 z-[1300] flex items-center justify-center p-3 sm:p-6",
   },
 );
@@ -94,7 +94,8 @@ function handleOpenAutoFocus(event: Event) {
   <DialogRoot v-model:open="open">
     <!-- radix 的 Portal 不随 open 卸载，须手动门控，否则全屏容器关闭后残留挡住页面点击 -->
     <DialogPortal v-if="open">
-      <DialogOverlay :class="overlayClass" />
+      <!-- 层叠骨架固定在基建侧：调用方覆盖 overlayClass 时只传配色皮肤，避免丢 z-index 被页面 sticky 元素压住 -->
+      <DialogOverlay :class="['fixed inset-0 z-[1300]', overlayClass]" />
       <div :class="rootClass">
         <DialogContent
           :class="[panelClass, 'relative z-10 w-full overflow-hidden rounded-lg outline-none', maxWidthClass]"

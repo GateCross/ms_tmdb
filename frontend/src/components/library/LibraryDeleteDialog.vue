@@ -19,7 +19,7 @@ defineProps<{
     :show-close-button="false"
     max-width-class="max-w-md"
     root-class="fixed inset-0 z-[1300] flex items-center justify-center p-4"
-    overlay-class="absolute inset-0 bg-black/65 backdrop-blur-[2px]"
+    overlay-class="bg-black/65 backdrop-blur-[2px]"
     header-class="px-5 pt-5 pb-0"
     content-class="px-5 pt-2 pb-0"
     footer-class="mt-5 flex justify-end gap-2 px-5 pb-5"
