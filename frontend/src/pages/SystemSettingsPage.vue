@@ -61,6 +61,13 @@ const syncStatusText = computed(() => (syncEnabled.value ? "已启用" : "已关
 const taskRunStatusText = computed(() => (syncRunning.value ? "执行中" : "空闲"));
 const latestLog = computed(() => logsItems.value[0] ?? null);
 const latestLogStatusText = computed(() => (latestLog.value ? formatStatus(latestLog.value.status) : "暂无记录"));
+// 异常执行结果用状态色突出，成功/取消维持默认文字色
+const latestLogStatusClass = computed(() => {
+  const status = latestLog.value?.status;
+  if (status === "partial_failed") return "text-warn";
+  if (status === "panic") return "text-danger";
+  return "";
+});
 const latestLogTimeText = computed(() =>
   latestLog.value ? formatDateTime(latestLog.value.triggered_at) : "等待首次执行",
 );
@@ -308,7 +315,7 @@ onMounted(reloadAll);
         </article>
         <article class="settings-summary-card">
           <span class="settings-summary-label">最近执行</span>
-          <strong>{{ latestLogStatusText }}</strong>
+          <strong :class="latestLogStatusClass">{{ latestLogStatusText }}</strong>
           <p>{{ latestLogTimeText }}</p>
         </article>
         <article class="settings-summary-card">

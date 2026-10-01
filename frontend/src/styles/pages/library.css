@@ -258,11 +258,6 @@
   box-shadow: none;
 }
 
-/* 表格模式仅保留右侧操作，数量文案交给底部分页 */
-.library-list-summary-table {
-  justify-content: flex-end;
-}
-
 .library-list-controls {
   display: flex;
   flex-wrap: wrap;

@@ -47,6 +47,15 @@
   color: var(--text-strong);
 }
 
+/* 异常执行结果用状态色突出，需压过上一条 strong 的默认文字色 */
+.settings-summary-card strong.text-warn {
+  color: var(--warn-fg);
+}
+
+.settings-summary-card strong.text-danger {
+  color: var(--danger-fg);
+}
+
 .settings-summary-card p {
   display: -webkit-box;
   overflow: hidden;

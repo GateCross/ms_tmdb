@@ -11,11 +11,13 @@ const props = withDefaults(
     small?: boolean;
     pageSize?: number;
     pageSizeOptions?: number[];
+    showStats?: boolean;
   }>(),
   {
     small: false,
     pageSize: 0,
     pageSizeOptions: () => [10, 20, 50, 100],
+    showStats: true,
   },
 );
 
@@ -63,7 +65,7 @@ watch(
 
 <template>
   <div class="settings-pagination-row" :class="small ? 'settings-pagination-row-sm' : ''">
-    <p>共 {{ total }} 条，当前第 {{ page }} / {{ totalPages }} 页</p>
+    <p v-if="showStats">共 {{ total }} 条记录 · 第 {{ page }}/{{ totalPages }} 页</p>
     <div class="settings-pagination-actions">
       <label v-if="showPageSize" class="settings-pagination-size">
         每页

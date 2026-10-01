@@ -217,25 +217,25 @@ handleExternalTabChange = onExternalTabChange;
           暂无本地数据，可以尝试切换分类、重置搜索，或新建一条本地记录。
         </section>
 
-        <section class="mt-6 flex items-center justify-center gap-2">
-          <button class="btn-soft px-3 py-1.5 disabled:opacity-40" :disabled="page <= 1" @click="gotoPage(page - 1)">
-            上一页
-          </button>
-          <span class="px-3 text-sm text-muted">{{ page }} / {{ totalPages() }}</span>
-          <button
-            class="btn-soft px-3 py-1.5 disabled:opacity-40"
-            :disabled="page >= totalPages()"
-            @click="gotoPage(page + 1)"
-          >
-            下一页
-          </button>
+        <section class="mt-6">
+          <LogsPagination
+            :total="total"
+            :page="page"
+            :total-pages="totalPages()"
+            :busy="loading"
+            :show-stats="false"
+            @change-page="gotoPage"
+          />
         </section>
       </LoadState>
     </template>
 
-    <!-- 表格视图：限高，列表内部纵向滚动；数量信息只在底部分页展示 -->
+    <!-- 表格视图：限高，列表内部纵向滚动；顶部汇总条与卡片视图同构 -->
     <section v-else class="card settings-card-wide settings-log-card library-result-card">
-      <section class="library-list-summary library-list-summary-table">
+      <section class="library-list-summary">
+        <p class="text-sm text-muted">
+          共 <strong>{{ total }}</strong> 条记录 · 第 {{ page }}/{{ totalPages() }} 页
+        </p>
         <div class="library-list-controls">
           <div class="library-switch library-view-switch" role="group" aria-label="视图模式">
             <button type="button" class="library-switch-btn" @click="viewMode = 'grid'">卡片</button>
@@ -281,6 +281,7 @@ handleExternalTabChange = onExternalTabChange;
         :page-size-options="pageSizeOptions"
         :total-pages="totalPages()"
         :busy="loading"
+        :show-stats="false"
         @change-page="gotoPage"
         @change-page-size="changePageSize"
       />

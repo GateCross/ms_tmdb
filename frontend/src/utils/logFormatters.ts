@@ -232,9 +232,10 @@ export function formatQueryForDisplay(query: string, max: number) {
   return safeQuery ? `?${trimMiddle(safeQuery, max)}` : "无查询参数";
 }
 
+// 预算对齐请求列两行折行的实际容量，超长残余由 line-clamp 截尾，tooltip 兜底全量
 export function accessQuery(value: string) {
   const query = splitPathAndQuery(value).query;
-  return formatQueryForDisplay(query, 96);
+  return formatQueryForDisplay(query, 132);
 }
 
 export function upstreamHost(value: string) {
@@ -256,7 +257,7 @@ export function upstreamQuery(value: string) {
   }
   try {
     const parsed = new URL(text);
-    return formatQueryForDisplay(parsed.search, 110);
+    return formatQueryForDisplay(parsed.search, 132);
   } catch {
     return accessQuery(text);
   }
