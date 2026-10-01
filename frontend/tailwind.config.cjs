@@ -15,6 +15,7 @@ module.exports = {
         card: "var(--surface)", // 卡片/面板背景
         raised: "var(--surface-muted)", // 次级面板/嵌入块背景
         line: "var(--border-muted)", // 描边
+        overlay: "var(--overlay-bg)", // 弹层/侧栏遮罩
         brand: {
           DEFAULT: "var(--accent)",
           soft: "var(--accent-soft)",

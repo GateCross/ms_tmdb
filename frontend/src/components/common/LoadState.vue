@@ -31,6 +31,6 @@ withDefaults(
 <style scoped>
 .load-state-status {
   @apply px-4 py-8 text-center text-sm;
-  color: rgba(203, 213, 225, 0.68);
+  color: var(--text-placeholder);
 }
 </style>
