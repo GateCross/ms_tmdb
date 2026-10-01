@@ -54,9 +54,9 @@ const columns = ["时间", "请求", "状态", "耗时", "正文", "来源", "�
             <code>{{ item.path || accessPath(item.request_uri) }}<span class="logs-path-query">{{ pathQueryString(item) }}</span></code>
           </BaseTooltip>
         </div>
-        <p v-if="item.error_message" class="logs-error-line" :title="item.error_message">
-          {{ trimMiddle(item.error_message, 120) }}
-        </p>
+        <BaseTooltip v-if="item.error_message" :content="item.error_message">
+          <p class="logs-error-line">{{ trimMiddle(item.error_message, 120) }}</p>
+        </BaseTooltip>
       </div>
 
       <div>
@@ -75,7 +75,9 @@ const columns = ["时间", "请求", "状态", "耗时", "正文", "来源", "�
 
       <div class="logs-source">
         <strong>{{ item.client_ip || "-" }}</strong>
-        <span :title="item.user_agent">{{ item.user_agent || "-" }}</span>
+        <BaseTooltip :content="item.user_agent || '-'">
+          <span>{{ item.user_agent || "-" }}</span>
+        </BaseTooltip>
       </div>
 
       <button class="btn-soft-xs logs-action" type="button" @click="emit('open-detail', item)">详情</button>

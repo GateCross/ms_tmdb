@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BaseDialog from "@/components/common/BaseDialog.vue";
+import BaseTooltip from "@/components/common/BaseTooltip.vue";
 import JsonFoldViewer from "@/components/common/JsonFoldViewer.vue";
 import type { RequestLogDetail } from "@/utils/logFormatters";
 import {
@@ -55,13 +56,17 @@ const emit = defineEmits<{
       <div class="logs-detail-overview">
         <div class="logs-detail-overview-main">
           <span class="logs-method">{{ detail.method }}</span>
-          <code :title="detailEndpointTitle(detail)">{{ detailEndpointDisplay(detail) }}</code>
+          <BaseTooltip :content="detailEndpointTitle(detail)">
+            <code>{{ detailEndpointDisplay(detail) }}</code>
+          </BaseTooltip>
         </div>
 
         <div class="logs-detail-overview-meta">
           <span
             ><small>状态</small
-            ><strong :title="detail.error_message || 'ok'">{{ formatStatusCode(detail.status_code) }}</strong></span
+            ><BaseTooltip :content="detail.error_message || 'ok'"
+              ><strong>{{ formatStatusCode(detail.status_code) }}</strong></BaseTooltip
+            ></span
           >
           <span><small>耗时</small><strong>{{ formatDuration(detail.duration_ms) }}</strong></span>
           <span><small>时间</small><strong>{{ formatDateTime(detail.created_at) }}</strong></span>
@@ -72,11 +77,15 @@ const emit = defineEmits<{
           <span><small>请求正文</small><strong>{{ formatBytes(detail.request_body_bytes) }}</strong></span>
           <span v-if="isAccessDetail(detail)">
             <small>请求 ID</small>
-            <strong :title="detail.request_id">{{ detail.request_id || "-" }}</strong>
+            <BaseTooltip :content="detail.request_id || '-'">
+              <strong>{{ detail.request_id || "-" }}</strong>
+            </BaseTooltip>
           </span>
           <span v-if="isAccessDetail(detail)">
             <small>原始请求</small>
-            <strong :title="formatRequestUriForDisplay(detail.request_uri)">{{ formatRequestUriForDisplay(detail.request_uri) }}</strong>
+            <BaseTooltip :content="formatRequestUriForDisplay(detail.request_uri)">
+              <strong>{{ formatRequestUriForDisplay(detail.request_uri) }}</strong>
+            </BaseTooltip>
           </span>
         </div>
       </div>

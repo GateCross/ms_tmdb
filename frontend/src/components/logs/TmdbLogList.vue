@@ -53,9 +53,9 @@ const columns = ["时间", "上游路径", "状态", "耗时", "响应正文", "
             <code>{{ item.path || "-" }}<span class="logs-path-query">{{ pathQuery(item) }}</span></code>
           </BaseTooltip>
         </div>
-        <p v-if="item.error_message" class="logs-error-line" :title="item.error_message">
-          {{ trimMiddle(item.error_message, 120) }}
-        </p>
+        <BaseTooltip v-if="item.error_message" :content="item.error_message">
+          <p class="logs-error-line">{{ trimMiddle(item.error_message, 120) }}</p>
+        </BaseTooltip>
       </div>
 
       <div>
