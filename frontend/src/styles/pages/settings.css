@@ -1035,7 +1035,7 @@
 .settings-media-cell {
   @apply grid min-w-0 gap-2;
   grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
+  align-items: center;
 }
 
 .settings-media-type {
