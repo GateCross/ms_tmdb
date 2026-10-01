@@ -366,8 +366,8 @@
 }
 
 .logs-row {
-  min-height: 4.1rem;
-  padding: 0.68rem 1rem;
+  min-height: 3.4rem;
+  padding: 0.55rem 1rem;
   border-bottom: 1px solid var(--border-muted);
   transition:
     background-color 0.16s ease,
@@ -397,32 +397,23 @@
 
 .logs-grid-auto-sync {
   grid-template-columns:
-    minmax(7rem, 7.4rem) minmax(11rem, 1.5fr) minmax(5rem, 5.4rem) minmax(4rem, 4.4rem)
-    minmax(7rem, 0.8fr) minmax(7rem, 1fr) minmax(3.6rem, 4rem);
-}
-
-/* 本地库表格视图：列宽可收缩，避免横向撑破页面 */
-.logs-grid-library {
-  width: 100%;
-  grid-template-columns:
-    minmax(0, 5.8rem) minmax(0, 1.5fr) minmax(0, 4.6rem) minmax(0, 6.6rem)
-    minmax(0, 1fr) minmax(0, 5.2rem) minmax(4.4rem, 5rem);
-}
-
-.logs-grid-library > * {
-  min-width: 0;
-}
-
-/* 本地库行高比日志更紧凑，贴近原表格密度 */
-.logs-row.logs-grid-library {
-  min-height: 3.2rem;
-  padding: 0.52rem 1rem;
+    minmax(7rem, 7.4rem) minmax(12rem, 1.7fr) minmax(5rem, 5.4rem) minmax(4rem, 4.4rem)
+    minmax(7rem, 0.8fr) minmax(7rem, 0.95fr) minmax(3.6rem, 4rem);
 }
 
 .logs-time {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  color: var(--text-strong);
+  font-size: 0.78rem;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+}
+
+.logs-time-date {
   color: var(--text-muted);
-  font-size: 0.75rem;
-  line-height: 1.35;
+  font-size: 0.68rem;
 }
 
 .logs-main {
@@ -440,36 +431,30 @@
 
 .logs-method {
   flex: none;
-  min-width: 3.1rem;
-  padding: 0.22rem 0.42rem;
-  border-radius: 0.5rem;
+  min-width: 2.4rem;
+  padding: 0.12rem 0.38rem;
+  border-radius: 0.4rem;
   color: var(--accent);
   background: var(--accent-active-bg);
   border: 1px solid var(--accent-active-border);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 700;
-  line-height: 1.15;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
   text-align: center;
 }
 
 .logs-path-line code {
   min-width: 0;
   max-width: 100%;
-  display: -webkit-box;
   overflow: hidden;
   color: var(--text-strong);
-  background: var(--surface-muted);
-  border: 1px solid var(--border-muted);
-  border-radius: 0.55rem;
-  padding: 0.2rem 0.48rem;
   font-size: 0.78rem;
   line-height: 1.45;
-  word-break: break-all;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.logs-host,
 .logs-error-line {
   min-width: 0;
   overflow: hidden;
@@ -477,20 +462,53 @@
   white-space: nowrap;
   font-size: 0.73rem;
   line-height: 1.35;
-}
-
-.logs-host {
-  color: var(--accent);
-}
-
-.logs-error-line {
   color: var(--danger-fg);
 }
 
-.logs-duration {
+/* 状态：色点 + 等宽数字，替代色块胶囊 */
+.log-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-main);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.log-status-dot {
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.log-status-dot-success {
+  background: var(--success-fg);
   color: var(--success-fg);
+}
+
+.log-status-dot-warn {
+  background: var(--warn-fg);
+  color: var(--warn-fg);
+}
+
+.log-status-dot-danger {
+  background: var(--danger-fg);
+  color: var(--danger-fg);
+}
+
+.log-status-dot-muted {
+  background: var(--text-placeholder);
+  color: var(--text-placeholder);
+}
+
+/* 耗时是中性指标，好坏由状态列表达 */
+.logs-duration {
+  color: var(--text-strong);
   font-size: 0.8rem;
   font-weight: 650;
+  font-variant-numeric: tabular-nums;
 }
 
 .logs-body-cell {
@@ -500,6 +518,12 @@
   color: var(--text-muted);
   font-size: 0.75rem;
   line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.logs-failed-count {
+  color: var(--danger-fg);
+  font-weight: 600;
 }
 
 .logs-body-cell small {
@@ -533,19 +557,19 @@
 }
 
 .logs-page-shell .logs-list-shell .logs-action {
-  min-width: 3.6rem;
-  padding: 0.42rem 0.62rem;
-  color: var(--accent);
-  background: var(--accent-active-bg);
-  border-color: var(--accent-active-border);
+  min-width: 3.2rem;
+  padding: 0.32rem 0.6rem;
+  color: var(--text-muted);
+  background: transparent;
+  border-color: transparent;
   box-shadow: none;
   white-space: nowrap;
 }
 
+/* 悬浮只泛浅色底不变边框，避免出现突兀的描边盒子 */
 .logs-page-shell .logs-list-shell .logs-action:hover {
   color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
-  border-color: var(--accent);
+  background: var(--accent-active-bg);
 }
 
 .logs-page-shell .logs-list-shell .logs-action:focus-visible {
@@ -784,14 +808,76 @@
   box-shadow: var(--glass-shadow-soft);
 }
 
-.settings-log-table th,
-.settings-log-table td {
-  vertical-align: top;
-}
-
-.settings-log-table,
 .settings-detail-table {
   color: var(--text-main);
+}
+
+/* 明细弹窗 tab：下划线式，避免再嵌一层分段控件盒子 */
+.detail-tabs {
+  display: flex;
+  gap: 1.4rem;
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.detail-tab {
+  position: relative;
+  padding: 0.45rem 0.1rem;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.detail-tab:hover {
+  color: var(--text-main);
+}
+
+.detail-tab::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.detail-tab-active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.detail-tab-active::after {
+  background: var(--accent);
+}
+
+.detail-tab-count {
+  margin-left: 0.3rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--border-muted);
+  border-radius: 9999px;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-tab-active .detail-tab-count {
+  color: var(--accent);
+  border-color: var(--accent-active-border);
+  background: var(--accent-active-bg);
+}
+
+/* 失败计数是语义色，选中态不覆盖 */
+.detail-tab-count-danger {
+  color: var(--danger-fg);
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
 }
 
 .settings-detail-table th,
@@ -811,11 +897,11 @@
 }
 
 .settings-detail-col-remote {
-  width: 38%;
+  width: 46%;
 }
 
 .settings-detail-col-local {
-  width: 38%;
+  width: 30%;
 }
 
 .settings-detail-col-failure {
@@ -854,17 +940,7 @@
 .settings-table-meta {
   @apply mt-1 text-xs;
   color: var(--text-muted);
-}
-
-.settings-status-pill {
-  @apply inline-flex whitespace-nowrap rounded-md px-2.5 py-1 text-xs;
-}
-
-.settings-count-pill {
-  @apply mr-1 inline-flex min-w-7 justify-center rounded-md px-2 py-0.5 text-xs;
-  color: var(--text-main);
-  background: var(--surface-muted);
-  border: 1px solid var(--border-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .settings-count-success {
@@ -956,10 +1032,11 @@
 }
 
 .settings-media-type {
-  @apply inline-flex whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium;
+  @apply inline-flex whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-bold;
   color: var(--accent);
   background: var(--accent-active-bg);
   border: 1px solid var(--accent-active-border);
+  letter-spacing: 0.04em;
 }
 
 .settings-media-type-danger {
@@ -968,33 +1045,52 @@
   border-color: var(--danger-border);
 }
 
-.settings-chip-list {
-  @apply flex flex-wrap gap-1 text-xs leading-relaxed;
+/* 远端差异字段名：单行等宽文本，弱化为技术元信息 */
+.settings-field-inline {
+  min-width: 0;
+  overflow: hidden;
   color: var(--text-muted);
-}
-
-.settings-chip-list span {
-  @apply inline-flex max-w-full rounded-md px-2 py-1;
-  color: var(--text-main);
-  background: var(--surface-muted);
-  border: 1px solid var(--border-muted);
-  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .settings-empty-value {
   @apply text-xs;
-  color: var(--text-muted);
+  color: var(--text-placeholder);
 }
 
 .settings-field-detail {
-  margin-top: 0.45rem;
+  margin-top: 0.4rem;
 }
 
+/* 字段明细入口：幽灵文本链接，不再用色块 chip */
 .settings-field-detail summary {
-  @apply inline-flex cursor-pointer select-none rounded-md px-2 py-1 text-xs font-medium;
+  @apply inline-flex cursor-pointer select-none items-center text-xs font-medium;
+  list-style: none;
   color: var(--accent);
-  background: var(--accent-active-bg);
-  border: 1px solid var(--accent-active-border);
+  transition: color 0.15s ease;
+}
+
+.settings-field-detail summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-field-detail summary::before {
+  content: "▸";
+  margin-right: 0.3rem;
+  font-size: 0.68rem;
+  transition: transform 0.15s ease;
+}
+
+.settings-field-detail[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.settings-field-detail summary:hover {
+  color: var(--accent-strong);
 }
 
 .settings-field-detail[open] summary {
@@ -1006,14 +1102,13 @@
 }
 
 .settings-field-stack > div {
-  @apply inline-flex max-w-full items-start gap-1 rounded-lg px-2 py-1 leading-relaxed;
+  @apply inline-flex max-w-full items-start gap-1.5 rounded-md px-1.5 py-0.5 leading-relaxed;
   color: var(--text-main);
   background: var(--surface-muted);
-  border: 1px solid var(--border-muted);
 }
 
 .settings-field-stack span {
-  @apply inline-flex min-w-8 justify-center rounded-md px-1.5 py-0.5 text-xs;
+  @apply inline-flex min-w-6 justify-center rounded px-1 py-0.5 text-[11px];
   color: var(--accent);
   background: var(--accent-active-bg);
 }

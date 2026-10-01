@@ -3,12 +3,11 @@ import type { AdminTmdbRequestLogItem } from "@/api/admin";
 import DataListShell from "@/components/common/DataListShell.vue";
 import {
   bodyMeta,
-  formatDateTime,
+  formatDateTimeParts,
   formatDuration,
   formatStatusCode,
-  statusClass,
+  statusDotClass,
   trimMiddle,
-  upstreamHost,
 } from "@/utils/logFormatters";
 
 defineProps<{
@@ -33,21 +32,25 @@ const columns = ["时间", "上游路径", "状态", "耗时", "响应正文", "
     loading-text="日志加载中..."
   >
     <article v-for="item in items" :key="item.id" class="logs-row logs-grid-tmdb">
-      <time class="logs-time">{{ formatDateTime(item.created_at) }}</time>
+      <time class="logs-time">
+        <span class="logs-time-date">{{ formatDateTimeParts(item.created_at).date }}</span>
+        <span>{{ formatDateTimeParts(item.created_at).time }}</span>
+      </time>
 
       <div class="logs-main">
         <div class="logs-path-line">
           <span class="logs-method">{{ item.method }}</span>
-          <code :title="item.path || '-'">{{ item.path || "-" }}</code>
+          <!-- 域名各行恒定，收进悬浮提示；完整 URL 在详情弹窗 -->
+          <code :title="item.url || item.path || '-'">{{ item.path || "-" }}</code>
         </div>
-        <p class="logs-host" :title="upstreamHost(item.url)">{{ upstreamHost(item.url) }}</p>
         <p v-if="item.error_message" class="logs-error-line" :title="item.error_message">
           {{ trimMiddle(item.error_message, 120) }}
         </p>
       </div>
 
       <div>
-        <span class="settings-status-pill" :class="statusClass(item.status_code)">
+        <span class="log-status">
+          <i class="log-status-dot" :class="statusDotClass(item.status_code)" aria-hidden="true"></i>
           {{ formatStatusCode(item.status_code) }}
         </span>
       </div>

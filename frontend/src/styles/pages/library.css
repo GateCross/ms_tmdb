@@ -122,7 +122,7 @@
 
 .library-search-combo:focus-within {
   border-color: var(--field-border-focus);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.14);
+  box-shadow: 0 0 0 3px var(--accent-ring);
 }
 
 .library-search-media-switch {
@@ -147,7 +147,7 @@
 }
 
 .library-search-input::placeholder {
-  color: rgba(199, 210, 227, 0.62);
+  color: var(--text-placeholder);
 }
 
 .library-search-input:focus {
@@ -418,6 +418,83 @@
   white-space: nowrap;
 }
 
+/* 表格模式行内容：海报锚点 + 名称两行 */
+.library-cell-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.library-row-poster {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 3rem;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border-muted);
+  box-shadow: var(--glass-shadow-soft);
+}
+
+/* TMDB ID 等宽小字，弱化为辅助信息 */
+.library-list-id {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 类型以小 chip 展示，最多两个 +N，完整列表见单元格 title */
+.library-genre-cell {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.3rem;
+  overflow: hidden;
+}
+
+.library-genre-chip {
+  @apply inline-block whitespace-nowrap rounded px-1.5 py-0.5 text-[11px];
+  /* flex 子项默认可收缩，会把 chip 压成省略号 */
+  flex: 0 0 auto;
+  max-width: 6.5rem;
+  overflow: hidden;
+  color: var(--text-muted);
+  background: var(--surface-muted);
+  border: 1px solid var(--border-muted);
+  text-overflow: ellipsis;
+}
+
+.library-genre-chip-more {
+  color: var(--text-placeholder);
+  background: transparent;
+  border-style: dashed;
+}
+
+/* 列宽：名称列带海报占主位，ID 弱化为辅助列 */
+.logs-grid-library {
+  width: 100%;
+  grid-template-columns:
+    minmax(0, 2.1fr) minmax(0, 6.2rem) minmax(0, 4.6rem) minmax(0, 6.4rem)
+    minmax(0, 1.05fr) minmax(0, 5.4rem) minmax(4.4rem, 5rem);
+}
+
+.logs-grid-library > * {
+  min-width: 0;
+}
+
+/* 海报行比纯文本行略高 */
+.logs-row.logs-grid-library {
+  min-height: 4rem;
+  padding: 0.5rem 1rem;
+}
+
+/* 评分徽章定宽，纵向成列对齐 */
+.logs-grid-library .rating-badge {
+  min-width: 2.8rem;
+}
+
 .library-list-title {
   min-width: 0;
   overflow: hidden;
@@ -459,6 +536,24 @@
 
 /* 窄屏摘要卡中，操作区固定右下，图标按钮始终可点 */
 @media (max-width: 767px) {
+  /* 顶部左位由 TMDB ID 改为类型 chips，ID 收进详情 */
+  .logs-row.logs-grid-library .library-list-id {
+    display: none;
+  }
+
+  .logs-row.logs-grid-library .library-genre-cell {
+    grid-area: time;
+  }
+
+  .logs-row.logs-grid-library .library-cell-title {
+    grid-area: main;
+  }
+
+  .logs-row.logs-grid-library .library-row-poster {
+    width: 2.25rem;
+    height: 3.375rem;
+  }
+
   .logs-row.logs-grid-library .library-table-actions {
     grid-area: action;
     justify-self: end;

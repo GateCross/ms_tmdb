@@ -196,31 +196,6 @@ select.field-control option {
   color: var(--text-main);
 }
 
-.glass-pill {
-  @apply flex items-center gap-1 rounded-md p-1;
-  background: var(--surface-muted);
-  border: 1px solid var(--border-muted);
-  box-shadow: none;
-}
-
-.glass-pill-btn {
-  @apply rounded px-4 py-2 text-sm transition;
-  border: 1px solid transparent;
-  color: var(--text-muted);
-}
-
-.glass-pill-btn:hover {
-  background: var(--surface);
-  color: var(--text-main);
-}
-
-.glass-pill-btn-active {
-  color: var(--accent-strong);
-  background: var(--surface);
-  border-color: var(--accent-active-border);
-  box-shadow: 0 6px 14px var(--accent-ring);
-}
-
 .panel-glass {
   border: 1px solid var(--glass-border);
   background: var(--panel-bg);
@@ -570,6 +545,13 @@ html.dark .toast-notice-close::after {
   color: var(--warn-fg);
   background: var(--warn-bg);
   border: 1px solid var(--warn-border);
+}
+
+.chip-neutral {
+  @apply inline-block rounded px-2 py-0.5 text-[11px];
+  color: var(--soft-btn-fg);
+  background: var(--soft-btn-bg);
+  border: 1px solid var(--soft-btn-border);
 }
 
 .table-shell {

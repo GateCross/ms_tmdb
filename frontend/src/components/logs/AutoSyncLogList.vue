@@ -2,9 +2,10 @@
 import type { AdminAutoSyncLogItem } from "@/api/admin";
 import DataListShell from "@/components/common/DataListShell.vue";
 import {
-  autoSyncStatusClass,
+  autoSyncStatusDotClass,
   formatAutoSyncStatus,
   formatDateTime,
+  formatDateTimeParts,
   formatDuration,
   formatMode,
   summarizeMessage,
@@ -19,6 +20,11 @@ const emit = defineEmits<{
   "open-detail": [item: AdminAutoSyncLogItem];
 }>();
 
+// cron/批大小各行基本恒定，列表只留策略单行，完整配置收进悬浮提示与详情
+function cronTitle(item: AdminAutoSyncLogItem): string {
+  return `${item.cron_expr || "-"} · 批大小 ${item.batch_size}`;
+}
+
 const columns = ["时间", "策略", "状态", "耗时", "检查/同步/失败", "摘要", "操作"];
 </script>
 
@@ -32,18 +38,21 @@ const columns = ["时间", "策略", "状态", "耗时", "检查/同步/失败",
     loading-text="日志加载中..."
   >
     <article v-for="item in items" :key="item.id" class="logs-row logs-grid-auto-sync">
-      <time class="logs-time">{{ formatDateTime(item.triggered_at) }}</time>
+      <time class="logs-time">
+        <span class="logs-time-date">{{ formatDateTimeParts(item.triggered_at).date }}</span>
+        <span>{{ formatDateTimeParts(item.triggered_at).time }}</span>
+      </time>
 
       <div class="logs-main">
         <div class="logs-path-line">
           <span class="logs-method">SYNC</span>
-          <code :title="formatMode(item.mode)">{{ formatMode(item.mode) }}</code>
+          <code :title="cronTitle(item)">{{ formatMode(item.mode) }}</code>
         </div>
-        <p class="logs-host" :title="item.cron_expr || '-'">{{ item.cron_expr || "-" }} · 批大小 {{ item.batch_size }}</p>
       </div>
 
       <div>
-        <span class="settings-status-pill" :class="autoSyncStatusClass(item.status)">
+        <span class="log-status">
+          <i class="log-status-dot" :class="autoSyncStatusDotClass(item.status)" aria-hidden="true"></i>
           {{ formatAutoSyncStatus(item.status) }}
         </span>
       </div>
@@ -52,7 +61,7 @@ const columns = ["时间", "策略", "状态", "耗时", "检查/同步/失败",
 
       <div class="logs-body-cell">
         <span>检查 {{ item.checked }}</span>
-        <small>同步 {{ item.synced }} · 失败 {{ item.failed }}</small>
+        <small>同步 {{ item.synced }} · <span :class="item.failed > 0 ? 'logs-failed-count' : undefined">失败 {{ item.failed }}</span></small>
       </div>
 
       <div class="logs-source">

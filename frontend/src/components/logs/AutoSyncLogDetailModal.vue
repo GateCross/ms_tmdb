@@ -54,7 +54,7 @@ watch(
     title="执行日志明细"
     max-width-class="max-w-6xl"
     root-class="fixed inset-0 z-[1300] flex items-center justify-center p-3 sm:p-4"
-    overlay-class="bg-black/55"
+    overlay-class="bg-overlay"
     panel-class="panel-glass settings-detail-modal max-h-[92vh]"
     header-class="modal-header"
     content-class="settings-detail-scroll flex h-[calc(92vh-72px)] flex-col overflow-hidden px-4 py-4 sm:px-5"
@@ -98,22 +98,28 @@ watch(
         </article>
       </div>
 
-      <div class="glass-pill mt-3 w-fit">
+      <div class="detail-tabs mt-3 w-fit">
         <button
           type="button"
-          class="glass-pill-btn"
-          :class="{ 'glass-pill-btn-active': activeTab === 'synced' }"
+          class="detail-tab"
+          :class="{ 'detail-tab-active': activeTab === 'synced' }"
           @click="activeTab = 'synced'"
         >
-          同步成功项 {{ detail.synced }}
+          同步成功项 <span class="detail-tab-count">{{ detail.synced }}</span>
         </button>
         <button
           type="button"
-          class="glass-pill-btn"
-          :class="{ 'glass-pill-btn-active': activeTab === 'failed' }"
+          class="detail-tab"
+          :class="{ 'detail-tab-active': activeTab === 'failed' }"
           @click="activeTab = 'failed'"
         >
-          同步失败项 {{ detail.failed }}
+          同步失败项
+          <span
+            class="detail-tab-count"
+            :class="{ 'detail-tab-count-danger': detail.failed > 0 }"
+          >
+            {{ detail.failed }}
+          </span>
         </button>
       </div>
 
@@ -152,12 +158,16 @@ watch(
                     </div>
                   </td>
                   <td class="px-3 py-2">
-                    <div v-if="visibleFieldList(entry.remote_diff_fields).length" class="settings-chip-list">
-                      <span v-for="field in visibleFieldList(entry.remote_diff_fields)" :key="field">{{ field }}</span>
-                    </div>
-                    <span v-else class="settings-empty-value">-</span>
+                    <p
+                      v-if="visibleFieldList(entry.remote_diff_fields).length"
+                      class="settings-field-inline"
+                      :title="formatFieldList(entry.remote_diff_fields)"
+                    >
+                      {{ visibleFieldList(entry.remote_diff_fields).join(" · ") }}
+                    </p>
+                    <span v-else class="settings-empty-value">无差异</span>
                     <details v-if="fieldChangeCount(entry.field_changes)" class="settings-field-detail">
-                      <summary>字段明细 {{ fieldChangeCount(entry.field_changes) }} 项</summary>
+                      <summary>字段明细 · {{ fieldChangeCount(entry.field_changes) }} 项</summary>
                       <pre class="settings-diff-pre settings-diff-pre-compact">{{
                         formatFieldChanges(entry.field_changes)
                       }}</pre>
@@ -178,7 +188,7 @@ watch(
                         <p>{{ formatFieldList(entry.kept_local_fields) }}</p>
                       </div>
                     </div>
-                    <span v-else class="settings-empty-value">-</span>
+                    <span v-else class="settings-empty-value">无变更</span>
                   </td>
                 </tr>
                 <tr v-if="detail.synced_list.length === 0">

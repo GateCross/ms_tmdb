@@ -4,10 +4,10 @@ import DataListShell from "@/components/common/DataListShell.vue";
 import {
   accessPath,
   bodyMeta,
-  formatDateTime,
+  formatDateTimeParts,
   formatDuration,
   formatStatusCode,
-  statusClass,
+  statusDotClass,
   trimMiddle,
 } from "@/utils/logFormatters";
 
@@ -33,7 +33,10 @@ const columns = ["时间", "请求", "状态", "耗时", "正文", "来源", "�
     loading-text="日志加载中..."
   >
     <article v-for="item in items" :key="item.id" class="logs-row logs-grid-access">
-      <time class="logs-time">{{ formatDateTime(item.created_at) }}</time>
+      <time class="logs-time">
+        <span class="logs-time-date">{{ formatDateTimeParts(item.created_at).date }}</span>
+        <span>{{ formatDateTimeParts(item.created_at).time }}</span>
+      </time>
 
       <div class="logs-main">
         <div class="logs-path-line">
@@ -46,7 +49,8 @@ const columns = ["时间", "请求", "状态", "耗时", "正文", "来源", "�
       </div>
 
       <div>
-        <span class="settings-status-pill" :class="statusClass(item.status_code)">
+        <span class="log-status">
+          <i class="log-status-dot" :class="statusDotClass(item.status_code)" aria-hidden="true"></i>
           {{ formatStatusCode(item.status_code) }}
         </span>
       </div>

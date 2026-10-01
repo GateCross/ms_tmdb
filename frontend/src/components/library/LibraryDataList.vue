@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import DataListShell from "@/components/common/DataListShell.vue";
 import type { LibraryListItem } from "@/components/library/types";
+import { tmdbImg } from "@/api/tmdb";
 import { ratingTierClass } from "@/utils/ratingTier";
 
 defineProps<{
@@ -14,7 +15,16 @@ defineProps<{
   requestDeleteItem: (item: LibraryListItem) => void;
 }>();
 
-const columns = ["TMDB ID", "名称", "评分", "日期", "类型", "状态", "操作"];
+const columns = ["名称", "TMDB ID", "评分", "日期", "类型", "状态", "操作"];
+
+// 类型列最多展示两个 chip，其余以 +N 汇总，完整列表由单元格 title 提示
+function genreChips(item: LibraryListItem): string[] {
+  return Array.isArray(item.genre_names) ? item.genre_names.slice(0, 2) : [];
+}
+
+function genreOverflowCount(item: LibraryListItem): number {
+  return Array.isArray(item.genre_names) ? Math.max(0, item.genre_names.length - 2) : 0;
+}
 </script>
 
 <template>
@@ -23,29 +33,40 @@ const columns = ["TMDB ID", "名称", "评分", "日期", "类型", "状态", "�
     grid-class="logs-grid-library"
     :columns="columns"
     :empty="items.length === 0"
-    empty-text="无数据"
+    empty-text="暂无本地数据，可以尝试切换分类、重置搜索，或新建一条本地记录。"
   >
     <article
       v-for="item in items"
       :key="item.tmdb_id"
       class="logs-row logs-grid-library"
     >
-      <span class="logs-time">{{ item.tmdb_id }}</span>
-
-      <div class="logs-main">
-        <strong class="library-list-title" :title="item.title || item.name">
-          {{ item.title || item.name || "-" }}
-        </strong>
-        <span
-          class="library-list-subtitle"
-          :title="item.original_title || item.original_name || ''"
-        >
-          {{ item.original_title || item.original_name || "-" }}
-        </span>
+      <div class="library-cell-title">
+        <img
+          class="library-row-poster"
+          :src="tmdbImg(item.poster_path, 'w92')"
+          alt=""
+          loading="lazy"
+          draggable="false"
+        />
+        <div class="logs-main">
+          <strong class="library-list-title" :title="item.title || item.name">
+            {{ item.title || item.name || "-" }}
+          </strong>
+          <span
+            class="library-list-subtitle"
+            :title="item.original_title || item.original_name || ''"
+          >
+            {{ item.original_title || item.original_name || "-" }}
+          </span>
+        </div>
       </div>
 
+      <span class="library-list-id">{{ item.tmdb_id }}</span>
+
       <div>
-        <span class="rating-badge" :class="ratingTierClass(item.vote_average)">{{ (item.vote_average ?? 0).toFixed(1) }} 分</span>
+        <span class="rating-badge" :class="ratingTierClass(item.vote_average)">
+          {{ (item.vote_average ?? 0).toFixed(1) }}
+        </span>
       </div>
 
       <span class="logs-duration library-list-date">
@@ -53,26 +74,35 @@ const columns = ["TMDB ID", "名称", "评分", "日期", "类型", "状态", "�
       </span>
 
       <div
-        class="logs-body-cell"
+        class="logs-body-cell library-genre-cell"
         :title="
           Array.isArray(item.genre_names) && item.genre_names.length
             ? item.genre_names.join(' / ')
             : '-'
         "
       >
-        <span>
-          {{
-            Array.isArray(item.genre_names) && item.genre_names.length
-              ? item.genre_names.join(" / ")
-              : "-"
-          }}
-        </span>
+        <template v-if="genreChips(item).length">
+          <span
+            v-for="genre in genreChips(item)"
+            :key="genre"
+            class="library-genre-chip"
+          >
+            {{ genre }}
+          </span>
+          <span
+            v-if="genreOverflowCount(item) > 0"
+            class="library-genre-chip library-genre-chip-more"
+          >
+            +{{ genreOverflowCount(item) }}
+          </span>
+        </template>
+        <span v-else class="library-list-status-muted">-</span>
       </div>
 
       <div class="logs-source">
         <span v-if="item.tmdb_id < 0" class="chip-local-new">本地新建</span>
         <span v-else-if="item.is_modified" class="chip-modified">已修改</span>
-        <span v-else class="library-list-status-muted">未修改</span>
+        <span v-else class="chip-neutral">未修改</span>
       </div>
 
       <div class="library-table-actions flex items-center gap-2">

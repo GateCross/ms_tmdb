@@ -8,7 +8,7 @@ import { formatJsonText } from "@/utils/jsonText";
 export type RequestLogDetail = AdminProxyAccessLogDetailResp | AdminTmdbRequestLogDetailResp;
 
 export function formatRequestLogTotal(total: number) {
-  return `${Math.max(0, Number(total) || 0)}`;
+  return (Math.max(0, Number(total) || 0)).toLocaleString("zh-CN");
 }
 
 export function formatDateTime(value: string) {
@@ -21,6 +21,12 @@ export function formatDateTime(value: string) {
     return text;
   }
   return date.toLocaleString("zh-CN", { hour12: false });
+}
+
+/* 列表时间两行展示：日期弱化、时刻突出 */
+export function formatDateTimeParts(value: string) {
+  const [date = "-", time = ""] = formatDateTime(value).split(" ");
+  return { date, time: time || date };
 }
 
 export function formatDuration(durationMs: number) {
@@ -55,6 +61,17 @@ export function statusClass(code: number) {
   return "bg-warn-soft text-warn border border-warn-line";
 }
 
+/* 列表状态用色点表达，弱化色块胶囊 */
+export function statusDotClass(code: number) {
+  if (code >= 200 && code < 400) {
+    return "log-status-dot-success";
+  }
+  if (code === 0 || code >= 400) {
+    return "log-status-dot-danger";
+  }
+  return "log-status-dot-warn";
+}
+
 export function formatMode(mode: string) {
   return mode === "overwrite_all" ? "全量覆盖" : "仅更新未在本地修改的字段";
 }
@@ -86,6 +103,19 @@ export function autoSyncStatusClass(status: string) {
       return "bg-raised text-muted border border-line";
     default:
       return "bg-raised text-muted border border-line";
+  }
+}
+
+export function autoSyncStatusDotClass(status: string) {
+  switch (status) {
+    case "success":
+      return "log-status-dot-success";
+    case "partial_failed":
+      return "log-status-dot-warn";
+    case "panic":
+      return "log-status-dot-danger";
+    default:
+      return "log-status-dot-muted";
   }
 }
 
