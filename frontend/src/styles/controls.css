@@ -619,3 +619,36 @@ html.dark .global-toast-close::before,
 html.dark .global-toast-close::after {
   background: rgba(237, 242, 247, 0.7);
 }
+
+/* BaseTooltip（reka Tooltip 封装）：明暗反转芯片，浅色下深芯片、深色下浅芯片 */
+.base-tooltip {
+  z-index: 1400;
+  max-width: 24rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.5rem;
+  color: #f8fbff;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(191, 219, 254, 0.2);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.26);
+  font-size: 0.72rem;
+  line-height: 1.45;
+  text-align: center;
+  /* 长查询串无空格，必须允许任意断行，否则会水平溢出芯片 */
+  overflow-wrap: anywhere;
+}
+
+.base-tooltip-arrow {
+  fill: rgba(15, 23, 42, 0.95);
+  stroke: none;
+}
+
+html.dark .base-tooltip {
+  color: #101317;
+  background: rgba(226, 232, 240, 0.96);
+  border-color: rgba(15, 23, 42, 0.2);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .base-tooltip-arrow {
+  fill: rgba(226, 232, 240, 0.96);
+}

@@ -262,6 +262,34 @@ export function upstreamQuery(value: string) {
   }
 }
 
+/* 完整脱敏查询串：供 tooltip 展示，不做长度截断 */
+export function upstreamQueryFull(value: string) {
+  const text = (value ?? "").trim();
+  if (!text) {
+    return "";
+  }
+  try {
+    const params = new URLSearchParams(new URL(text).search);
+    params.delete("api_key");
+    const safe = [...params.entries()].map(([k, v]) => `${k}=${v}`).join("&");
+    return safe ? `?${safe}` : "";
+  } catch {
+    return "";
+  }
+}
+
+export function accessQueryFull(value: string) {
+  const query = splitPathAndQuery(value).query;
+  const text = query.replace(/^\?/, "");
+  if (!text) {
+    return "";
+  }
+  const params = new URLSearchParams(text);
+  params.delete("api_key");
+  const safe = [...params.entries()].map(([k, v]) => `${k}=${v}`).join("&");
+  return safe ? `?${safe}` : "";
+}
+
 export function bodyText(text: string | undefined) {
   return formatJsonText(text);
 }

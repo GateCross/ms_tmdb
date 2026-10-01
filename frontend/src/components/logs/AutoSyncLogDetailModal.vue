@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import BaseDialog from "@/components/common/BaseDialog.vue";
+import BaseTooltip from "@/components/common/BaseTooltip.vue";
 import LogsPagination from "@/components/logs/LogsPagination.vue";
 import type { AdminAutoSyncLogDetailResp } from "@/api/admin";
 import {
@@ -158,13 +159,14 @@ watch(
                     </div>
                   </td>
                   <td class="px-3 py-2">
-                    <p
+                    <BaseTooltip
                       v-if="visibleFieldList(entry.remote_diff_fields).length"
-                      class="settings-field-inline"
-                      :title="formatFieldList(entry.remote_diff_fields)"
+                      :content="formatFieldList(entry.remote_diff_fields)"
                     >
-                      {{ visibleFieldList(entry.remote_diff_fields).join(" · ") }}
-                    </p>
+                      <p class="settings-field-inline">
+                        {{ visibleFieldList(entry.remote_diff_fields).join(" · ") }}
+                      </p>
+                    </BaseTooltip>
                     <span v-else class="settings-empty-value">无差异</span>
                     <details v-if="fieldChangeCount(entry.field_changes)" class="settings-field-detail">
                       <summary>字段明细 · {{ fieldChangeCount(entry.field_changes) }} 项</summary>
@@ -241,7 +243,9 @@ watch(
                     </div>
                   </td>
                   <td class="px-3 py-2 text-muted">
-                    <p class="settings-detail-message">{{ entry.message || "-" }}</p>
+                    <BaseTooltip :content="entry.message || '-'">
+                      <p class="settings-detail-message">{{ entry.message || "-" }}</p>
+                    </BaseTooltip>
                   </td>
                 </tr>
                 <tr v-if="detail.failed_list.length === 0">

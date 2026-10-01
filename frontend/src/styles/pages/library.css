@@ -310,57 +310,6 @@
   @apply relative inline-flex h-7 w-7 items-center justify-center rounded-lg transition disabled:opacity-60;
 }
 
-.table-action-btn::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: calc(100% + 0.45rem);
-  left: 50%;
-  z-index: 30;
-  transform: translateX(-50%) translateY(2px);
-  white-space: nowrap;
-  border-radius: 9999px;
-  padding: 0.25rem 0.55rem;
-  color: #f8fbff;
-  background: rgba(15, 23, 42, 0.94);
-  border: 1px solid rgba(191, 219, 254, 0.2);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.26);
-  font-size: 0.68rem;
-  line-height: 1;
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity 0.14s ease,
-    transform 0.14s ease;
-}
-
-.table-action-btn::before {
-  content: "";
-  position: absolute;
-  bottom: calc(100% + 0.18rem);
-  left: 50%;
-  z-index: 31;
-  width: 0.45rem;
-  height: 0.45rem;
-  transform: translateX(-50%) rotate(45deg);
-  background: rgba(15, 23, 42, 0.94);
-  border-bottom: 1px solid rgba(191, 219, 254, 0.18);
-  border-right: 1px solid rgba(191, 219, 254, 0.18);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.14s ease;
-}
-
-.table-action-btn:hover::after,
-.table-action-btn:focus-visible::after {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.table-action-btn:hover::before,
-.table-action-btn:focus-visible::before {
-  opacity: 1;
-}
-
 .table-action-btn-soft {
   color: var(--soft-btn-fg);
   background: var(--soft-btn-bg);

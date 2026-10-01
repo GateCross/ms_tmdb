@@ -10,6 +10,7 @@ import {
   formatMode,
   summarizeMessage,
 } from "@/utils/logFormatters";
+import BaseTooltip from "@/components/common/BaseTooltip.vue";
 
 defineProps<{
   items: AdminAutoSyncLogItem[];
@@ -46,7 +47,9 @@ const columns = ["时间", "策略", "状态", "耗时", "检查/同步/失败",
       <div class="logs-main">
         <div class="logs-path-line">
           <span class="logs-method">SYNC</span>
-          <code :title="cronTitle(item)">{{ formatMode(item.mode) }}</code>
+          <BaseTooltip :content="cronTitle(item)">
+            <code>{{ formatMode(item.mode) }}</code>
+          </BaseTooltip>
         </div>
       </div>
 
@@ -65,7 +68,9 @@ const columns = ["时间", "策略", "状态", "耗时", "检查/同步/失败",
       </div>
 
       <div class="logs-source">
-        <strong :title="item.message">{{ summarizeMessage(item.message) }}</strong>
+        <BaseTooltip :content="item.message || '-'">
+          <strong>{{ summarizeMessage(item.message) }}</strong>
+        </BaseTooltip>
         <span>{{ formatDateTime(item.finished_at || item.created_at) }}</span>
       </div>
 
