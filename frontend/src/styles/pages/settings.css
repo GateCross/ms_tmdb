@@ -447,12 +447,19 @@
 .logs-path-line code {
   min-width: 0;
   max-width: 100%;
+  display: -webkit-box;
   overflow: hidden;
   color: var(--text-strong);
   font-size: 0.78rem;
   line-height: 1.45;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  word-break: break-all;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* 内联查询参数弱化为次要色，填充宽屏路径列空档 */
+.logs-path-query {
+  color: var(--text-muted);
 }
 
 .logs-error-line {

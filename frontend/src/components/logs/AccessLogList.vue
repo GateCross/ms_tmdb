@@ -3,6 +3,8 @@ import type { AdminProxyAccessLogItem } from "@/api/admin";
 import DataListShell from "@/components/common/DataListShell.vue";
 import {
   accessPath,
+  accessQuery,
+  accessQueryFull,
   bodyMeta,
   formatDateTimeParts,
   formatDuration,
@@ -10,6 +12,7 @@ import {
   statusDotClass,
   trimMiddle,
 } from "@/utils/logFormatters";
+import BaseTooltip from "@/components/common/BaseTooltip.vue";
 
 defineProps<{
   items: AdminProxyAccessLogItem[];
@@ -19,6 +22,12 @@ defineProps<{
 const emit = defineEmits<{
   "open-detail": [item: AdminProxyAccessLogItem];
 }>();
+
+// 查询参数内联展示填补宽屏空档；accessQuery 已脱敏 api_key，无参数返回空串
+function pathQueryString(item: AdminProxyAccessLogItem): string {
+  const query = accessQuery(item.request_uri);
+  return query.startsWith("?") ? query : "";
+}
 
 const columns = ["时间", "请求", "状态", "耗时", "正文", "来源", "操作"];
 </script>
@@ -41,7 +50,9 @@ const columns = ["时间", "请求", "状态", "耗时", "正文", "来源", "�
       <div class="logs-main">
         <div class="logs-path-line">
           <span class="logs-method">{{ item.method }}</span>
-          <code :title="item.request_uri || item.path">{{ item.path || accessPath(item.request_uri) }}</code>
+          <BaseTooltip :content="`${item.path || accessPath(item.request_uri)}${accessQueryFull(item.request_uri)}`">
+            <code>{{ item.path || accessPath(item.request_uri) }}<span class="logs-path-query">{{ pathQueryString(item) }}</span></code>
+          </BaseTooltip>
         </div>
         <p v-if="item.error_message" class="logs-error-line" :title="item.error_message">
           {{ trimMiddle(item.error_message, 120) }}

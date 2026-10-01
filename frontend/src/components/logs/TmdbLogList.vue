@@ -8,7 +8,10 @@ import {
   formatStatusCode,
   statusDotClass,
   trimMiddle,
+  upstreamQuery,
+  upstreamQueryFull,
 } from "@/utils/logFormatters";
+import BaseTooltip from "@/components/common/BaseTooltip.vue";
 
 defineProps<{
   items: AdminTmdbRequestLogItem[];
@@ -18,6 +21,12 @@ defineProps<{
 const emit = defineEmits<{
   "open-detail": [item: AdminTmdbRequestLogItem];
 }>();
+
+// 查询参数是路径列的主要可变内容，内联展示填补宽屏空档；无参数返回空串
+function pathQuery(item: AdminTmdbRequestLogItem): string {
+  const query = upstreamQuery(item.url);
+  return query.startsWith("?") ? query : "";
+}
 
 const columns = ["时间", "上游路径", "状态", "耗时", "响应正文", "操作"];
 </script>
@@ -40,8 +49,9 @@ const columns = ["时间", "上游路径", "状态", "耗时", "响应正文", "
       <div class="logs-main">
         <div class="logs-path-line">
           <span class="logs-method">{{ item.method }}</span>
-          <!-- 域名各行恒定，收进悬浮提示；完整 URL 在详情弹窗 -->
-          <code :title="item.url || item.path || '-'">{{ item.path || "-" }}</code>
+          <BaseTooltip :content="`${item.path || '-'}${upstreamQueryFull(item.url)}`">
+            <code>{{ item.path || "-" }}<span class="logs-path-query">{{ pathQuery(item) }}</span></code>
+          </BaseTooltip>
         </div>
         <p v-if="item.error_message" class="logs-error-line" :title="item.error_message">
           {{ trimMiddle(item.error_message, 120) }}
