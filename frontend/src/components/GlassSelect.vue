@@ -10,7 +10,7 @@ import {
   SelectItem,
   SelectItemText,
   SelectItemIndicator,
-} from "radix-vue";
+} from "reka-ui";
 import { ChevronDown, Check } from "lucide-vue-next";
 import { cn } from "@/lib/utils";
 
@@ -40,7 +40,7 @@ const emit = defineEmits<{
 }>();
 
 const attrs = useAttrs();
-// radix 的 SelectRoot 不渲染 DOM，外部 attrs（含 class）须转发到 SelectTrigger 才生效
+// reka 的 SelectRoot 不渲染 DOM，外部 attrs（含 class）须转发到 SelectTrigger 才生效
 const triggerClass = computed(() =>
   cn(
     "glass-select field-control inline-flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-[var(--field-border)] bg-[var(--field-bg)] px-3 py-1.5 text-sm text-[var(--text-main)] shadow-sm outline-none transition focus:border-[var(--field-border-focus)] focus:ring-1 focus:ring-[var(--field-border-focus)] disabled:cursor-not-allowed disabled:opacity-60",
@@ -75,7 +75,7 @@ const selectedValue = computed({
       <SelectContent
         position="popper"
         :side-offset="4"
-        class="z-[1400] max-h-64 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-lg border border-[var(--border-muted)] bg-[var(--menu-bg)] p-1 text-[var(--text-main)] shadow-xl backdrop-blur-md animate-in fade-in-80"
+        class="z-[1400] max-h-64 min-w-[var(--reka-select-trigger-width)] overflow-hidden rounded-lg border border-[var(--border-muted)] bg-[var(--menu-bg)] p-1 text-[var(--text-main)] shadow-xl backdrop-blur-md animate-in fade-in-80"
       >
         <SelectViewport class="p-1">
           <SelectItem

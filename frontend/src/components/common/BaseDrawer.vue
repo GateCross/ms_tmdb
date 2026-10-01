@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "radix-vue";
+import { DialogRoot, DialogPortal, DialogOverlay, DialogContent, DialogTitle, DialogDescription } from "reka-ui";
 import { cn } from "@/lib/utils";
 
 const props = withDefaults(
@@ -76,10 +76,10 @@ function requestClose() {
 
 <template>
   <DialogRoot v-model:open="open">
-    <!-- radix 的 Portal 不随 open 卸载，须手动门控，否则全屏容器关闭后残留挡住页面点击 -->
+    <!-- reka 的 Portal 不随 open 卸载，须手动门控，否则全屏容器关闭后残留挡住页面点击 -->
     <DialogPortal v-if="open">
       <div :class="rootClass">
-        <DialogOverlay :class="['fixed inset-0 bg-black/45 backdrop-blur-[2px] transition-opacity', overlayClass]" />
+        <DialogOverlay :class="['fixed inset-0 bg-overlay backdrop-blur-[2px] transition-opacity', overlayClass]" />
 
         <DialogContent
           :class="cn('fixed z-10 flex flex-col outline-none transition-transform', panelClass, panelSideClass)"

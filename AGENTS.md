@@ -11,7 +11,7 @@
 | 框架 | Vue 3.5 + TypeScript 5.8（`strict: true`） | 全部 `<script setup lang="ts">`，无 Options API |
 | 构建 | Vite 6 + @vitejs/plugin-vue | dev 监听 `0.0.0.0:5173`（局域网访问，勿改回 localhost） |
 | 路由 | Vue Router 4（history 模式） | 所有页面路由懒加载 `() => import(...)` |
-| UI 原语 | radix-vue ^1.9 | 仅用于弹层/下拉等无头原语，无组件库皮肤 |
+| UI 原语 | reka-ui ^2.10（原 radix-vue 改名后的 2.x 版本线） | 仅用于弹层/下拉等无头原语，无组件库皮肤 |
 | 图标 | lucide-vue-next | 具名按需导入，尺寸用 Tailwind class（如 `h-4 w-4`） |
 | 样式 | TailwindCSS 3.4（PostCSS 方式）+ tailwindcss-animate | `darkMode: 'class'` 已启用：`.dark` 类由 `useAdminPreferences.applyRootTheme` 按界面模式同步到 `html` 根（挂在根上才能覆盖 Teleport 到 body 的弹层）；深浅两套颜色令牌集中在 `styles/theme.css` 的 `:root`（浅色默认）与 `html.dark` |
 | 请求 | axios 1.8 单例 | 见 `src/api/http.ts` |
@@ -72,10 +72,10 @@ frontend/src/
 ### 组件（src/components/）
 - props 用类型式 `defineProps<{...}>` + `withDefaults`；emits 用类型式 `defineEmits<{ close: [] }>`；v-model 用 computed get/set（见 `GlassSelect.vue`）并同发 `update:modelValue` + `change`。
 - class 拼接一律 `cn()`；外部 attrs 转发时用 `useAttrs` + `defineOptions({ inheritAttrs: false })`（参考 GlassSelect）。
-- **弹层一律用 radix-vue 封装的基建，禁止手写 focus trap / scroll lock**（git bd24ab7 已迁移并删除手写实现）：
+- **弹层一律用 reka-ui 封装的基建，禁止手写 focus trap / scroll lock**（git bd24ab7 已迁移并删除手写实现）：
   - 对话框：`components/common/BaseDialog.vue`（皮肤壳 `ModalShell.vue`，variant `glass`/`vben`）
   - 抽屉：`BaseDrawer.vue`；下拉：`GlassSelect.vue`；局部 toast：`ToastNotice.vue`
-  - radix 的 `Portal` 不随 open 卸载，必须 `<Portal v-if="open">` 手动门控，否则透明全屏容器残留挡点击。
+  - reka 的 `Portal` 不随 open 卸载，必须 `<Portal v-if="open">` 手动门控，否则透明全屏容器残留挡点击。
   - busy（提交中）必须阻止 Escape/点遮罩关闭；初始焦点用 `[data-dialog-primary]` 标记在容器内查找。
 - **Select 选项 value 禁止空字符串**（曾导致日志页崩溃），用 `"all"` 等哨兵值。
 - z-index 层级约定：弹窗 overlay/root `z-[1300]`、Select 弹层 `z-[1400]`。
@@ -90,7 +90,7 @@ frontend/src/
 - `style.css` 只有 `@tailwind` 指令；CSS 引入顺序在 `main.ts` 固定（theme → layout → pages/* → controls → responsive），顺序即覆盖优先级，新增文件要考虑插入位置。
 - 页面样式一页一文件：`styles/pages/home.css` / `media.css`（详情页）/ `library.css` / `settings.css`；通用控件类（`.btn-primary`、`.btn-soft`、`.card`、`.panel-glass`、`.field-control` 等）在 `styles/controls.css`，先复用再造。
 - 组件内样式：优先 Tailwind 工具类；确需 scoped CSS 可用 `@apply`（参考 LoadState.vue）。
-- Tailwind 语义色（tailwind.config.cjs）：`ink/muted/strong/page/card/raised/line` + `brand/success/warn/danger/info`（各带 `soft`/`line` 变体），全部指向 theme.css 令牌。
+- Tailwind 语义色（tailwind.config.cjs）：`ink/muted/strong/page/card/raised/line/overlay` + `brand/success/warn/danger/info`（各带 `soft`/`line` 变体），全部指向 theme.css 令牌。
 - 响应式：`styles/responsive.css` + Tailwind 断点。**海报网格列数断点与 `useLibraryList.currentGridColumnCount()` 必须一一对应**（640/768/1024/1280/1536/1920/2560 → 2/3/4/5/6/8/10/12 列，卡片视图每页行数固定 2），改任何一边要同步另一边。
 
 ### 路由（src/router/index.ts）
@@ -105,7 +105,7 @@ frontend/src/
 ## 五、历史踩坑红线（改坏过一次，别再犯）
 
 1. dev server `host: true`（0.0.0.0）是需求，不是笔误。
-2. 弹层/下拉必须走 radix-vue；`DialogPortal` 必须 `v-if="open"` 门控。
+2. 弹层/下拉必须走 reka-ui；`DialogPortal` 必须 `v-if="open"` 门控。
 3. 下拉 value 不能是 `""`。
 4. 搜索必须防抖；预取失败必须静默（`showErrorToast: false`），且不影响导航。
 5. 本地新建/保存的 `genres` 由后端按 TMDB 官方 ID 还原，前端只传 `genre_names` 名称数组，不要自造数字 ID。

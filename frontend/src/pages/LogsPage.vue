@@ -101,7 +101,7 @@ const detailFailedPageSize = ref(20);
 const clearConfirmVisible = ref(false);
 const { toastVisible, toastText, toastTone, showToastNotice, closeToastNotice } = useToastNotice();
 
-// radix-vue 不接受空字符串选项值，「全部」用 all 哨兵，由 LogsToolbar 映射回空串
+// reka-ui 不接受空字符串选项值，「全部」用 all 哨兵，由 LogsToolbar 映射回空串
 const requestStatusOptions = [
   { label: "全部状态", value: "all" },
   { label: "成功", value: "success" },
