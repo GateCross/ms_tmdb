@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import GlassSelect from "@/components/GlassSelect.vue";
+import BaseTooltip from "@/components/common/BaseTooltip.vue";
 import LoadState from "@/components/common/LoadState.vue";
 import ToastNotice from "@/components/common/ToastNotice.vue";
 import {
@@ -19,6 +20,7 @@ import { useToastNotice } from "@/composables/useToastNotice";
 const loading = ref(false);
 const settingsLoaded = ref(false);
 const appVersion = __APP_VERSION__;
+const versionText = computed(() => `v${appVersion || "-"}`);
 const initialLoading = computed(() => loading.value && !settingsLoaded.value);
 
 const proxySaving = ref(false);
@@ -320,7 +322,9 @@ onMounted(reloadAll);
         </article>
         <article class="settings-summary-card">
           <span class="settings-summary-label">当前版本</span>
-          <strong>v{{ appVersion || "-" }}</strong>
+          <BaseTooltip :content="versionText">
+            <strong>{{ versionText }}</strong>
+          </BaseTooltip>
           <p>前端构建版本</p>
         </article>
       </section>
