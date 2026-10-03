@@ -264,6 +264,7 @@ func (s *ProxyService) GetTvSeasonDetail(seriesID, seasonNumber int, opts *tmdbc
 		return nil, localErr
 	}
 	if hasLocal {
+		// GetLocalTvSeason 返回前已完成对外 ID 清理，此处不再重复处理
 		raw, err := json.Marshal(localData)
 		if err != nil {
 			return nil, err
@@ -277,7 +278,12 @@ func (s *ProxyService) GetTvSeasonDetail(seriesID, seasonNumber int, opts *tmdbc
 		syncSeriesID = resolveSyncTmdbID(tv.SyncTmdbID, tv.TmdbID)
 	}
 
-	return s.TmdbClient.GetTVSeason(syncSeriesID, seasonNumber, opts)
+	raw, err := s.TmdbClient.GetTVSeason(syncSeriesID, seasonNumber, opts)
+	if err != nil {
+		return nil, err
+	}
+	// 回源用的是旧剧集 ID，响应里每集都带 show_id，必须改写为对外 ID。
+	return NormalizeOutwardRaw(raw, seriesID), nil
 }
 
 // GetLocalTvSeason 获取本地已保存季明细
@@ -309,6 +315,7 @@ func (s *ProxyService) GetLocalTvSeason(seriesID, seasonNumber int) (map[string]
 	if err != nil {
 		return nil, false, err
 	}
+	NormalizeOutwardIDs(normalized, seriesID)
 	return normalized, true, nil
 }
 
@@ -337,9 +344,11 @@ func (s *ProxyService) SaveTvSeasonToLocal(seriesID, seasonNumber int, opts *tmd
 	if err != nil {
 		return nil, err
 	}
+	// 本地持久化保持与 TMDB 上游快照一致，仅出参对外暴露时改写 ID
 	if err := s.saveTvSeasonPayload(seriesID, seasonNumber, normalized); err != nil {
 		return nil, err
 	}
+	NormalizeOutwardIDs(normalized, seriesID)
 	return normalized, nil
 }
 
@@ -356,6 +365,7 @@ func (s *ProxyService) UpdateLocalTvSeason(seriesID, seasonNumber int, payload m
 	if err := s.saveTvSeasonPayload(seriesID, seasonNumber, normalized); err != nil {
 		return nil, err
 	}
+	NormalizeOutwardIDs(normalized, seriesID)
 	return normalized, nil
 }
 
@@ -927,6 +937,8 @@ func mergeTVSeriesWithLocalData(tmdbData json.RawMessage, localData model.RawJSO
 	}
 
 	applyLocalTVSeasonSummaries(payload, localPatch)
+	displayID := mapNumberValue(payload["id"])
+	NormalizeOutwardIDs(payload, displayID)
 
 	raw, err := json.Marshal(payload)
 	if err != nil {
@@ -1253,6 +1265,7 @@ func resolveSyncTmdbID(syncTmdbID int, currentTmdbID int) int {
 	return 0
 }
 
+// 把响应中的资源 ID 统一改写为对外 ID，并保留内部 sync_tmdb_id 供管理前端展示。
 func rewriteTMDBID(raw json.RawMessage, tmdbID int, syncTmdbID int) (json.RawMessage, error) {
 	payload := map[string]interface{}{}
 	if err := json.Unmarshal(raw, &payload); err != nil {
@@ -1265,9 +1278,48 @@ func rewriteTMDBID(raw json.RawMessage, tmdbID int, syncTmdbID int) (json.RawMes
 		syncTmdbID = tmdbID
 	}
 	payload["sync_tmdb_id"] = syncTmdbID
+	NormalizeOutwardIDs(payload, tmdbID)
 	normalized, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
 	return normalized, nil
+}
+
+// 递归把响应里的 show_id 改写为对外剧集 ID：回源走旧 ID，原样返回会让下游
+// 按旧 ID 归属剧集。分集 id、季 id、人物 id 等其它实体字段不能误伤。
+func NormalizeOutwardIDs(node interface{}, displayID int) {
+	switch v := node.(type) {
+	case map[string]interface{}:
+		for key, val := range v {
+			if key == "show_id" && displayID > 0 {
+				if _, ok := val.(float64); ok {
+					v[key] = displayID
+					continue
+				}
+			}
+			NormalizeOutwardIDs(val, displayID)
+		}
+	case []interface{}:
+		for _, item := range v {
+			NormalizeOutwardIDs(item, displayID)
+		}
+	}
+}
+
+// 整段 JSON 响应的 show_id 清理，供代理出口统一调用。
+func NormalizeOutwardRaw(raw json.RawMessage, displayID int) json.RawMessage {
+	if displayID <= 0 || len(raw) == 0 {
+		return raw
+	}
+	payload := map[string]interface{}{}
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return raw
+	}
+	NormalizeOutwardIDs(payload, displayID)
+	normalized, err := json.Marshal(payload)
+	if err != nil {
+		return raw
+	}
+	return normalized
 }

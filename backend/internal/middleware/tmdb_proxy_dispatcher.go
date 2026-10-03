@@ -143,10 +143,11 @@ func episodeDetailMappedRoute(
 	resolver tmdbIDResolver,
 ) tmdbPatternHandler {
 	return func(matches []string, opts *tmdbclient.RequestOption, _ *http.Request) (json.RawMessage, error) {
-		seriesID, err := parseIntParam(matches[1], "series_id")
+		displaySeriesID, err := parseIntParam(matches[1], "series_id")
 		if err != nil {
 			return nil, err
 		}
+		seriesID := displaySeriesID
 		if resolver != nil {
 			seriesID = resolver(seriesID)
 		}
@@ -158,7 +159,12 @@ func episodeDetailMappedRoute(
 		if err != nil {
 			return nil, err
 		}
-		return handler(seriesID, seasonNum, episodeNum, opts)
+		data, err := handler(seriesID, seasonNum, episodeNum, opts)
+		if err != nil {
+			return nil, err
+		}
+		// 回源用的是旧剧集 ID，响应中的 show_id 需改写为对外 ID。
+		return proxy.NormalizeOutwardRaw(data, displaySeriesID), nil
 	}
 }
 
@@ -237,6 +243,7 @@ func rewriteTopLevelID(raw json.RawMessage, id int) (json.RawMessage, error) {
 		return raw, nil
 	}
 	payload["id"] = id
+	proxy.NormalizeOutwardIDs(payload, id)
 	normalized, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
