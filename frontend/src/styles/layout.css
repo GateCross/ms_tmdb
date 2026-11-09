@@ -40,29 +40,16 @@
 }
 
 .admin-brand-mark {
-  position: relative;
-  display: block;
-  width: 34px;
-  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   flex: 0 0 auto;
-}
-
-.admin-brand-mark::before,
-.admin-brand-mark::after {
-  content: "";
-  position: absolute;
   border-radius: 8px;
-  transform: skewX(-28deg);
-}
-
-.admin-brand-mark::before {
-  inset: 3px 13px 3px 2px;
-  background: linear-gradient(180deg, #dd65f3 0%, #725cff 100%);
-}
-
-.admin-brand-mark::after {
-  inset: 12px 2px 3px 14px;
-  background: linear-gradient(180deg, #2fd4ff 0%, #2f7cff 100%);
+  background: var(--surface-muted);
+  border: 1px solid var(--border-muted);
+  color: var(--accent);
 }
 
 .admin-brand-copy {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Film } from "lucide-vue-next";
 import { getMenuIconPaths, type AdminMenuGroup } from "./adminLayoutConfig";
 
 defineProps<{
@@ -11,7 +12,9 @@ defineProps<{
 <template>
   <aside class="admin-sidebar" :class="{ 'admin-sidebar-open': open }" aria-label="主导航">
     <RouterLink to="/" class="admin-brand">
-      <span class="admin-brand-mark" aria-hidden="true"></span>
+      <span class="admin-brand-mark" aria-hidden="true">
+        <Film class="h-4 w-4" />
+      </span>
       <span class="admin-brand-copy">
         <strong>媒体数据管理</strong>
       </span>
@@ -29,12 +32,7 @@ defineProps<{
         >
           <span class="admin-menu-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false">
-              <path
-                v-for="pathData in getMenuIconPaths(item.path)"
-                :key="pathData"
-                :d="pathData"
-                pathLength="24"
-              />
+              <path v-for="pathData in getMenuIconPaths(item.path)" :key="pathData" :d="pathData" pathLength="24" />
             </svg>
           </span>
           <span>{{ item.title }}</span>

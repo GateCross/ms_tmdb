@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { cancelPrefetch, prefetchMediaDetail, schedulePrefetch } from "@/api/prefetch";
 import { useRoute, useRouter } from "vue-router";
+import { Cake, Flame, MapPin } from "lucide-vue-next";
 import { getPersonCombinedCredits, getPersonDetail, getPersonImages } from "@/api/person";
 import { profileImg, tmdbImg } from "@/api/tmdb";
 import LoadState from "@/components/common/LoadState.vue";
@@ -281,20 +282,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <LoadState
-    v-if="!detail"
-    class="card"
-    :loading="loading"
-    loading-text="人物详情加载中..."
-  />
+  <LoadState v-if="!detail" class="card" :loading="loading" loading-text="人物详情加载中..." />
 
   <template v-else>
-    <div
-      v-if="refreshError"
-      class="logs-refresh-error mb-4"
-      role="status"
-      aria-live="polite"
-    >
+    <div v-if="refreshError" class="logs-refresh-error mb-4" role="status" aria-live="polite">
       <span>刷新失败：{{ refreshError }}</span>
       <button type="button" class="btn-soft-xs" :disabled="loading" @click="loadData">重试</button>
     </div>
@@ -314,9 +305,18 @@ onBeforeUnmount(() => {
             <span v-if="detail.known_for_department" class="badge">
               {{ detail.known_for_department }}
             </span>
-            <span v-if="detail.birthday" class="badge">🎂 {{ detail.birthday }}</span>
-            <span v-if="detail.place_of_birth" class="badge">📍 {{ detail.place_of_birth }}</span>
-            <span class="badge">🔥 {{ detail.popularity?.toFixed(0) ?? "-" }}</span>
+            <span v-if="detail.birthday" class="badge inline-flex items-center gap-1.5">
+              <Cake class="h-3.5 w-3.5 text-muted" />
+              <span>{{ detail.birthday }}</span>
+            </span>
+            <span v-if="detail.place_of_birth" class="badge inline-flex items-center gap-1.5">
+              <MapPin class="h-3.5 w-3.5 text-muted" />
+              <span>{{ detail.place_of_birth }}</span>
+            </span>
+            <span class="badge inline-flex items-center gap-1.5">
+              <Flame class="h-3.5 w-3.5 text-muted" />
+              <span>热度 {{ detail.popularity?.toFixed(0) ?? "-" }}</span>
+            </span>
           </div>
 
           <p class="mt-4 text-sm leading-relaxed text-muted">
@@ -335,12 +335,7 @@ onBeforeUnmount(() => {
               </button>
             </div>
             <p v-if="photosLoading" class="text-xs text-muted">正在加载照片...</p>
-            <div
-              v-else-if="photosError"
-              class="logs-refresh-error"
-              role="status"
-              aria-live="polite"
-            >
+            <div v-else-if="photosError" class="logs-refresh-error" role="status" aria-live="polite">
               <span>{{ photosError }}</span>
               <button type="button" class="btn-soft-xs" :disabled="photosLoading" @click="loadPersonImages(true)">
                 重试
@@ -371,12 +366,7 @@ onBeforeUnmount(() => {
               </button>
             </div>
             <p v-if="creditsLoading" class="text-xs text-muted">正在加载代表作品...</p>
-            <div
-              v-else-if="creditsError"
-              class="logs-refresh-error"
-              role="status"
-              aria-live="polite"
-            >
+            <div v-else-if="creditsError" class="logs-refresh-error" role="status" aria-live="polite">
               <span>{{ creditsError }}</span>
               <button
                 type="button"
