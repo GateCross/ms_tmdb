@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"sort"
 	"strconv"
 	"strings"
@@ -177,7 +178,7 @@ func (s *ProxyService) getMovieDetail(tmdbID int, opts *tmdbclient.RequestOption
 	data, fetchErr := s.TmdbClient.GetMovie(syncTmdbID, opts)
 	if fetchErr != nil {
 		if shouldUseFallbackCache(fetchErr) && err == nil {
-			logx.Infof("TMDB 不可用，返回本地缓存: movie/%d", tmdbID)
+			logx.Infof("TMDB 不可用或资源已删除，返回本地缓存: movie/%d", tmdbID)
 			return rewriteTMDBID(json.RawMessage(movie.TmdbData), tmdbID, syncTmdbID)
 		}
 		return nil, fetchErr
@@ -683,7 +684,7 @@ func (s *ProxyService) getMovieDetailByLanguage(tmdbID int, opts *tmdbclient.Req
 			return mergeTMDBWithLocalData(cachedData, localData)
 		}
 		if shouldUseFallbackCache(fetchErr) && movieErr == nil {
-			logx.Infof("TMDB 不可用，返回本地默认语言缓存: movie/%d language=%s", tmdbID, normalizedLanguage)
+			logx.Infof("TMDB 不可用或资源已删除，返回本地默认语言缓存: movie/%d language=%s", tmdbID, normalizedLanguage)
 			return rewriteTMDBID(json.RawMessage(movie.TmdbData), tmdbID, syncTmdbID)
 		}
 		return nil, fetchErr
@@ -746,7 +747,7 @@ func (s *ProxyService) getTVSeriesDetailByLanguage(tmdbID int, opts *tmdbclient.
 			return mergeTVSeriesWithLocalData(cachedData, localData)
 		}
 		if shouldUseFallbackCache(fetchErr) && tvErr == nil {
-			logx.Infof("TMDB 不可用，返回本地默认语言缓存: tv/%d language=%s", tmdbID, normalizedLanguage)
+			logx.Infof("TMDB 不可用或资源已删除，返回本地默认语言缓存: tv/%d language=%s", tmdbID, normalizedLanguage)
 			cachedData, err := rewriteTMDBID(json.RawMessage(tv.TmdbData), tmdbID, syncTmdbID)
 			if err != nil {
 				return nil, err
@@ -799,7 +800,7 @@ func (s *ProxyService) getPersonDetailByLanguage(tmdbID int, opts *tmdbclient.Re
 			return mergeTMDBWithLocalData(json.RawMessage(snapshot.TmdbData), localData)
 		}
 		if shouldUseFallbackCache(fetchErr) && personErr == nil {
-			logx.Infof("TMDB 不可用，返回本地默认语言缓存: person/%d language=%s", tmdbID, normalizedLanguage)
+			logx.Infof("TMDB 不可用或资源已删除，返回本地默认语言缓存: person/%d language=%s", tmdbID, normalizedLanguage)
 			return mergeTMDBWithLocalData(json.RawMessage(person.TmdbData), localData)
 		}
 		return nil, fetchErr
@@ -1001,9 +1002,15 @@ func isExpired(syncedAt *time.Time, ttl time.Duration) bool {
 	return time.Since(*syncedAt) > ttl
 }
 
+// shouldUseFallbackCache 判断回源失败时能否用本地缓存兜底：
+// 网络故障，或 TMDB 返回 404（条目已被上游删除，本地库仍需可用）。
+// 其余 API 错误（401/429 等）必须上抛，避免掩盖鉴权、限流等配置问题。
 func shouldUseFallbackCache(fetchErr error) bool {
 	var apiErr *tmdbclient.APIError
-	return !errors.As(fetchErr, &apiErr)
+	if !errors.As(fetchErr, &apiErr) {
+		return true
+	}
+	return apiErr.StatusCode == http.StatusNotFound
 }
 
 func (s *ProxyService) ensureTVSeriesExists(seriesID int, opts *tmdbclient.RequestOption) error {

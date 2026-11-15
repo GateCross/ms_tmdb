@@ -20,7 +20,12 @@ func TestShouldUseFallbackCache(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "tmdb http error must be surfaced",
+			name: "tmdb 404 resource deleted can use cache",
+			err:  &tmdbclient.APIError{StatusCode: http.StatusNotFound, Body: `{}`},
+			want: true,
+		},
+		{
+			name: "other tmdb http error must be surfaced",
 			err:  &tmdbclient.APIError{StatusCode: http.StatusTooManyRequests, Body: `{}`},
 			want: false,
 		},
