@@ -8,7 +8,7 @@ import { formatJsonText } from "@/utils/jsonText";
 export type RequestLogDetail = AdminProxyAccessLogDetailResp | AdminTmdbRequestLogDetailResp;
 
 export function formatRequestLogTotal(total: number) {
-  return (Math.max(0, Number(total) || 0)).toLocaleString("zh-CN");
+  return Math.max(0, Number(total) || 0).toLocaleString("zh-CN");
 }
 
 export function formatDateTime(value: string) {
@@ -119,6 +119,18 @@ export function autoSyncStatusDotClass(status: string) {
   }
 }
 
+/* 失败/异常行整行弱高亮，排查时先扫行再读状态列 */
+export function autoSyncRowToneClass(status: string) {
+  if (status === "panic") {
+    return "logs-row-tone-danger";
+  }
+  return status === "partial_failed" ? "logs-row-tone-warn" : "";
+}
+
+export function requestRowToneClass(statusCode: number) {
+  return statusCode === 0 || statusCode >= 400 ? "logs-row-tone-danger" : "";
+}
+
 export function summarizeMessage(message: string) {
   const text = (message ?? "").trim();
   if (!text) {
@@ -158,11 +170,19 @@ export function hasFieldList(fields: string[] | undefined) {
   return visibleFieldList(fields).length > 0;
 }
 
-export function hasLocalFieldSummary(entry: Pick<AdminAutoSyncLogDetailEntry, "changed_fields" | "overwritten_fields" | "kept_local_fields">) {
-  return hasFieldList(entry.changed_fields) || hasFieldList(entry.overwritten_fields) || hasFieldList(entry.kept_local_fields);
+export function hasLocalFieldSummary(
+  entry: Pick<AdminAutoSyncLogDetailEntry, "changed_fields" | "overwritten_fields" | "kept_local_fields">,
+) {
+  return (
+    hasFieldList(entry.changed_fields) ||
+    hasFieldList(entry.overwritten_fields) ||
+    hasFieldList(entry.kept_local_fields)
+  );
 }
 
-export function fieldChangeCount(changes: Array<{ field: string; diff_type: string; before: string; after: string }> | undefined) {
+export function fieldChangeCount(
+  changes: Array<{ field: string; diff_type: string; before: string; after: string }> | undefined,
+) {
   return Array.isArray(changes) ? changes.length : 0;
 }
 
@@ -203,6 +223,10 @@ export function splitPathAndQuery(value: string) {
 
 export function accessPath(value: string) {
   return splitPathAndQuery(value).path;
+}
+
+export function cleanLogPath(value?: string | null): string {
+  return splitPathAndQuery(value ?? "").path;
 }
 
 export function formatRequestUriForDisplay(value: string) {

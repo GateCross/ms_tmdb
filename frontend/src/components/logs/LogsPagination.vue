@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed } from "vue";
 import GlassSelect from "@/components/GlassSelect.vue";
+
+type PageItem = number | "ellipsis";
 
 const props = withDefaults(
   defineProps<{
@@ -26,27 +28,23 @@ const emit = defineEmits<{
   "change-page-size": [pageSize: number];
 }>();
 
-const jumpPage = ref(props.page);
 const showPageSize = computed(() => props.pageSize > 0 && props.pageSizeOptions.length > 0);
 const pageSizeValue = computed(() => String(props.pageSize));
 const pageSizeSelectOptions = computed(() =>
   props.pageSizeOptions.map((size) => ({ label: `${size} 条`, value: String(size) })),
 );
 
-function normalizeJumpPage(value: number) {
-  const next = Number.isFinite(value) ? Math.trunc(value) : props.page;
-  if (next < 1) return 1;
-  if (next > props.totalPages) return props.totalPages;
-  return next;
-}
-
-function submitJumpPage() {
-  const target = normalizeJumpPage(Number(jumpPage.value));
-  jumpPage.value = target;
-  if (target !== props.page) {
-    emit("change-page", target);
+// 页码窗口：总数少直接全出，多时保留首尾页 + 当前页邻域，间隙折叠为省略号
+const pageItems = computed<PageItem[]>(() => {
+  const total = Math.max(1, props.totalPages);
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, index) => index + 1);
   }
-}
+  const pages = [
+    ...new Set([1, total, props.page - 1, props.page, props.page + 1].filter((page) => page >= 1 && page <= total)),
+  ].sort((a, b) => a - b);
+  return pages.flatMap((page, index) => (index && page - pages[index - 1] > 1 ? ["ellipsis" as const, page] : [page]));
+});
 
 function changePageSize(value: string) {
   const next = Number(value);
@@ -54,13 +52,6 @@ function changePageSize(value: string) {
     emit("change-page-size", Math.trunc(next));
   }
 }
-
-watch(
-  () => props.page,
-  (value) => {
-    jumpPage.value = value;
-  },
-);
 </script>
 
 <template>
@@ -84,21 +75,22 @@ watch(
       >
         上一页
       </button>
-      <form class="settings-pagination-jump" @submit.prevent="submitJumpPage">
-        <span>跳至</span>
-        <input
-          v-model.number="jumpPage"
-          class="field-control-xs settings-pagination-input"
-          type="number"
-          min="1"
-          :max="totalPages"
-          :disabled="busy"
-          aria-label="跳转页码"
-          @blur="jumpPage = normalizeJumpPage(Number(jumpPage))"
-        />
-        <span>页</span>
-        <button class="btn-soft px-3 py-1.5 disabled:opacity-60" type="submit" :disabled="busy">跳转</button>
-      </form>
+      <nav v-if="pageItems.length > 1" class="settings-pagination-nav" aria-label="分页">
+        <template v-for="(item, index) in pageItems" :key="`${item}-${index}`">
+          <span v-if="item === 'ellipsis'" class="settings-pagination-ellipsis" aria-hidden="true">…</span>
+          <button
+            v-else
+            class="settings-pagination-page"
+            :class="item === page ? 'settings-pagination-page-active' : ''"
+            type="button"
+            :disabled="busy"
+            :aria-current="item === page ? 'page' : undefined"
+            @click="emit('change-page', item)"
+          >
+            {{ item }}
+          </button>
+        </template>
+      </nav>
       <button
         class="btn-soft px-3 py-1.5 disabled:opacity-60"
         :disabled="busy || page >= totalPages"

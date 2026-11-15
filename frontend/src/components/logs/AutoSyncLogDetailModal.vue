@@ -2,6 +2,7 @@
 import { ref, watch } from "vue";
 import BaseDialog from "@/components/common/BaseDialog.vue";
 import BaseTooltip from "@/components/common/BaseTooltip.vue";
+import DataListShell from "@/components/common/DataListShell.vue";
 import LogsPagination from "@/components/logs/LogsPagination.vue";
 import type { AdminAutoSyncLogDetailResp } from "@/api/admin";
 import {
@@ -37,6 +38,9 @@ const emit = defineEmits<{
 }>();
 
 const activeTab = ref<DetailTab>("synced");
+
+const syncedColumns = ["媒体", "远端差异", "本地处理"];
+const failedColumns = ["媒体", "失败原因"];
 
 // 翻页会整体替换 detail 对象但 id 不变；仅在切换到另一条日志时重置 tab，
 // 全成功却无失败项的日志直接落到失败项 tab 没有意义，仍回成功项
@@ -115,10 +119,7 @@ watch(
           @click="activeTab = 'failed'"
         >
           同步失败项
-          <span
-            class="detail-tab-count"
-            :class="{ 'detail-tab-count-danger': detail.failed > 0 }"
-          >
+          <span class="detail-tab-count" :class="{ 'detail-tab-count-danger': detail.failed > 0 }">
             {{ detail.failed }}
           </span>
         </button>
@@ -127,78 +128,63 @@ watch(
       <!-- 两个 tab 共用同一弹性高度：表格区 flex-1 内部滚动，切换 tab 弹窗尺寸不变 -->
       <template v-if="activeTab === 'synced'">
         <div class="flex min-h-0 flex-1 flex-col">
-          <div class="table-shell settings-table-shell mt-3 min-h-0 flex-1 overflow-y-auto">
-            <table
-              class="min-w-full text-sm settings-detail-table settings-detail-table-fixed settings-detail-success-table"
+          <DataListShell
+            shell-class="settings-detail-data-list mt-3 min-h-0 flex-1 overflow-auto"
+            grid-class="logs-grid-detail-synced"
+            :columns="syncedColumns"
+            :empty="detail.synced_list.length === 0"
+            empty-text="无成功同步明细"
+          >
+            <article
+              v-for="(entry, idx) in detail.synced_list"
+              :key="`synced-${idx}-${entry.media_type}-${entry.tmdb_id}`"
+              class="logs-row logs-grid-detail-synced settings-detail-row"
             >
-              <colgroup>
-                <col class="settings-detail-col-media" />
-                <col class="settings-detail-col-remote" />
-                <col class="settings-detail-col-local" />
-              </colgroup>
-              <thead class="table-head text-left text-muted">
-                <tr>
-                  <th class="px-3 py-2 font-medium">媒体</th>
-                  <th class="px-3 py-2 font-medium">远端差异</th>
-                  <th class="px-3 py-2 font-medium">本地处理</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(entry, idx) in detail.synced_list"
-                  :key="`synced-${idx}-${entry.media_type}-${entry.tmdb_id}`"
-                  class="table-row-hover"
+              <div class="settings-media-cell">
+                <span class="settings-media-type">{{ formatMediaType(entry.media_type) }}</span>
+                <div class="min-w-0">
+                  <p class="settings-table-primary line-clamp-2">{{ entry.name || "-" }}</p>
+                  <p class="settings-table-meta">TMDB ID {{ entry.tmdb_id || "-" }}</p>
+                </div>
+              </div>
+
+              <div class="min-w-0">
+                <BaseTooltip
+                  v-if="visibleFieldList(entry.remote_diff_fields).length"
+                  :content="formatFieldList(entry.remote_diff_fields)"
                 >
-                  <td class="px-3 py-2">
-                    <div class="settings-media-cell">
-                      <span class="settings-media-type">{{ formatMediaType(entry.media_type) }}</span>
-                      <div>
-                        <p class="settings-table-primary line-clamp-2">{{ entry.name || "-" }}</p>
-                        <p class="settings-table-meta">TMDB ID {{ entry.tmdb_id || "-" }}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-3 py-2">
-                    <BaseTooltip
-                      v-if="visibleFieldList(entry.remote_diff_fields).length"
-                      :content="formatFieldList(entry.remote_diff_fields)"
-                    >
-                      <p class="settings-field-inline">
-                        {{ visibleFieldList(entry.remote_diff_fields).join(" · ") }}
-                      </p>
-                    </BaseTooltip>
-                    <span v-else class="settings-empty-value">无差异</span>
-                    <details v-if="fieldChangeCount(entry.field_changes)" class="settings-field-detail">
-                      <summary>字段明细 · {{ fieldChangeCount(entry.field_changes) }} 项</summary>
-                      <pre class="settings-diff-pre settings-diff-pre-compact">{{
-                        formatFieldChanges(entry.field_changes)
-                      }}</pre>
-                    </details>
-                  </td>
-                  <td class="px-3 py-2">
-                    <div v-if="hasLocalFieldSummary(entry)" class="settings-field-stack">
-                      <div v-if="hasFieldList(entry.changed_fields)">
-                        <span>变更</span>
-                        <p>{{ formatFieldList(entry.changed_fields) }}</p>
-                      </div>
-                      <div v-if="hasFieldList(entry.overwritten_fields)">
-                        <span>覆盖</span>
-                        <p>{{ formatFieldList(entry.overwritten_fields) }}</p>
-                      </div>
-                      <div v-if="hasFieldList(entry.kept_local_fields)">
-                        <span>保留</span>
-                        <p>{{ formatFieldList(entry.kept_local_fields) }}</p>
-                      </div>
-                    </div>
-                    <span v-else class="settings-empty-value">无变更</span>
-                  </td>
-                </tr>
-                <tr v-if="detail.synced_list.length === 0">
-                  <td colspan="3" class="px-3 py-4 text-center text-muted">无成功同步明细</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                  <p class="settings-field-inline">
+                    {{ visibleFieldList(entry.remote_diff_fields).join(" · ") }}
+                  </p>
+                </BaseTooltip>
+                <span v-else class="settings-empty-value">无差异</span>
+                <details v-if="fieldChangeCount(entry.field_changes)" class="settings-field-detail">
+                  <summary>字段明细 · {{ fieldChangeCount(entry.field_changes) }} 项</summary>
+                  <pre class="settings-diff-pre settings-diff-pre-compact">{{
+                    formatFieldChanges(entry.field_changes)
+                  }}</pre>
+                </details>
+              </div>
+
+              <div class="min-w-0">
+                <div v-if="hasLocalFieldSummary(entry)" class="settings-field-stack">
+                  <div v-if="hasFieldList(entry.changed_fields)">
+                    <span>变更</span>
+                    <p>{{ formatFieldList(entry.changed_fields) }}</p>
+                  </div>
+                  <div v-if="hasFieldList(entry.overwritten_fields)">
+                    <span>覆盖</span>
+                    <p>{{ formatFieldList(entry.overwritten_fields) }}</p>
+                  </div>
+                  <div v-if="hasFieldList(entry.kept_local_fields)">
+                    <span>保留</span>
+                    <p>{{ formatFieldList(entry.kept_local_fields) }}</p>
+                  </div>
+                </div>
+                <span v-else class="settings-empty-value">无变更</span>
+              </div>
+            </article>
+          </DataListShell>
           <LogsPagination
             class="flex-none"
             :total="detail.synced"
@@ -213,47 +199,33 @@ watch(
 
       <template v-else>
         <div class="flex min-h-0 flex-1 flex-col">
-          <div class="table-shell settings-table-shell mt-3 min-h-0 flex-1 overflow-y-auto">
-            <table
-              class="min-w-full text-sm settings-detail-table settings-detail-table-fixed settings-detail-failed-table"
+          <DataListShell
+            shell-class="settings-detail-data-list mt-3 min-h-0 flex-1 overflow-auto"
+            grid-class="logs-grid-detail-failed"
+            :columns="failedColumns"
+            :empty="detail.failed_list.length === 0"
+            empty-text="无失败明细"
+          >
+            <article
+              v-for="(entry, idx) in detail.failed_list"
+              :key="`failed-${idx}-${entry.media_type}-${entry.tmdb_id}`"
+              class="logs-row logs-grid-detail-failed settings-detail-row logs-row-tone-danger"
             >
-              <colgroup>
-                <col class="settings-detail-col-media" />
-                <col class="settings-detail-col-failure" />
-              </colgroup>
-              <thead class="table-head text-left text-muted">
-                <tr>
-                  <th class="px-3 py-2 font-medium">媒体</th>
-                  <th class="px-3 py-2 font-medium">失败原因</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(entry, idx) in detail.failed_list"
-                  :key="`failed-${idx}-${entry.media_type}-${entry.tmdb_id}`"
-                  class="table-row-hover"
-                >
-                  <td class="px-3 py-2">
-                    <div class="settings-media-cell">
-                      <span class="settings-media-type">{{ formatMediaType(entry.media_type) }}</span>
-                      <div>
-                        <p class="settings-table-primary line-clamp-2">{{ entry.name || "-" }}</p>
-                        <p class="settings-table-meta">TMDB ID {{ entry.tmdb_id || "-" }}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-3 py-2 text-muted">
-                    <BaseTooltip :content="entry.message || '-'">
-                      <p class="settings-detail-message">{{ entry.message || "-" }}</p>
-                    </BaseTooltip>
-                  </td>
-                </tr>
-                <tr v-if="detail.failed_list.length === 0">
-                  <td colspan="2" class="px-3 py-4 text-center text-muted">无失败明细</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+              <div class="settings-media-cell">
+                <span class="settings-media-type">{{ formatMediaType(entry.media_type) }}</span>
+                <div class="min-w-0">
+                  <p class="settings-table-primary line-clamp-2">{{ entry.name || "-" }}</p>
+                  <p class="settings-table-meta">TMDB ID {{ entry.tmdb_id || "-" }}</p>
+                </div>
+              </div>
+
+              <div class="min-w-0 text-muted">
+                <BaseTooltip :content="entry.message || '-'">
+                  <p class="settings-detail-message">{{ entry.message || "-" }}</p>
+                </BaseTooltip>
+              </div>
+            </article>
+          </DataListShell>
           <LogsPagination
             class="flex-none"
             :total="detail.failed"
