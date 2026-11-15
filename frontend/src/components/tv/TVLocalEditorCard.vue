@@ -19,10 +19,13 @@ const props = defineProps<{
   genreOptions: GenreOption[];
   tvStatusOptions: ReadonlyArray<SelectOption>;
   tvTypeOptions: ReadonlyArray<SelectOption>;
+  skipSync: boolean | null;
+  skipSyncToggling: boolean;
   onDelete: () => void;
   onEnterEdit: () => void;
   onSave: () => void;
   onCancel: () => void;
+  onToggleSkipSync: (value: boolean) => void;
   onUpdateGenreKeyword: (value: string) => void;
 }>();
 
@@ -43,6 +46,17 @@ const genreKeywordModel = computed({
         <button v-if="!isEditing" class="btn-soft-xs" @click="onEnterEdit">编辑</button>
       </div>
     </div>
+
+    <label v-if="skipSync !== null" class="mt-2 flex items-center gap-2 text-xs text-muted">
+      <input
+        type="checkbox"
+        class="check-control"
+        :checked="skipSync"
+        :disabled="skipSyncToggling"
+        @change="onToggleSkipSync(($event.target as HTMLInputElement).checked)"
+      />
+      <span>跳过自动同步（勾选后定时任务不再拉取该剧集，手动同步不受影响）</span>
+    </label>
 
     <p v-if="!isEditing" class="mt-2 text-xs text-muted">当前为查看模式，点击“编辑”后可修改并保存到本地数据库。</p>
 

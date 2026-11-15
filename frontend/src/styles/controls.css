@@ -554,6 +554,13 @@ html.dark .toast-notice-close::after {
   border: 1px solid var(--soft-btn-border);
 }
 
+.chip-skip-sync {
+  @apply inline-block rounded px-2 py-0.5 text-[11px];
+  color: var(--danger-fg);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+}
+
 .table-shell {
   @apply mt-4 overflow-x-auto rounded-lg p-0;
   -webkit-overflow-scrolling: touch;

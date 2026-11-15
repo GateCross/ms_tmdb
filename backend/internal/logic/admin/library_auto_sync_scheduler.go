@@ -435,6 +435,8 @@ func (s *LibraryAutoSyncScheduler) syncTvSeries(ctx context.Context, settings Au
 			Model(&model.TVSeries{}).
 			Select("id", "tmdb_id", "sync_tmdb_id", "name").
 			Where("tmdb_id > 0").
+			// 标记跳过同步的剧集不参与定时拉取
+			Where("skip_sync IS NOT TRUE").
 			Order("id ASC").
 			Limit(settings.BatchSize)
 		if lastID > 0 {

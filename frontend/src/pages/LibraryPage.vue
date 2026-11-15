@@ -208,6 +208,7 @@ handleExternalTabChange = onExternalTabChange;
                 </p>
                 <span v-if="item.tmdb_id < 0" class="chip-local-new mt-1 text-[10px]"> 本地新建 </span>
                 <span v-else-if="item.is_modified" class="chip-modified mt-1 text-[10px]"> 已修改 </span>
+                <span v-if="item.skip_sync" class="chip-skip-sync mt-1 text-[10px]"> 跳过同步 </span>
               </div>
             </RouterLink>
           </div>

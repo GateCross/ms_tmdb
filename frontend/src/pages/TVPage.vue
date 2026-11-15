@@ -25,6 +25,9 @@ const {
   saving,
   deleting,
   saveMessage,
+  skipSync,
+  skipSyncToggling,
+  toggleSkipSync,
   checkingRemoteDiff,
   remoteDiffNotice,
   remoteDiffMessage,
@@ -231,10 +234,13 @@ watch(seasonLocalMessage, (message) => {
             :genre-options="genreOptions"
             :tv-status-options="tvStatusOptions"
             :tv-type-options="tvTypeOptions"
+            :skip-sync="skipSync"
+            :skip-sync-toggling="skipSyncToggling"
             :on-delete="deleteCurrentTV"
             :on-enter-edit="enterEditMode"
             :on-save="saveTVChanges"
             :on-cancel="cancelEditMode"
+            :on-toggle-skip-sync="toggleSkipSync"
             :on-update-genre-keyword="updateGenreKeyword"
           />
 

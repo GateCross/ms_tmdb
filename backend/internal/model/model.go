@@ -116,6 +116,7 @@ type TVSeries struct {
 	TmdbData         RawJSON    `gorm:"type:jsonb" json:"tmdb_data"`
 	LocalData        RawJSON    `gorm:"type:jsonb" json:"local_data"`
 	IsModified       bool       `gorm:"default:false" json:"is_modified"`
+	SkipSync         bool       `gorm:"default:false" json:"skip_sync"`
 	LastSyncedAt     *time.Time `json:"last_synced_at"`
 }
 

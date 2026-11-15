@@ -98,6 +98,7 @@ function genreOverflowCount(item: LibraryListItem): number {
         <span v-if="item.tmdb_id < 0" class="chip-local-new">本地新建</span>
         <span v-else-if="item.is_modified" class="chip-modified">已修改</span>
         <span v-else class="chip-neutral">未修改</span>
+        <span v-if="item.skip_sync" class="chip-skip-sync">跳过同步</span>
       </div>
 
       <div class="library-table-actions flex items-center gap-2">

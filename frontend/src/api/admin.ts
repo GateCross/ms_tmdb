@@ -297,6 +297,8 @@ export type AdminMovieListItem = MediaSummary & {
   popularity: number;
   is_modified: boolean;
   genre_names: string[];
+  // 仅剧集返回；电影恒为空，仅为列表 union 访问兼容
+  skip_sync?: boolean;
 };
 
 export type AdminTVListItem = MediaSummary & {
@@ -310,6 +312,7 @@ export type AdminTVListItem = MediaSummary & {
   number_of_episodes: number;
   popularity: number;
   is_modified: boolean;
+  skip_sync: boolean;
   genre_names: string[];
 };
 
@@ -418,6 +421,21 @@ export function createTV(payload: AdminCreateTVPayload) {
 
 export function deleteTV(id: number) {
   return http.delete(`/api/admin/tv/${id}`);
+}
+
+export type AdminTvSkipSyncResp = {
+  skip_sync: boolean;
+  message?: string;
+};
+
+export function getTVSkipSync(id: number, options?: RequestOptions) {
+  return http.get<AdminTvSkipSyncResp>(`/api/admin/tv/${id}/skip-sync`, {
+    ...options,
+  });
+}
+
+export function updateTVSkipSync(id: number, skipSync: boolean) {
+  return http.put<AdminTvSkipSyncResp>(`/api/admin/tv/${id}/skip-sync`, { skip_sync: skipSync });
 }
 
 export function getTVSeasonLocal(id: number, seasonNumber: number, options?: RequestOptions) {

@@ -35,7 +35,7 @@ jsonb_build_object(
 ) AS tmdb_data`
 
 // tvSeriesListSelect 同上，减少 tv_series 列表 IO。
-const tvSeriesListSelect = `tv_series.id, tv_series.tmdb_id, tv_series.name, tv_series.original_name, tv_series.poster_path, tv_series.backdrop_path, tv_series.vote_average, tv_series.first_air_date, tv_series.number_of_seasons, tv_series.number_of_episodes, tv_series.popularity, tv_series.is_modified, tv_series.last_synced_at, tv_series.created_at,
+const tvSeriesListSelect = `tv_series.id, tv_series.tmdb_id, tv_series.name, tv_series.original_name, tv_series.poster_path, tv_series.backdrop_path, tv_series.vote_average, tv_series.first_air_date, tv_series.number_of_seasons, tv_series.number_of_episodes, tv_series.popularity, tv_series.is_modified, tv_series.skip_sync, tv_series.last_synced_at, tv_series.created_at,
 jsonb_build_object(
   'genres', COALESCE(tv_series.local_data->'genres', '[]'::jsonb),
   'genre_names', COALESCE(tv_series.local_data->'genre_names', '[]'::jsonb)

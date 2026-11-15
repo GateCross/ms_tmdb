@@ -62,6 +62,7 @@ func (l *ListTvSeriesLogic) ListTvSeries(req *types.LibraryListReq) (*types.TvSe
 			NumberOfEpisodes: m.NumberOfEpisodes,
 			Popularity:       m.Popularity,
 			IsModified:       m.IsModified,
+			SkipSync:         m.SkipSync,
 			GenreNames:       mergeGenreNames(genreNamesFromRaw(m.LocalData), genreNamesFromRaw(m.TmdbData)),
 		}
 	}

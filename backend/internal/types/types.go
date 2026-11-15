@@ -363,6 +363,16 @@ type AdminTvSeasonLocalUpdateReq struct {
 	Payload      map[string]interface{} `json:"payload"`
 }
 
+type AdminTvSkipSyncReq struct {
+	Id       int  `path:"id"`
+	SkipSync bool `json:"skip_sync"`
+}
+
+type AdminTvSkipSyncResp struct {
+	SkipSync bool   `json:"skip_sync"`
+	Message  string `json:"message,optional"`
+}
+
 type AdminUpdateReq struct {
 	Id               int      `path:"id"`
 	TmdbId           *int     `json:"tmdb_id,optional"`
@@ -433,6 +443,7 @@ type TvSeriesListItem struct {
 	NumberOfEpisodes int      `json:"number_of_episodes"`
 	Popularity       float64  `json:"popularity"`
 	IsModified       bool     `json:"is_modified"`
+	SkipSync         bool     `json:"skip_sync"`
 	GenreNames       []string `json:"genre_names"`
 }
 

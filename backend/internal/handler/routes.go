@@ -201,6 +201,16 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: admin.DeleteTvSeasonLocalHandler(serverCtx),
 			},
 			{
+				Method:  http.MethodGet,
+				Path:    "/tv/:id/skip-sync",
+				Handler: admin.GetTvSkipSyncHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/tv/:id/skip-sync",
+				Handler: admin.UpdateTvSkipSyncHandler(serverCtx),
+			},
+			{
 				Method:  http.MethodPost,
 				Path:    "/upload/image",
 				Handler: admin.UploadImageHandler(serverCtx),

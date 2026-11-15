@@ -5,9 +5,11 @@ import {
   deleteTV,
   deleteTVSeasonLocal,
   getTVSeasonLocal,
+  getTVSkipSync,
   saveTVSeasonLocal,
   updateTV,
   updateTVSeasonLocal,
+  updateTVSkipSync,
 } from "@/api/admin";
 
 import type { AdminCompareFieldDetail, AdminSyncMode } from "@/api/admin";
@@ -70,6 +72,9 @@ export function useTVDetailPage() {
   const saveError = ref("");
   const deleteError = ref("");
   const saveMessage = ref("");
+  // null 表示未保存到本地库或状态未知，此时详情页不显示跳过同步开关
+  const skipSync = ref<boolean | null>(null);
+  const skipSyncToggling = ref(false);
   const comparedRemoteId = ref<number | null>(null);
   const checkingRemoteDiff = ref(false);
   const remoteDiffNotice = ref<RemoteDiffNotice | null>(null);
@@ -121,6 +126,7 @@ export function useTVDetailPage() {
   let creditsReqSeq = 0;
   let cancelDeferredLoads: (() => void) | null = null;
   let seasonDetailReqSeq = 0;
+  let skipSyncReqSeq = 0;
 
   const filteredGenreOptions = computed(() => {
     const keyword = genreKeyword.value.trim().toLowerCase();
@@ -1165,6 +1171,47 @@ export function useTVDetailPage() {
     }
   }
 
+  async function loadSkipSyncState() {
+    const targetId = tvId.value;
+    if (!targetId) {
+      skipSync.value = null;
+      return;
+    }
+    const requestSeq = ++skipSyncReqSeq;
+    try {
+      // 辅助状态读取：静默失败，未保存本地库的条目不显示开关
+      const resp = await getTVSkipSync(targetId, { showErrorToast: false });
+      if (requestSeq !== skipSyncReqSeq || targetId !== tvId.value) {
+        return;
+      }
+      skipSync.value = resp.data?.skip_sync ?? false;
+    } catch {
+      if (requestSeq !== skipSyncReqSeq || targetId !== tvId.value) {
+        return;
+      }
+      skipSync.value = null;
+    }
+  }
+
+  async function toggleSkipSync(next: boolean) {
+    if (!tvId.value || skipSyncToggling.value || skipSync.value === null) {
+      return;
+    }
+    const targetId = tvId.value;
+    skipSyncToggling.value = true;
+    try {
+      const resp = await updateTVSkipSync(targetId, next);
+      if (targetId !== tvId.value) {
+        return;
+      }
+      skipSync.value = resp.data?.skip_sync ?? next;
+    } catch {
+      /* handled by global toast */
+    } finally {
+      skipSyncToggling.value = false;
+    }
+  }
+
   async function checkRemoteDiffAndPrompt(force = false) {
     if (!tvId.value || checkingRemoteDiff.value || (!force && comparedRemoteId.value === tvId.value)) {
       return;
@@ -1275,6 +1322,7 @@ export function useTVDetailPage() {
       !!detail.value && Number(detail.value.id ?? detail.value.sync_tmdb_id) === targetId;
     if (!sameDetail) {
       detail.value = null;
+      skipSync.value = null;
     }
     const hadDetail = sameDetail;
     stopDeferredLoads();
@@ -1289,6 +1337,7 @@ export function useTVDetailPage() {
         return;
       }
       detail.value = resp.data;
+      void loadSkipSyncState();
       resetEditForm(resp.data);
       genreOptions.value = normalizeGenreOptions(resp.data?.genres);
       genreOptionsLoaded.value = false;
@@ -1485,6 +1534,7 @@ export function useTVDetailPage() {
     creditsReqSeq++;
     stopDeferredLoads();
     seasonDetailReqSeq++;
+    skipSyncReqSeq++;
   });
 
   return {
@@ -1500,6 +1550,9 @@ export function useTVDetailPage() {
     saving,
     deleting,
     saveMessage,
+    skipSync,
+    skipSyncToggling,
+    toggleSkipSync,
     checkingRemoteDiff,
     remoteDiffNotice,
     remoteDiffMessage,

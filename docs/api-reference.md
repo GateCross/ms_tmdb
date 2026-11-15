@@ -96,6 +96,8 @@
 - `POST /api/admin/sync/movie/{id}`
 - `POST /api/admin/sync/tv/{id}`
 - `POST /api/admin/sync/person/{id}`
+- `GET /api/admin/tv/{id}/skip-sync`（查询剧集是否跳过自动同步）
+- `PUT /api/admin/tv/{id}/skip-sync`（标记剧集跳过自动同步，请求体 `{"skip_sync": true}`；标记后定时任务不再拉取该剧集，手动同步不受影响）
 
 请求体字段：
 

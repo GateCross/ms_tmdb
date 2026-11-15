@@ -93,6 +93,16 @@ type (
 		Data    map[string]interface{} `json:"data"`
 		Message string                 `json:"message,optional"`
 	}
+	// 管理接口 - 剧集跳过自动同步请求
+	AdminTvSkipSyncReq {
+		Id       int  `path:"id"`
+		SkipSync bool `json:"skip_sync"`
+	}
+	// 管理接口 - 剧集跳过自动同步响应
+	AdminTvSkipSyncResp {
+		SkipSync bool   `json:"skip_sync"`
+		Message  string `json:"message,optional"`
+	}
 	// 管理接口 - 同步请求
 	AdminSyncReq {
 		Id              int      `path:"id"`
@@ -488,6 +498,12 @@ service tmdb-api {
 
 	@handler DeleteTvSeasonLocal
 	delete /tv/:id/season/:season_number/local (AdminTvSeasonLocalReq) returns (AdminTvSeasonLocalResp)
+
+	@handler GetTvSkipSync
+	get /tv/:id/skip-sync (PathIdReq) returns (AdminTvSkipSyncResp)
+
+	@handler UpdateTvSkipSync
+	put /tv/:id/skip-sync (AdminTvSkipSyncReq) returns (AdminTvSkipSyncResp)
 
 	@handler SyncMovie
 	post /sync/movie/:id (AdminSyncReq) returns (AdminSyncResp)

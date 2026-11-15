@@ -150,6 +150,7 @@ export function useLibraryList(options: UseLibraryListOptions = {}) {
         number_of_episodes: Number(raw.number_of_episodes ?? 0),
         popularity: Number(raw.popularity ?? 0),
         is_modified: Boolean(raw.is_modified),
+        skip_sync: Boolean(raw.skip_sync),
         genre_names: genres,
         id: Number.isFinite(Number(raw.id)) ? Number(raw.id) : tmdbId,
         media_type: "tv",
