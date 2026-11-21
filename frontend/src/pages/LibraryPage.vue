@@ -84,9 +84,34 @@ handleExternalTabChange = onExternalTabChange;
     <section class="library-toolbar card">
       <div class="library-toolbar-main">
         <div class="library-toolbar-copy">
-          <p class="section-label">本地库</p>
-          <h2 class="library-toolbar-title">{{ activeTab === "movie" ? "电影库" : "剧集库" }}</h2>
-          <p class="mt-1 text-sm text-muted">管理本地缓存、手动新建条目，并快速进入详情页处理字段覆盖。</p>
+          <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h2 class="library-toolbar-title">{{ activeTab === "movie" ? "电影库" : "剧集库" }}</h2>
+            <span class="text-xs text-muted">本地库 · 管理本地缓存与手动新建条目</span>
+          </div>
+        </div>
+        <div class="library-list-controls">
+          <div class="library-switch library-view-switch" role="group" aria-label="视图模式">
+            <button
+              type="button"
+              class="library-switch-btn"
+              :class="viewMode === 'grid' ? 'library-switch-btn-active' : ''"
+              @click="viewMode = 'grid'"
+            >
+              卡片
+            </button>
+            <button
+              type="button"
+              class="library-switch-btn"
+              :class="viewMode === 'table' ? 'library-switch-btn-active' : ''"
+              @click="viewMode = 'table'"
+            >
+              表格
+            </button>
+          </div>
+
+          <button type="button" class="btn-primary library-list-create-btn" @click="openCreatePanel">
+            {{ createTitle }}
+          </button>
         </div>
       </div>
 
@@ -127,25 +152,12 @@ handleExternalTabChange = onExternalTabChange;
       </div>
     </section>
 
-    <!-- 卡片视图：保持原来的整页自然滚动布局 -->
+    <!-- 卡片视图：整页自然滚动布局 -->
     <template v-if="viewMode === 'grid'">
-      <section class="library-list-summary mt-4">
-        <p class="text-sm text-muted">
-          共 <strong>{{ total }}</strong> 条记录 · 第 {{ page }}/{{ totalPages() }} 页
-        </p>
-        <div class="library-list-controls">
-          <div class="library-switch library-view-switch" role="group" aria-label="视图模式">
-            <button type="button" class="library-switch-btn library-switch-btn-active" @click="viewMode = 'grid'">
-              卡片
-            </button>
-            <button type="button" class="library-switch-btn" @click="viewMode = 'table'">表格</button>
-          </div>
-
-          <button type="button" class="btn-primary library-list-create-btn" @click="openCreatePanel">
-            {{ createTitle }}
-          </button>
-        </div>
-      </section>
+      <p class="mt-4 text-xs text-muted">
+        共 <strong class="font-semibold text-ink tabular-nums">{{ total }}</strong> 条记录 · 第
+        <span class="tabular-nums">{{ page }}/{{ totalPages() }}</span> 页
+      </p>
 
       <div
         v-if="refreshError && !loadError"
@@ -231,29 +243,11 @@ handleExternalTabChange = onExternalTabChange;
       </LoadState>
     </template>
 
-    <!-- 表格视图：限高，列表内部纵向滚动；顶部汇总条与卡片视图同构 -->
+    <!-- 表格视图：限高，列表内部纵向滚动 -->
     <section v-else class="card settings-card-wide settings-log-card library-result-card">
-      <section class="library-list-summary">
-        <p class="text-sm text-muted">
-          共 <strong>{{ total }}</strong> 条记录 · 第 {{ page }}/{{ totalPages() }} 页
-        </p>
-        <div class="library-list-controls">
-          <div class="library-switch library-view-switch" role="group" aria-label="视图模式">
-            <button type="button" class="library-switch-btn" @click="viewMode = 'grid'">卡片</button>
-            <button type="button" class="library-switch-btn library-switch-btn-active" @click="viewMode = 'table'">
-              表格
-            </button>
-          </div>
-
-          <button type="button" class="btn-primary library-list-create-btn" @click="openCreatePanel">
-            {{ createTitle }}
-          </button>
-        </div>
-      </section>
-
       <div
         v-if="refreshError && !loadError"
-        class="logs-refresh-error"
+        class="logs-refresh-error !mt-0 !mb-3"
         role="status"
         aria-live="polite"
       >
@@ -264,6 +258,7 @@ handleExternalTabChange = onExternalTabChange;
       <LoadState :loading="initialLoading" loading-text="媒体库加载中...">
         <LibraryDataList
           :items="items"
+          :loading="loading"
           :deleting-id="deletingId"
           :can-delete-item="canDeleteItem"
           :schedule-item-detail="scheduleItemDetail"
@@ -282,7 +277,6 @@ handleExternalTabChange = onExternalTabChange;
         :page-size-options="pageSizeOptions"
         :total-pages="totalPages()"
         :busy="loading"
-        :show-stats="false"
         @change-page="gotoPage"
         @change-page-size="changePageSize"
       />

@@ -17,7 +17,7 @@ const emit = defineEmits<{
   <section class="logs-hero card">
     <div class="logs-hero-head">
       <div class="min-w-0">
-        <p class="section-label">Logs</p>
+        <p class="section-label">日志中心</p>
         <h2 class="library-toolbar-title">请求日志</h2>
         <p class="mt-1 text-sm text-muted">代理访问、TMDB 回源请求与定时同步执行记录。</p>
       </div>

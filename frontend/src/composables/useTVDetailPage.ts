@@ -10,6 +10,7 @@ import {
   updateTV,
   updateTVSeasonLocal,
   updateTVSkipSync,
+  uploadAdminImage,
 } from "@/api/admin";
 
 import type { AdminCompareFieldDetail, AdminSyncMode } from "@/api/admin";
@@ -69,6 +70,7 @@ export function useTVDetailPage() {
   const isEditing = ref(false);
   const saving = ref(false);
   const deleting = ref(false);
+  const uploadingField = ref<"" | "poster_path" | "backdrop_path">("");
   const saveError = ref("");
   const deleteError = ref("");
   const saveMessage = ref("");
@@ -1134,6 +1136,27 @@ export function useTVDetailPage() {
     isEditing.value = false;
   }
 
+  async function uploadEditImage(field: "poster_path" | "backdrop_path", event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    uploadingField.value = field;
+    try {
+      const resp = await uploadAdminImage(file);
+      const path = String(resp.data?.path ?? "").trim();
+      if (!path) {
+        throw new Error("上传成功但未返回图片路径");
+      }
+      editForm.value[field] = path;
+    } catch {
+      /* handled by global toast */
+    } finally {
+      uploadingField.value = "";
+      input.value = "";
+    }
+  }
+
   async function deleteCurrentTV() {
     if (!tvId.value) {
       deleteError.value = "无效剧集 ID";
@@ -1246,26 +1269,10 @@ export function useTVDetailPage() {
         return;
       }
 
-      const remoteFieldPreview = remoteFields.slice(0, 6).join("、");
-      const remoteSummary =
-        remoteFields.length === 0
-          ? "无"
-          : remoteFields.length > 6
-            ? `${remoteFieldPreview} 等 ${remoteFields.length} 项`
-            : `${remoteFieldPreview}（共 ${remoteFields.length} 项）`;
-      const localOverridePreview = localOverrideFields.slice(0, 6).join("、");
-      const localOverrideSummary =
-        localOverrideFields.length === 0
-          ? "无"
-          : localOverrideFields.length > 6
-            ? `${localOverridePreview} 等 ${localOverrideFields.length} 项`
-            : `${localOverridePreview}（共 ${localOverrideFields.length} 项）`;
       const detailItems = normalizeDiffDetails(resp.data?.diff_details);
       const remoteDetails = buildDiffDetailsByFields(remoteFields, detailItems, "remote");
       const localOverrideDetails = buildDiffDetailsByFields(localOverrideFields, detailItems, "local_override");
       remoteDiffNotice.value = {
-        remoteSummary,
-        localOverrideSummary,
         remoteFields,
         localOverrideFields,
         remoteDetails,
@@ -1549,6 +1556,7 @@ export function useTVDetailPage() {
     isEditing,
     saving,
     deleting,
+    uploadingField,
     saveMessage,
     skipSync,
     skipSyncToggling,
@@ -1608,6 +1616,7 @@ export function useTVDetailPage() {
     deleteCurrentTV,
     enterEditMode,
     cancelEditMode,
+    uploadEditImage,
     saveTVChanges,
     episodeEditFieldClass,
     formatEpisodeCode,

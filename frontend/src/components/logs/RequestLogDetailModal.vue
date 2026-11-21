@@ -45,7 +45,7 @@ const emit = defineEmits<{
   >
     <template #title>
       <span class="block min-w-0">
-        <span class="section-label block">{{ detailType === "access" ? "Access Detail" : "TMDB Detail" }}</span>
+        <span class="section-label block">{{ detailType === "access" ? "访问明细" : "上游明细" }}</span>
         <span class="block text-base font-semibold">日志详情</span>
       </span>
     </template>

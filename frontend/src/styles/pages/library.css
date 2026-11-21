@@ -12,23 +12,13 @@
 }
 
 .library-toolbar {
-  @apply flex flex-col gap-4;
+  @apply flex flex-col gap-3;
   position: relative;
   overflow: visible;
 }
 
-.library-toolbar::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 3px;
-  border-top-left-radius: inherit;
-  border-top-right-radius: inherit;
-  background: linear-gradient(90deg, var(--accent), var(--accent-soft));
-}
-
 .library-toolbar-title {
-  @apply mt-1 text-xl font-semibold md:text-2xl;
+  @apply text-xl font-semibold md:text-2xl;
   color: var(--text-main);
 }
 
@@ -220,7 +210,6 @@
   overflow: hidden;
 }
 
-.library-page-shell .library-list-summary,
 .library-page-shell .logs-refresh-error,
 .library-page-shell .settings-pagination-row {
   flex: none;
@@ -239,23 +228,8 @@
 .library-page-shell .library-data-list.logs-list-shell {
   flex: 1 1 auto;
   min-height: 0;
-  margin-top: 0.75rem;
+  margin-top: 0;
   overflow: auto;
-}
-
-.library-list-summary {
-  @apply flex flex-wrap items-center justify-between gap-3 rounded-lg px-4 py-3 text-sm;
-  color: var(--text-muted);
-  background: var(--surface);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-shadow-soft);
-}
-
-/* 表格结果卡内的汇总条更轻，避免双层卡片过重 */
-.library-result-card > .library-list-summary {
-  background: var(--surface-muted);
-  border-color: var(--border-muted);
-  box-shadow: none;
 }
 
 .library-list-controls {
@@ -282,7 +256,7 @@
 }
 
 .library-delete-btn {
-  @apply flex h-8 w-8 items-center justify-center rounded-lg text-sm shadow-sm transition-all duration-200 disabled:cursor-not-allowed;
+  @apply flex h-8 w-8 items-center justify-center rounded-lg text-sm shadow-sm transition-[opacity,background-color] duration-150 disabled:cursor-not-allowed;
   color: var(--danger-fg);
   background: var(--danger-bg);
   border: 1px solid var(--danger-border);
@@ -416,12 +390,28 @@
   border-style: dashed;
 }
 
-/* 列宽：名称列带海报占主位，ID 弱化为辅助列 */
+/* 列宽：名称列带海报占主位，固定列保留最小宽度避免中屏挤压截断 */
 .logs-grid-library {
   width: 100%;
   grid-template-columns:
-    minmax(0, 2.1fr) minmax(0, 6.2rem) minmax(0, 4.6rem) minmax(0, 6.4rem)
-    minmax(0, 1.05fr) minmax(0, 5.4rem) minmax(4.4rem, 5rem);
+    minmax(14rem, 2.2fr) minmax(5.5rem, 6.2rem) minmax(4.2rem, 4.8rem) minmax(6.8rem, 7.2rem)
+    minmax(8rem, 1.05fr) minmax(5.8rem, 7.2rem) minmax(4.6rem, 5rem);
+}
+
+.library-row-clickable {
+  cursor: pointer;
+}
+
+.library-row-clickable:hover .library-list-title {
+  color: var(--accent);
+}
+
+.library-status-cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
 }
 
 .logs-grid-library > * {
@@ -481,7 +471,8 @@
 /* 窄屏摘要卡中，操作区固定右下，图标按钮始终可点 */
 @media (max-width: 767px) {
   /* 顶部左位由 TMDB ID 改为类型 chips，ID 收进详情 */
-  .logs-row.logs-grid-library .library-list-id {
+  .logs-row.logs-grid-library .library-list-id,
+  .logs-row.logs-grid-library .library-status-cell {
     display: none;
   }
 

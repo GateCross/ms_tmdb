@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AdminProxyAccessLogItem } from "@/api/admin";
-import DataListShell from "@/components/common/DataListShell.vue";
+import DataListShell, { type DataListColumn } from "@/components/common/DataListShell.vue";
 import {
   accessPath,
   accessQueryFull,
@@ -24,11 +24,25 @@ const emit = defineEmits<{
   "open-detail": [item: AdminProxyAccessLogItem];
 }>();
 
-const columns = ["时间", "请求", "状态", "耗时", "正文", "来源", "操作"];
+const columns: DataListColumn[] = [
+  "时间",
+  "请求",
+  "状态",
+  { label: "耗时", align: "right" },
+  { label: "正文", align: "right" },
+  "来源",
+  { label: "操作", align: "right" },
+];
 </script>
 
 <template>
-  <DataListShell grid-class="logs-grid-access" :columns="columns" :loading="loading" loading-text="日志加载中...">
+  <DataListShell
+    grid-class="logs-grid-access"
+    :columns="columns"
+    :loading="loading"
+    :empty="items.length === 0"
+    loading-text="日志加载中..."
+  >
     <article
       v-for="item in items"
       :key="item.id"

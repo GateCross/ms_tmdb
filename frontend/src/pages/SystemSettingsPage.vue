@@ -333,7 +333,7 @@ onMounted(reloadAll);
       <div class="card settings-card">
         <div class="settings-panel-header">
           <div>
-            <p class="section-label">Network</p>
+            <p class="section-label">网络与日志</p>
             <h3 class="settings-section-title">代理与日志</h3>
             <p class="settings-note">配置 TMDB 网络代理，并统一控制三类日志的自动清理周期。</p>
           </div>
@@ -419,7 +419,7 @@ onMounted(reloadAll);
       <div class="card settings-card">
         <div class="settings-panel-header">
           <div>
-            <p class="section-label">Schedule</p>
+            <p class="section-label">定时同步</p>
             <h3 class="settings-section-title">定时同步设置</h3>
             <p class="settings-note">仅支持 cron 表达式调度，保存后即时生效。</p>
           </div>

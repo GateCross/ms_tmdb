@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AdminTmdbRequestLogItem } from "@/api/admin";
-import DataListShell from "@/components/common/DataListShell.vue";
+import DataListShell, { type DataListColumn } from "@/components/common/DataListShell.vue";
 import {
   bodyMeta,
   cleanLogPath,
@@ -23,11 +23,24 @@ const emit = defineEmits<{
   "open-detail": [item: AdminTmdbRequestLogItem];
 }>();
 
-const columns = ["时间", "上游路径", "状态", "耗时", "响应正文", "操作"];
+const columns: DataListColumn[] = [
+  "时间",
+  "上游路径",
+  "状态",
+  { label: "耗时", align: "right" },
+  { label: "响应正文", align: "right" },
+  { label: "操作", align: "right" },
+];
 </script>
 
 <template>
-  <DataListShell grid-class="logs-grid-tmdb" :columns="columns" :loading="loading" loading-text="日志加载中...">
+  <DataListShell
+    grid-class="logs-grid-tmdb"
+    :columns="columns"
+    :loading="loading"
+    :empty="items.length === 0"
+    loading-text="日志加载中..."
+  >
     <article
       v-for="item in items"
       :key="item.id"

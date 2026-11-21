@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { defineAsyncComponent, watch } from "vue";
+import { computed, defineAsyncComponent, watch } from "vue";
+import { ArrowLeft, Copy, Pencil, Trash2 } from "lucide-vue-next";
 import { tmdbImg } from "@/api/tmdb";
 import BaseDialog from "@/components/common/BaseDialog.vue";
 import LoadState from "@/components/common/LoadState.vue";
@@ -8,6 +9,7 @@ import { formatStatusLabel, formatTvTypeLabel, tvStatusOptions, tvTypeOptions } 
 import { useToastNotice } from "@/composables/useToastNotice";
 import { useTVDetailPage } from "@/composables/useTVDetailPage";
 import { ratingTierClass } from "@/utils/ratingTier";
+import { copyText } from "@/utils/clipboard";
 
 const TVRemoteDiffCard = defineAsyncComponent(() => import("@/components/tv/TVRemoteDiffCard.vue"));
 const TVLocalEditorCard = defineAsyncComponent(() => import("@/components/tv/TVLocalEditorCard.vue"));
@@ -24,6 +26,7 @@ const {
   isEditing,
   saving,
   deleting,
+  uploadingField,
   saveMessage,
   skipSync,
   skipSyncToggling,
@@ -82,6 +85,7 @@ const {
   deleteCurrentTV,
   enterEditMode,
   cancelEditMode,
+  uploadEditImage,
   saveTVChanges,
   episodeEditFieldClass,
   formatEpisodeCode,
@@ -108,6 +112,21 @@ const {
 } = useTVDetailPage();
 
 const { toastVisible, toastText, toastTone, showToastNotice, closeToastNotice } = useToastNotice();
+
+const displayTitle = computed(() => detail.value?.name || detail.value?.original_name || "");
+const displayOriginalTitle = computed(() => {
+  const original = (detail.value?.original_name || "").trim();
+  return original && original !== displayTitle.value ? original : "";
+});
+
+async function copyTmdbId(id: number) {
+  if (!id) return;
+  if (await copyText(String(id))) {
+    showToastNotice("已复制 TMDB ID");
+    return;
+  }
+  showToastNotice("复制失败，请手动复制", "info");
+}
 
 watch(saveMessage, (message) => {
   if (message.trim()) {
@@ -142,159 +161,204 @@ watch(seasonLocalMessage, (message) => {
         重试
       </button>
     </div>
-    <!-- 背景横幅 -->
-    <section class="hero-banner hero-banner-detail">
-      <img
-        :src="tmdbImg(detail.backdrop_path, 'original')"
-        :alt="detail.name || detail.original_name"
-        class="hero-banner-media"
-      />
-      <div class="absolute left-4 top-4 z-10">
-        <button class="detail-back-btn" @click="goBack">返回上一页</button>
-      </div>
-      <div class="hero-overlay">
-        <h1 class="text-2xl font-bold text-white md:text-3xl">{{ detail.name || detail.original_name }}</h1>
-        <p class="mt-1 text-sm text-white/70">{{ detail.tagline }}</p>
-      </div>
-    </section>
 
-    <section class="card mt-4">
-      <div class="detail-layout">
-        <div class="detail-poster">
-          <img :src="tmdbImg(detail.poster_path, 'w780')" :alt="detail.name" class="detail-poster-img" />
+    <!-- 融合头部概要卡 -->
+    <section class="detail-hero-card">
+      <div v-if="detail.backdrop_path" class="detail-hero-backdrop">
+        <img
+          :src="tmdbImg(detail.backdrop_path, 'original')"
+          :alt="displayTitle"
+          class="detail-hero-backdrop-img"
+        />
+        <div class="detail-hero-backdrop-fade" aria-hidden="true"></div>
+        <div class="absolute left-4 top-4 z-10">
+          <button type="button" class="detail-back-btn detail-back-btn-overlay" @click="goBack">
+            <ArrowLeft class="h-3.5 w-3.5" aria-hidden="true" />
+            <span>返回上一页</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="detail-hero-body">
+        <div v-if="!detail.backdrop_path" class="mb-4">
+          <button type="button" class="detail-back-btn" @click="goBack">
+            <ArrowLeft class="h-3.5 w-3.5" aria-hidden="true" />
+            <span>返回上一页</span>
+          </button>
         </div>
 
-        <div class="detail-info">
-          <h2 class="text-xl font-bold">{{ detail.name }}</h2>
-          <p v-if="detail.original_name !== detail.name" class="text-sm text-muted">
-            {{ detail.original_name }}
-          </p>
-          <div class="mt-2 grid gap-1 text-xs text-muted sm:grid-cols-2">
-            <template v-if="hasRewrittenTmdbId">
-              <p>
-                修改后 TMDB ID：
-                <span class="font-medium text-ink">{{ currentTmdbId }}</span>
-              </p>
-              <p>
-                原始 TMDB ID：
-                <span class="font-medium text-ink">{{ originalTmdbId }}</span>
-              </p>
-            </template>
-            <p v-else>
-              TMDB ID：
-              <span class="font-medium text-ink">{{ currentTmdbId }}</span>
+        <div class="detail-summary-layout">
+          <div class="detail-poster" :class="{ 'detail-poster-overlap': Boolean(detail.backdrop_path) }">
+            <img :src="tmdbImg(detail.poster_path, 'w780')" :alt="displayTitle" class="detail-poster-img" />
+          </div>
+
+          <div class="detail-info">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="min-w-0">
+                <h1 class="text-2xl font-semibold text-strong md:text-3xl">{{ displayTitle }}</h1>
+                <p v-if="displayOriginalTitle" class="mt-0.5 text-sm text-muted">
+                  {{ displayOriginalTitle }}
+                </p>
+                <p v-if="detail.tagline" class="mt-1 text-xs text-muted">
+                  {{ detail.tagline }}
+                </p>
+              </div>
+
+              <div class="flex shrink-0 flex-wrap items-center gap-2">
+                <label
+                  v-if="skipSync !== null"
+                  class="btn-soft-xs inline-flex cursor-pointer items-center gap-1.5"
+                  title="勾选后定时任务不再自动拉取该剧集，手动同步不受影响"
+                >
+                  <input
+                    type="checkbox"
+                    class="check-control"
+                    :checked="skipSync"
+                    :disabled="skipSyncToggling"
+                    @change="toggleSkipSync(($event.target as HTMLInputElement).checked)"
+                  />
+                  <span>跳过自动同步</span>
+                </label>
+                <button
+                  type="button"
+                  class="btn-soft-xs inline-flex items-center gap-1"
+                  @click="isEditing ? cancelEditMode() : enterEditMode()"
+                >
+                  <Pencil class="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>{{ isEditing ? "收起编辑" : "编辑信息" }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="btn-danger-soft-xs inline-flex items-center gap-1 disabled:opacity-60"
+                  :disabled="deleting || saving"
+                  @click="deleteCurrentTV"
+                >
+                  <Trash2 class="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>{{ deleting ? "删除中..." : "删除" }}</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="detail-meta-row">
+              <span class="rating-badge" :class="ratingTierClass(detail.vote_average)">
+                {{ detail.vote_average == null ? "-" : `${detail.vote_average.toFixed(1)} 分` }}
+              </span>
+              <span class="badge">{{ formatStatusLabel(detail.status) }}</span>
+              <span v-if="detail.type" class="badge">{{ formatTvTypeLabel(detail.type) }}</span>
+              <span class="detail-meta-sep" aria-hidden="true">·</span>
+              <span>首播 {{ detail.first_air_date || "-" }}</span>
+              <template v-if="detail.number_of_seasons">
+                <span class="detail-meta-sep" aria-hidden="true">·</span>
+                <span>{{ detail.number_of_seasons }} 季 {{ detail.number_of_episodes }} 集</span>
+              </template>
+              <span class="detail-meta-sep" aria-hidden="true">·</span>
+              <button
+                type="button"
+                class="detail-copy-btn"
+                title="点击复制 TMDB ID"
+                @click="copyTmdbId(currentTmdbId)"
+              >
+                <span>TMDB {{ currentTmdbId }}</span>
+                <Copy class="h-3 w-3" aria-hidden="true" />
+              </button>
+              <span v-if="hasRewrittenTmdbId" class="font-mono text-xs text-muted">
+                (原始 {{ originalTmdbId }})
+              </span>
+            </div>
+
+            <div v-if="detail.genres?.length" class="mt-3 flex flex-wrap gap-1.5">
+              <span v-for="g in detail.genres" :key="g.id" class="genre-pill">
+                {{ g.name }}
+              </span>
+            </div>
+
+            <p class="detail-overview">
+              {{ detail.overview || "暂无简介" }}
             </p>
           </div>
-
-          <div class="mt-3 flex flex-wrap gap-2">
-            <span class="rating-badge" :class="ratingTierClass(detail.vote_average)">
-              {{ detail.vote_average == null ? "-" : `${detail.vote_average.toFixed(1)} 分` }}
-            </span>
-            <span class="badge">首播 {{ detail.first_air_date ?? "-" }}</span>
-            <span v-if="detail.number_of_seasons" class="badge">
-              {{ detail.number_of_seasons }} 季 · {{ detail.number_of_episodes }} 集
-            </span>
-            <span class="badge">{{ formatStatusLabel(detail.status) }}</span>
-            <span v-if="detail.type" class="badge">{{ formatTvTypeLabel(detail.type) }}</span>
-          </div>
-
-          <div v-if="detail.genres?.length" class="mt-3 flex flex-wrap gap-1.5">
-            <span v-for="g in detail.genres" :key="g.id" class="genre-pill">
-              {{ g.name }}
-            </span>
-          </div>
-
-          <p class="mt-4 text-sm leading-relaxed text-muted">
-            {{ detail.overview || "暂无简介" }}
-          </p>
-
-          <TVRemoteDiffCard
-            :target-id="tvId"
-            :checking-remote-diff="checkingRemoteDiff"
-            :remote-diff-notice="remoteDiffNotice"
-            :remote-diff-message="remoteDiffMessage"
-            :remote-diff-decision="remoteDiffDecision"
-            :show-remote-diff-details="showRemoteDiffDetails"
-            :show-local-override-diff-details="showLocalOverrideDiffDetails"
-            :should-show-sync-panel="shouldShowSyncPanel"
-            :allowed-sync-modes="allowedSyncModes"
-            :on-toggle-remote-details="toggleRemoteDiffDetails"
-            :on-toggle-local-details="toggleLocalOverrideDiffDetails"
-            :on-keep-local="keepLocalData"
-            :on-synced="handleSynced"
-          />
-
-          <TVLocalEditorCard
-            :is-editing="isEditing"
-            :deleting="deleting"
-            :saving="saving"
-            :edit-form="editForm"
-            :genre-keyword="genreKeyword"
-            :filtered-genre-options="filteredGenreOptions"
-            :genre-options="genreOptions"
-            :tv-status-options="tvStatusOptions"
-            :tv-type-options="tvTypeOptions"
-            :skip-sync="skipSync"
-            :skip-sync-toggling="skipSyncToggling"
-            :on-delete="deleteCurrentTV"
-            :on-enter-edit="enterEditMode"
-            :on-save="saveTVChanges"
-            :on-cancel="cancelEditMode"
-            :on-toggle-skip-sync="toggleSkipSync"
-            :on-update-genre-keyword="updateGenreKeyword"
-          />
-
-          <TVSeasonManager
-            :season-options="seasonOptions"
-            :selected-season-number="selectedSeasonNumber"
-            :season-local-saving="seasonLocalSaving"
-            :season-detail-loading="seasonDetailLoading"
-            :season-detail-error="seasonDetailError"
-            :season-panel-visible="seasonPanelVisible"
-            :selected-season-detail="selectedSeasonDetail"
-            :selected-season-episodes="selectedSeasonEpisodes"
-            :season-editor-visible="seasonEditorVisible"
-            :season-editor-mode="seasonEditorMode"
-            :season-local-saved="seasonLocalSaved"
-            :season-form="seasonForm"
-            :episode-creator-visible="episodeCreatorVisible"
-            :episode-form="episodeForm"
-            :editing-episode-number="editingEpisodeNumber"
-            :episode-edit-changed-count="episodeEditChangedCount"
-            :episode-edit-field-class="episodeEditFieldClass"
-            :format-episode-code="formatEpisodeCode"
-            :format-episode-runtime="formatEpisodeRuntime"
-            :format-episode-rating="formatEpisodeRating"
-            :on-open-season-create-editor="openSeasonCreateEditor"
-            :on-select-season="selectSeason"
-            :on-retry-season-detail="
-              () => selectedSeasonNumber != null && loadSeasonDetail(selectedSeasonNumber, true)
-            "
-            :on-open-season-edit-editor="openSeasonEditEditor"
-            :on-open-episode-create-editor="openEpisodeCreateEditor"
-            :on-save-season-to-local="saveSeasonToLocalFromTMDB"
-            :on-delete-season-local-data="deleteSeasonLocalData"
-            :on-save-season-editor="saveSeasonEditor"
-            :on-close-season-editor="closeSeasonEditor"
-            :on-save-episode-create="saveEpisodeCreate"
-            :on-close-episode-creator="closeEpisodeCreator"
-            :on-start-episode-edit="startEpisodeEdit"
-            :on-save-episode-edit="saveEpisodeEdit"
-            :on-cancel-episode-edit="cancelEpisodeEdit"
-            :on-delete-episode="deleteEpisode"
-          />
-
-          <TVCastSection
-            :credits-loading="creditsLoading"
-            :credits-loaded="creditsLoaded"
-            :credits-error="creditsError"
-            :cast-members="castMembers"
-            :person-link="personLink"
-            :on-refresh="() => loadTVCredits(true)"
-          />
         </div>
       </div>
     </section>
+
+    <!-- 全宽分节：远程差异 / 编辑 / 季管理 / 演员 -->
+    <TVRemoteDiffCard
+      :target-id="tvId"
+      :checking-remote-diff="checkingRemoteDiff"
+      :remote-diff-notice="remoteDiffNotice"
+      :remote-diff-message="remoteDiffMessage"
+      :remote-diff-decision="remoteDiffDecision"
+      :show-remote-diff-details="showRemoteDiffDetails"
+      :show-local-override-diff-details="showLocalOverrideDiffDetails"
+      :should-show-sync-panel="shouldShowSyncPanel"
+      :allowed-sync-modes="allowedSyncModes"
+      :on-toggle-remote-details="toggleRemoteDiffDetails"
+      :on-toggle-local-details="toggleLocalOverrideDiffDetails"
+      :on-keep-local="keepLocalData"
+      :on-synced="handleSynced"
+    />
+
+    <TVLocalEditorCard
+      :is-editing="isEditing"
+      :saving="saving"
+      :uploading-field="uploadingField"
+      :edit-form="editForm"
+      :genre-keyword="genreKeyword"
+      :filtered-genre-options="filteredGenreOptions"
+      :genre-options="genreOptions"
+      :tv-status-options="tvStatusOptions"
+      :tv-type-options="tvTypeOptions"
+      :on-save="saveTVChanges"
+      :on-cancel="cancelEditMode"
+      :on-update-genre-keyword="updateGenreKeyword"
+      :on-upload-image="uploadEditImage"
+    />
+
+    <TVSeasonManager
+      :season-options="seasonOptions"
+      :selected-season-number="selectedSeasonNumber"
+      :season-local-saving="seasonLocalSaving"
+      :season-detail-loading="seasonDetailLoading"
+      :season-detail-error="seasonDetailError"
+      :season-panel-visible="seasonPanelVisible"
+      :selected-season-detail="selectedSeasonDetail"
+      :selected-season-episodes="selectedSeasonEpisodes"
+      :season-editor-visible="seasonEditorVisible"
+      :season-editor-mode="seasonEditorMode"
+      :season-local-saved="seasonLocalSaved"
+      :season-form="seasonForm"
+      :episode-creator-visible="episodeCreatorVisible"
+      :episode-form="episodeForm"
+      :editing-episode-number="editingEpisodeNumber"
+      :episode-edit-changed-count="episodeEditChangedCount"
+      :episode-edit-field-class="episodeEditFieldClass"
+      :format-episode-code="formatEpisodeCode"
+      :format-episode-runtime="formatEpisodeRuntime"
+      :format-episode-rating="formatEpisodeRating"
+      :on-open-season-create-editor="openSeasonCreateEditor"
+      :on-select-season="selectSeason"
+      :on-retry-season-detail="() => selectedSeasonNumber != null && loadSeasonDetail(selectedSeasonNumber, true)"
+      :on-open-season-edit-editor="openSeasonEditEditor"
+      :on-open-episode-create-editor="openEpisodeCreateEditor"
+      :on-save-season-to-local="saveSeasonToLocalFromTMDB"
+      :on-delete-season-local-data="deleteSeasonLocalData"
+      :on-save-season-editor="saveSeasonEditor"
+      :on-close-season-editor="closeSeasonEditor"
+      :on-save-episode-create="saveEpisodeCreate"
+      :on-close-episode-creator="closeEpisodeCreator"
+      :on-start-episode-edit="startEpisodeEdit"
+      :on-save-episode-edit="saveEpisodeEdit"
+      :on-cancel-episode-edit="cancelEpisodeEdit"
+      :on-delete-episode="deleteEpisode"
+    />
+
+    <TVCastSection
+      :credits-loading="creditsLoading"
+      :credits-loaded="creditsLoaded"
+      :credits-error="creditsError"
+      :cast-members="castMembers"
+      :person-link="personLink"
+      :on-refresh="() => loadTVCredits(true)"
+    />
   </template>
 
   <BaseDialog

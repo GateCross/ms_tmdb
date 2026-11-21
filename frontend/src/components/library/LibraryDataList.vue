@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import DataListShell from "@/components/common/DataListShell.vue";
+import DataListShell, { type DataListColumn } from "@/components/common/DataListShell.vue";
 import BaseTooltip from "@/components/common/BaseTooltip.vue";
 import type { LibraryListItem } from "@/components/library/types";
 import { tmdbImg } from "@/api/tmdb";
@@ -7,6 +7,7 @@ import { ratingTierClass } from "@/utils/ratingTier";
 
 defineProps<{
   items: LibraryListItem[];
+  loading?: boolean;
   deletingId: number | null;
   canDeleteItem: (item: LibraryListItem) => boolean;
   scheduleItemDetail: (item: LibraryListItem) => void;
@@ -16,9 +17,27 @@ defineProps<{
   requestDeleteItem: (item: LibraryListItem) => void;
 }>();
 
-const columns = ["名称", "TMDB ID", "评分", "日期", "类型", "状态", "操作"];
+const columns: DataListColumn[] = [
+  "名称",
+  { label: "TMDB ID", align: "right" },
+  { label: "评分", align: "center" },
+  { label: "日期", align: "right" },
+  "类型",
+  "状态",
+  { label: "操作", align: "right" },
+];
 
-// 类型列最多展示两个 chip，其余以 +N 汇总，完整列表由单元格 title 提示
+function itemTitle(item: LibraryListItem): string {
+  return (item.title || item.name || "").trim() || "-";
+}
+
+function itemSubtitle(item: LibraryListItem): string {
+  const original = (item.original_title || item.original_name || "").trim();
+  const title = itemTitle(item);
+  return original && original !== title ? original : "";
+}
+
+// 类型列最多展示两个 chip，其余以 +N 汇总，完整列表由单元格 Tooltip 提示
 function genreChips(item: LibraryListItem): string[] {
   return Array.isArray(item.genre_names) ? item.genre_names.slice(0, 2) : [];
 }
@@ -33,13 +52,19 @@ function genreOverflowCount(item: LibraryListItem): number {
     shell-class="library-data-list"
     grid-class="logs-grid-library"
     :columns="columns"
+    :loading="loading"
     :empty="items.length === 0"
+    loading-text="媒体库加载中..."
     empty-text="暂无本地数据，可以尝试切换分类、重置搜索，或新建一条本地记录。"
   >
     <article
       v-for="item in items"
       :key="item.tmdb_id"
-      class="logs-row logs-grid-library"
+      class="logs-row logs-grid-library library-row-clickable"
+      @pointerenter="scheduleItemDetail(item)"
+      @pointerleave="cancelItemDetail(item)"
+      @touchstart.passive="touchItemDetail(item)"
+      @click="openItemDetail(item)"
     >
       <div class="library-cell-title">
         <img
@@ -50,18 +75,18 @@ function genreOverflowCount(item: LibraryListItem): number {
           draggable="false"
         />
         <div class="logs-main">
-          <BaseTooltip :content="item.title || item.name || '-'">
-            <strong class="library-list-title">{{ item.title || item.name || "-" }}</strong>
+          <BaseTooltip :content="itemTitle(item)">
+            <strong class="library-list-title">{{ itemTitle(item) }}</strong>
           </BaseTooltip>
-          <BaseTooltip :content="item.original_title || item.original_name || '-'">
-            <span class="library-list-subtitle">{{ item.original_title || item.original_name || "-" }}</span>
+          <BaseTooltip v-if="itemSubtitle(item)" :content="itemSubtitle(item)">
+            <span class="library-list-subtitle">{{ itemSubtitle(item) }}</span>
           </BaseTooltip>
         </div>
       </div>
 
-      <span class="library-list-id">{{ item.tmdb_id }}</span>
+      <span class="library-list-id text-right font-mono">{{ item.tmdb_id }}</span>
 
-      <div>
+      <div class="flex justify-center">
         <span class="rating-badge" :class="ratingTierClass(item.vote_average)">
           {{ (item.vote_average ?? 0).toFixed(1) }}
         </span>
@@ -94,10 +119,10 @@ function genreOverflowCount(item: LibraryListItem): number {
         </div>
       </BaseTooltip>
 
-      <div class="logs-source">
+      <div class="library-status-cell">
         <span v-if="item.tmdb_id < 0" class="chip-local-new">本地新建</span>
         <span v-else-if="item.is_modified" class="chip-modified">已修改</span>
-        <span v-else class="chip-neutral">未修改</span>
+        <span v-else-if="!item.skip_sync" class="library-list-status-muted">未修改</span>
         <span v-if="item.skip_sync" class="chip-skip-sync">跳过同步</span>
       </div>
 
@@ -107,12 +132,9 @@ function genreOverflowCount(item: LibraryListItem): number {
             class="table-action-btn table-action-btn-soft"
             type="button"
             aria-label="查看详情"
-            @pointerenter="scheduleItemDetail(item)"
-            @pointerleave="cancelItemDetail(item)"
             @focus="scheduleItemDetail(item)"
             @blur="cancelItemDetail(item)"
-            @touchstart.passive="touchItemDetail(item)"
-            @click="openItemDetail(item)"
+            @click.stop="openItemDetail(item)"
           >
             <svg
               viewBox="0 0 24 24"
@@ -136,7 +158,7 @@ function genreOverflowCount(item: LibraryListItem): number {
             type="button"
             :aria-label="deletingId === item.tmdb_id ? '删除中' : '删除'"
             :disabled="deletingId === item.tmdb_id"
-            @click="requestDeleteItem(item)"
+            @click.stop="requestDeleteItem(item)"
           >
             <span v-if="deletingId === item.tmdb_id" class="text-[11px]">...</span>
             <svg

@@ -10,14 +10,6 @@
   overflow: visible;
 }
 
-.home-search-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 3px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-soft));
-}
-
 .home-panel-head,
 .home-section-head {
   display: flex;
@@ -147,11 +139,8 @@
 }
 
 .home-media-card:hover {
-  transform: translateY(-3px);
   border-color: var(--accent-hover-border);
-  box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 14px 30px var(--accent-ring);
+  box-shadow: var(--glass-shadow);
 }
 
 .home-media-poster {

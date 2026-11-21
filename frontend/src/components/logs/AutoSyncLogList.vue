@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AdminAutoSyncLogItem } from "@/api/admin";
-import DataListShell from "@/components/common/DataListShell.vue";
+import DataListShell, { type DataListColumn } from "@/components/common/DataListShell.vue";
 import {
   autoSyncRowToneClass,
   autoSyncStatusDotClass,
@@ -21,11 +21,24 @@ const emit = defineEmits<{
 }>();
 
 // 策略/cron/批大小各行基本恒定，完整配置只在详情弹窗展示，列表留纯结果列
-const columns = ["时间", "状态", "检查/同步/失败", "耗时", "摘要", "操作"];
+const columns: DataListColumn[] = [
+  "时间",
+  "状态",
+  "检查/同步/失败",
+  { label: "耗时", align: "right" },
+  "摘要",
+  { label: "操作", align: "right" },
+];
 </script>
 
 <template>
-  <DataListShell grid-class="logs-grid-auto-sync" :columns="columns" :loading="loading" loading-text="日志加载中...">
+  <DataListShell
+    grid-class="logs-grid-auto-sync"
+    :columns="columns"
+    :loading="loading"
+    :empty="items.length === 0"
+    loading-text="日志加载中..."
+  >
     <article
       v-for="item in items"
       :key="item.id"

@@ -73,6 +73,10 @@
     @apply px-3;
   }
 
+  .vben-page-content {
+    padding: 12px 0 0;
+  }
+
   .admin-topbar {
     min-height: 58px;
     gap: 10px;
@@ -115,10 +119,6 @@
   }
 
   .card {
-    @apply p-4;
-  }
-
-  .hero-overlay {
     @apply p-4;
   }
 

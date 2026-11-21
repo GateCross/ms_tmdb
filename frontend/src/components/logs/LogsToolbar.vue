@@ -10,7 +10,6 @@ type SelectOption = {
 defineProps<{
   activeTab: LogTab;
   busy: boolean;
-  panelLabel: string;
   panelTitle: string;
   panelNote: string;
   requestStatusOptions: ReadonlyArray<SelectOption>;
@@ -66,10 +65,9 @@ function updateStatus(tab: LogTab, value: string) {
 
 <template>
   <div class="settings-log-header">
-    <div>
-      <p class="section-label">{{ panelLabel }}</p>
+    <div class="flex min-w-0 items-baseline gap-2" :title="panelNote">
       <h3 class="settings-section-title">{{ panelTitle }}</h3>
-      <p class="settings-note">{{ panelNote }}</p>
+      <span class="hidden text-xs text-muted xl:inline">{{ panelNote }}</span>
     </div>
 
     <div class="settings-log-actions">

@@ -1,11 +1,14 @@
 .btn-primary {
-  @apply rounded-md px-4 py-2 text-sm font-medium text-white transition;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
-  box-shadow: 0 8px 18px var(--accent-ring);
+  @apply rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors;
+  background: var(--accent);
 }
 
 .btn-primary:hover {
-  transform: translateY(-1px);
+  background: var(--accent-strong);
+}
+
+.btn-primary:active {
+  opacity: 0.92;
 }
 
 .btn-primary-compact {
@@ -13,9 +16,12 @@
 }
 
 .btn-primary-xs {
-  @apply rounded-md px-3 py-1.5 text-xs font-medium text-white transition;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
-  box-shadow: 0 8px 16px var(--accent-ring);
+  @apply rounded-md px-3 py-1.5 text-xs font-medium text-white transition-colors;
+  background: var(--accent);
+}
+
+.btn-primary-xs:hover {
+  background: var(--accent-strong);
 }
 
 .btn-soft {
@@ -171,7 +177,7 @@ select.field-control option {
 .check-control:checked,
 .radio-control:checked {
   border-color: var(--accent-strong);
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  background: var(--accent);
 }
 
 .check-control:checked::after,
@@ -200,7 +206,6 @@ select.field-control option {
   border: 1px solid var(--glass-border);
   background: var(--panel-bg);
   box-shadow: var(--glass-shadow);
-  backdrop-filter: var(--panel-blur);
 }
 
 .toast-notice {
@@ -347,7 +352,7 @@ html.dark .toast-notice-close::after {
 .global-toast {
   pointer-events: auto;
   display: inline-flex;
-  max-width: min(320px, calc(100vw - 32px));
+  max-width: min(420px, calc(100vw - 32px));
   width: max-content;
   align-items: center;
   gap: 10px;
@@ -454,11 +459,13 @@ html.dark .toast-notice-close::after {
 
 .global-toast-text {
   min-width: 0;
-  max-width: 15rem;
   flex: 0 1 auto;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
   font-size: 14px;
   font-weight: 500;
   line-height: 1.45;

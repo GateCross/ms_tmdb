@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import DetailSyncPanel from "@/components/DetailSyncPanel.vue";
 import type { AdminSyncMode } from "@/api/admin";
+import { resolveMediaFieldLabel, summarizeMediaFields } from "@/utils/mediaFieldLabels";
 import type { RemoteDiffDecision, RemoteDiffNotice } from "./types";
 
-defineProps<{
+const props = defineProps<{
   targetId: number;
   checkingRemoteDiff: boolean;
   remoteDiffNotice: RemoteDiffNotice | null;
@@ -18,37 +20,58 @@ defineProps<{
   onKeepLocal: () => void;
   onSynced: () => void;
 }>();
+
+const isCompactStatusOnly = computed(() => {
+  return (
+    !props.checkingRemoteDiff &&
+    !props.remoteDiffNotice &&
+    !props.shouldShowSyncPanel &&
+    (props.remoteDiffDecision === "no_diff" || Boolean(props.remoteDiffMessage))
+  );
+});
 </script>
 
 <template>
+  <div v-if="isCompactStatusOnly" class="detail-alert-compact">
+    <span class="text-success">
+      {{ remoteDiffDecision === "no_diff" ? "已完成检查，当前未发现远程差异。" : remoteDiffMessage }}
+    </span>
+  </div>
+
   <div
-    v-if="checkingRemoteDiff || remoteDiffNotice || remoteDiffMessage || remoteDiffDecision === 'no_diff'"
+    v-else-if="checkingRemoteDiff || remoteDiffNotice || shouldShowSyncPanel"
     class="detail-alert"
   >
     <p v-if="checkingRemoteDiff" class="text-xs text-warn">正在检测远程数据差异...</p>
 
     <template v-else-if="remoteDiffNotice">
-      <p class="detail-alert-title">检测到远程电影数据与本地不一致</p>
-      <p class="detail-alert-text">远程变化字段：{{ remoteDiffNotice.remoteSummary }}</p>
-      <p class="detail-alert-text">本地修改字段：{{ remoteDiffNotice.localOverrideSummary }}</p>
-      <div class="mt-2 flex flex-wrap items-center gap-2">
-        <button
-          v-if="remoteDiffNotice.remoteDetails.length"
-          class="detail-alert-action"
-          @click="onToggleRemoteDetails"
-        >
-          {{ showRemoteDiffDetails ? "收起远程变化明细" : "查看远程变化明细" }}
-        </button>
-        <button
-          v-if="remoteDiffNotice.localOverrideDetails.length"
-          class="detail-alert-action"
-          @click="onToggleLocalDetails"
-        >
-          {{ showLocalOverrideDiffDetails ? "收起本地修改明细" : "查看本地修改明细" }}
-        </button>
-        <button class="detail-alert-action disabled:opacity-60" @click="onKeepLocal">
-          暂不处理，保留本地
-        </button>
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="detail-alert-title">检测到远程电影数据与本地不一致</p>
+          <p class="detail-alert-text">远程变化字段：{{ summarizeMediaFields(remoteDiffNotice.remoteFields) }}</p>
+          <p class="detail-alert-text">本地修改字段：{{ summarizeMediaFields(remoteDiffNotice.localOverrideFields) }}</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            v-if="remoteDiffNotice.remoteDetails.length"
+            type="button"
+            class="btn-soft-xs"
+            @click="onToggleRemoteDetails"
+          >
+            {{ showRemoteDiffDetails ? "收起远程变化明细" : "查看远程变化明细" }}
+          </button>
+          <button
+            v-if="remoteDiffNotice.localOverrideDetails.length"
+            type="button"
+            class="btn-soft-xs"
+            @click="onToggleLocalDetails"
+          >
+            {{ showLocalOverrideDiffDetails ? "收起本地修改明细" : "查看本地修改明细" }}
+          </button>
+          <button type="button" class="btn-soft-xs disabled:opacity-60" @click="onKeepLocal">
+            暂不处理，保留本地
+          </button>
+        </div>
       </div>
 
       <div v-if="showRemoteDiffDetails && remoteDiffNotice.remoteDetails.length" class="detail-diff-list">
@@ -57,9 +80,20 @@ defineProps<{
           :key="`remote-${item.field}`"
           class="detail-diff-item"
         >
-          <p class="text-xs font-semibold text-warn">{{ item.field }}</p>
-          <p class="mt-1 text-xs text-muted">本地：{{ item.local }}</p>
-          <p class="mt-1 text-xs text-warn">远程：{{ item.remote }}</p>
+          <div class="flex items-baseline justify-between gap-2">
+            <span class="text-xs font-semibold text-strong">{{ resolveMediaFieldLabel(item.field) }}</span>
+            <span class="font-mono text-[11px] text-muted">{{ item.field }}</span>
+          </div>
+          <div class="detail-diff-grid">
+            <div class="detail-diff-col">
+              <span class="block text-[11px] text-muted">本地值</span>
+              <p class="mt-0.5 break-words text-ink">{{ item.local }}</p>
+            </div>
+            <div class="detail-diff-col detail-diff-col-remote">
+              <span class="block text-[11px] text-warn">TMDB 远程</span>
+              <p class="mt-0.5 break-words text-warn">{{ item.remote }}</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -72,9 +106,20 @@ defineProps<{
           :key="`local-${item.field}`"
           class="detail-diff-item"
         >
-          <p class="text-xs font-semibold text-warn">{{ item.field }}</p>
-          <p class="mt-1 text-xs text-muted">本地：{{ item.local }}</p>
-          <p class="mt-1 text-xs text-warn">远程：{{ item.remote }}</p>
+          <div class="flex items-baseline justify-between gap-2">
+            <span class="text-xs font-semibold text-strong">{{ resolveMediaFieldLabel(item.field) }}</span>
+            <span class="font-mono text-[11px] text-muted">{{ item.field }}</span>
+          </div>
+          <div class="detail-diff-grid">
+            <div class="detail-diff-col">
+              <span class="block text-[11px] text-muted">本地值</span>
+              <p class="mt-0.5 break-words text-ink">{{ item.local }}</p>
+            </div>
+            <div class="detail-diff-col detail-diff-col-remote">
+              <span class="block text-[11px] text-warn">TMDB 远程</span>
+              <p class="mt-0.5 break-words text-warn">{{ item.remote }}</p>
+            </div>
+          </div>
         </div>
       </div>
     </template>
@@ -88,15 +133,5 @@ defineProps<{
       :embedded="true"
       @synced="onSynced"
     />
-
-    <p
-      v-if="!checkingRemoteDiff && !remoteDiffNotice && remoteDiffDecision === 'no_diff'"
-      class="mt-3 text-xs text-success"
-    >
-      已完成检查，当前未发现远程差异。
-    </p>
-    <p v-if="!checkingRemoteDiff && !remoteDiffNotice && remoteDiffMessage" class="mt-3 text-xs text-success">
-      {{ remoteDiffMessage }}
-    </p>
   </div>
 </template>

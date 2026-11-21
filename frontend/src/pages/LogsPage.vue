@@ -152,11 +152,6 @@ const currentKeyword = computed(() => {
   if (activeTab.value === "tmdb") return tmdbKeyword.value.trim();
   return "";
 });
-const currentPanelLabel = computed(() => {
-  if (activeTab.value === "access") return "Access";
-  if (activeTab.value === "tmdb") return "Upstream";
-  return "Schedule";
-});
 const currentPanelTitle = computed(() => {
   if (activeTab.value === "access") return "外部访问日志";
   if (activeTab.value === "tmdb") return "TMDB 请求日志";
@@ -742,7 +737,6 @@ onMounted(() => {
         v-model:auto-sync-status="autoSyncStatus"
         :active-tab="activeTab"
         :busy="currentBusy"
-        :panel-label="currentPanelLabel"
         :panel-title="currentPanelTitle"
         :panel-note="currentPanelNote"
         :request-status-options="requestStatusOptions"

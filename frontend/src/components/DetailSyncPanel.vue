@@ -7,6 +7,7 @@ import { clearPersonCache } from "@/api/person";
 import { clearTVCache } from "@/api/tv";
 import ToastNotice from "@/components/common/ToastNotice.vue";
 import { useToastNotice } from "@/composables/useToastNotice";
+import { resolveMediaFieldLabel } from "@/utils/mediaFieldLabels";
 
 const props = defineProps<{
   mediaType: "movie" | "tv" | "person";
@@ -74,34 +75,7 @@ function applyPresetChangedFields() {
 }
 
 function resolveFieldLabel(field: string) {
-  const map: Record<string, string> = {
-    title: "片名",
-    original_title: "原始片名",
-    name: "名称",
-    original_name: "原始名称",
-    overview: "简介",
-    tagline: "标语",
-    release_date: "上映日期",
-    first_air_date: "首播日期",
-    status: "状态",
-    runtime: "时长",
-    homepage: "主页",
-    poster_path: "海报路径",
-    backdrop_path: "背景图路径",
-    vote_average: "评分",
-    popularity: "热度",
-    genre_names: "类型",
-    genres: "类型",
-    number_of_seasons: "季数",
-    number_of_episodes: "集数",
-    type: "剧集类型",
-    biography: "人物简介",
-    profile_path: "头像路径",
-    birthday: "生日",
-    place_of_birth: "出生地",
-    known_for_department: "擅长领域",
-  };
-  return map[field] ?? field;
+  return resolveMediaFieldLabel(field);
 }
 
 async function executeSync(payload: AdminSyncPayload) {

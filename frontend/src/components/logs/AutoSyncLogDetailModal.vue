@@ -68,7 +68,7 @@ watch(
   >
     <template #title>
       <span class="block min-w-0">
-        <span class="section-label block">Run Detail</span>
+        <span class="section-label block">执行明细</span>
         <span class="block text-base font-semibold">
           执行日志明细
           <span v-if="detail" class="text-sm text-muted">#{{ detail.id }}</span>

@@ -75,7 +75,7 @@ const selectedValue = computed({
       <SelectContent
         position="popper"
         :side-offset="4"
-        class="z-[1400] max-h-64 min-w-[var(--reka-select-trigger-width)] overflow-hidden rounded-lg border border-[var(--border-muted)] bg-[var(--menu-bg)] p-1 text-[var(--text-main)] shadow-xl backdrop-blur-md animate-in fade-in-80"
+        class="z-[1400] max-h-64 min-w-[var(--reka-select-trigger-width)] overflow-hidden rounded-lg border border-[var(--border-muted)] bg-[var(--menu-bg)] p-1 text-[var(--text-main)] shadow-lg animate-in fade-in-80"
       >
         <SelectViewport class="p-1">
           <SelectItem

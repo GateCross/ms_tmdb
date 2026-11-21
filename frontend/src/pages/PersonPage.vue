@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { cancelPrefetch, prefetchMediaDetail, schedulePrefetch } from "@/api/prefetch";
 import { useRoute, useRouter } from "vue-router";
-import { Cake, Flame, MapPin } from "lucide-vue-next";
+import { ArrowLeft, Cake, Flame, MapPin } from "lucide-vue-next";
 import { getPersonCombinedCredits, getPersonDetail, getPersonImages } from "@/api/person";
 import { profileImg, tmdbImg } from "@/api/tmdb";
 import LoadState from "@/components/common/LoadState.vue";
@@ -291,111 +291,121 @@ onBeforeUnmount(() => {
     </div>
     <section class="card">
       <div class="mb-4">
-        <button class="btn-soft-xs px-3 py-1.5" @click="goBack">返回上一页</button>
+        <button type="button" class="detail-back-btn" @click="goBack">
+          <ArrowLeft class="h-3.5 w-3.5" aria-hidden="true" />
+          <span>返回上一页</span>
+        </button>
       </div>
-      <div class="detail-layout">
+      <div class="detail-summary-layout">
         <div class="detail-poster">
           <img :src="profileImg(detail.profile_path, 'w780')" :alt="detail.name" class="detail-poster-img" />
         </div>
 
         <div class="detail-info">
-          <h1 class="text-2xl font-bold">{{ detail.name }}</h1>
+          <h1 class="text-2xl font-semibold text-strong md:text-3xl">{{ detail.name }}</h1>
 
-          <div class="mt-3 flex flex-wrap gap-2">
+          <div class="detail-meta-row">
             <span v-if="detail.known_for_department" class="badge">
               {{ detail.known_for_department }}
             </span>
-            <span v-if="detail.birthday" class="badge inline-flex items-center gap-1.5">
-              <Cake class="h-3.5 w-3.5 text-muted" />
+            <span v-if="detail.birthday" class="inline-flex items-center gap-1">
+              <Cake class="h-3.5 w-3.5 text-muted" aria-hidden="true" />
               <span>{{ detail.birthday }}</span>
             </span>
-            <span v-if="detail.place_of_birth" class="badge inline-flex items-center gap-1.5">
-              <MapPin class="h-3.5 w-3.5 text-muted" />
-              <span>{{ detail.place_of_birth }}</span>
-            </span>
-            <span class="badge inline-flex items-center gap-1.5">
-              <Flame class="h-3.5 w-3.5 text-muted" />
+            <template v-if="detail.place_of_birth">
+              <span v-if="detail.birthday" class="detail-meta-sep" aria-hidden="true">·</span>
+              <span class="inline-flex items-center gap-1">
+                <MapPin class="h-3.5 w-3.5 text-muted" aria-hidden="true" />
+                <span>{{ detail.place_of_birth }}</span>
+              </span>
+            </template>
+            <span v-if="detail.birthday || detail.place_of_birth" class="detail-meta-sep" aria-hidden="true">·</span>
+            <span class="inline-flex items-center gap-1">
+              <Flame class="h-3.5 w-3.5 text-muted" aria-hidden="true" />
               <span>热度 {{ detail.popularity?.toFixed(0) ?? "-" }}</span>
             </span>
           </div>
 
-          <p class="mt-4 text-sm leading-relaxed text-muted">
+          <p class="detail-overview">
             {{ detail.biography || "暂无简介" }}
           </p>
-
-          <div class="content-auto mt-6">
-            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <h3 class="text-sm font-semibold">照片</h3>
-              <button
-                class="btn-soft-xs px-3 py-1 disabled:opacity-60"
-                :disabled="photosLoading"
-                @click="loadPersonImages(true)"
-              >
-                {{ photosLoading ? "加载中..." : photosLoaded ? "刷新照片" : "加载照片" }}
-              </button>
-            </div>
-            <p v-if="photosLoading" class="text-xs text-muted">正在加载照片...</p>
-            <div v-else-if="photosError" class="logs-refresh-error" role="status" aria-live="polite">
-              <span>{{ photosError }}</span>
-              <button type="button" class="btn-soft-xs" :disabled="photosLoading" @click="loadPersonImages(true)">
-                重试
-              </button>
-            </div>
-            <p v-else-if="photosLoaded && !photoProfiles.length" class="text-xs text-muted">暂无照片数据</p>
-            <div v-else-if="photoProfiles.length" class="person-photo-strip">
-              <img
-                v-for="(img, idx) in photoProfiles"
-                :key="idx"
-                :src="tmdbImg(img.file_path, 'w185')"
-                :alt="`${detail.name} photo`"
-                class="person-photo-img"
-                loading="lazy"
-              />
-            </div>
-          </div>
-
-          <div class="content-auto mt-6">
-            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <h3 class="text-sm font-semibold">代表作品</h3>
-              <button
-                class="btn-soft-xs px-3 py-1 disabled:opacity-60"
-                :disabled="creditsLoading"
-                @click="loadPersonCombinedCredits(true)"
-              >
-                {{ creditsLoading ? "加载中..." : creditsLoaded ? "刷新作品" : "加载作品" }}
-              </button>
-            </div>
-            <p v-if="creditsLoading" class="text-xs text-muted">正在加载代表作品...</p>
-            <div v-else-if="creditsError" class="logs-refresh-error" role="status" aria-live="polite">
-              <span>{{ creditsError }}</span>
-              <button
-                type="button"
-                class="btn-soft-xs"
-                :disabled="creditsLoading"
-                @click="loadPersonCombinedCredits(true)"
-              >
-                重试
-              </button>
-            </div>
-            <p v-else-if="creditsLoaded && !topCredits.length" class="text-xs text-muted">暂无代表作品数据</p>
-            <div v-else-if="topCredits.length" class="cast-grid">
-              <div v-for="c in topCredits" :key="c.id + (c.media_type || '')" class="cast-card">
-                <RouterLink
-                  :to="`/${c.media_type === 'tv' ? 'tv' : 'movie'}/${c.id}`"
-                  @pointerenter="scheduleCreditItem(c)"
-                  @pointerleave="cancelCreditItem(c)"
-                  @focus="scheduleCreditItem(c)"
-                  @blur="cancelCreditItem(c)"
-                  @touchstart.passive="touchCreditItem(c)"
-                >
-                  <img :src="tmdbImg(c.poster_path, 'w185')" :alt="c.title || c.name" class="cast-img" loading="lazy" />
-                </RouterLink>
-                <p class="mt-1 truncate text-xs font-medium">{{ c.title || c.name }}</p>
-                <p class="truncate text-xs text-muted">{{ c.character ?? c.job ?? "" }}</p>
-              </div>
-            </div>
-          </div>
         </div>
+      </div>
+    </section>
+
+    <section class="card content-auto mt-4">
+      <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h3 class="text-sm font-semibold text-strong">照片</h3>
+        <button
+          class="btn-soft-xs disabled:opacity-60"
+          :disabled="photosLoading"
+          @click="loadPersonImages(true)"
+        >
+          {{ photosLoading ? "加载中..." : photosLoaded ? "刷新照片" : "加载照片" }}
+        </button>
+      </div>
+      <p v-if="photosLoading" class="text-xs text-muted">正在加载照片...</p>
+      <div v-else-if="photosError" class="logs-refresh-error" role="status" aria-live="polite">
+        <span>{{ photosError }}</span>
+        <button type="button" class="btn-soft-xs" :disabled="photosLoading" @click="loadPersonImages(true)">
+          重试
+        </button>
+      </div>
+      <p v-else-if="photosLoaded && !photoProfiles.length" class="text-xs text-muted">暂无照片数据</p>
+      <div v-else-if="photoProfiles.length" class="person-photo-strip">
+        <img
+          v-for="(img, idx) in photoProfiles"
+          :key="idx"
+          :src="tmdbImg(img.file_path, 'w185')"
+          :alt="`${detail.name} photo`"
+          class="person-photo-img"
+          loading="lazy"
+        />
+      </div>
+    </section>
+
+    <section class="card content-auto mt-4">
+      <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h3 class="text-sm font-semibold text-strong">代表作品</h3>
+        <button
+          class="btn-soft-xs disabled:opacity-60"
+          :disabled="creditsLoading"
+          @click="loadPersonCombinedCredits(true)"
+        >
+          {{ creditsLoading ? "加载中..." : creditsLoaded ? "刷新作品" : "加载作品" }}
+        </button>
+      </div>
+      <p v-if="creditsLoading" class="text-xs text-muted">正在加载代表作品...</p>
+      <div v-else-if="creditsError" class="logs-refresh-error" role="status" aria-live="polite">
+        <span>{{ creditsError }}</span>
+        <button
+          type="button"
+          class="btn-soft-xs"
+          :disabled="creditsLoading"
+          @click="loadPersonCombinedCredits(true)"
+        >
+          重试
+        </button>
+      </div>
+      <p v-else-if="creditsLoaded && !topCredits.length" class="text-xs text-muted">暂无代表作品数据</p>
+      <div v-else-if="topCredits.length" class="cast-grid">
+        <RouterLink
+          v-for="c in topCredits"
+          :key="c.id + (c.media_type || '')"
+          :to="`/${c.media_type === 'tv' ? 'tv' : 'movie'}/${c.id}`"
+          class="cast-card group"
+          @pointerenter="scheduleCreditItem(c)"
+          @pointerleave="cancelCreditItem(c)"
+          @focus="scheduleCreditItem(c)"
+          @blur="cancelCreditItem(c)"
+          @touchstart.passive="touchCreditItem(c)"
+        >
+          <img :src="tmdbImg(c.poster_path, 'w185')" :alt="c.title || c.name" class="cast-img" loading="lazy" />
+          <p class="mt-1.5 truncate text-xs font-medium text-strong transition-colors group-hover:text-brand">
+            {{ c.title || c.name }}
+          </p>
+          <p v-if="c.character || c.job" class="truncate text-xs text-muted">{{ c.character ?? c.job }}</p>
+        </RouterLink>
       </div>
     </section>
   </template>

@@ -26,8 +26,6 @@ export type TVEditForm = {
 };
 
 export type RemoteDiffNotice = {
-  remoteSummary: string;
-  localOverrideSummary: string;
   remoteFields: string[];
   localOverrideFields: string[];
   remoteDetails: AdminCompareFieldDetail[];
